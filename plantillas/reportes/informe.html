@@ -5,7 +5,7 @@
 <main class="pagina ancha" id="informe" aria-busy="true">
   <nav class="migas"><a href="{% url 'reportes:mapa' %}">← Mapa de riesgos</a><a href="{% url 'reportes:descargas' %}">Descargar capas</a></nav>
   <h1 class="form-titulo">Línea del tiempo</h1>
-  <p class="form-ayuda">Qué se reportó y cuánto llovió, hora por hora, desde el inicio de la emergencia. Son reportes de la comunidad y mediciones preliminares: <b>no es información oficial</b>.</p>
+  <p class="form-ayuda">Todo lo que se ha reportado, en orden, desde el inicio de la emergencia. Son reportes de la comunidad: <b>no es información oficial</b>.</p>
 
   <form class="filtros" onsubmit="return false" aria-label="Filtros">
     <label>Isla<select id="f-isla"></select></label>
@@ -13,30 +13,27 @@
     <label>Qué ver<select id="f-clase"></select></label>
     <label>Desde<input type="date" id="f-desde"></label>
     <label>Hasta<input type="date" id="f-hasta"></label>
-    <label>Estación de lluvia<select id="f-estacion"></select></label>
   </form>
 
   <div class="cifras">
-    <div class="cifra"><span>Lluvia en el periodo</span><b id="cifra-lluvia">…</b><small id="cifra-lluvia-sub"></small></div>
     <div class="cifra"><span>Reportes</span><b id="cifra-reportes">…</b><small id="cifra-reportes-sub"></small></div>
+    <div class="cifra"><span>Días con reportes</span><b id="cifra-dias">…</b><small id="cifra-dias-sub"></small></div>
   </div>
 
   {# Navegador: todo el periodo de un vistazo. Se queda arriba al bajar y lleva a cualquier día con un toque. #}
   <section class="navegador" id="navegador" aria-label="Ir a un día">
     <div class="pista-grafico" id="pista-grafico" hidden></div>
     <div class="nav-leyenda">
-      <span><i style="background:#2f6fb3"></i><span id="ley-lluvia">Lluvia por día</span></span>
       <span><i style="background:#c8151b"></i><span id="ley-reportes">Reportes por día</span></span>
+      <span><i style="background:#2f6fb3;border-radius:50%"></i><span id="ley-lluvia">Día de lluvia muy fuerte</span></span>
       <span class="nav-ayuda">Toca un día para ir a él</span>
     </div>
-    <svg id="g-nav" role="img" aria-label="Lluvia y reportes por día. Toca un día para ir a él."></svg>
+    <svg id="g-nav" role="img" aria-label="Reportes por día. Toca un día para ir a él."></svg>
     <div class="saltos" id="saltos" role="group" aria-label="Ir rápido a"></div>
   </section>
 
-  <div class="vertical-cabecera" aria-hidden="true"><span>Lluvia, mm por hora</span><span>Hora</span><span>Reportes</span></div>
   <div id="linea"></div>
-  <p class="ficha-pie" id="nota-lluvia"></p>
-  <p class="ficha-pie">Horas de Galápagos. Los días sin reportes y con menos de 5 mm de lluvia se juntan en una sola fila; las horas con menos de 1 mm y sin reportes van en el resumen del día. El detalle de la lluvia y el pronóstico están en <a href="/clima/">/clima</a>.</p>
+  <p class="ficha-pie">Horas de Galápagos. Los días sin reportes se juntan en una sola fila. Los días de lluvia muy fuerte (50 mm o más) llevan una nota con lo que llovió; el detalle de la lluvia y el pronóstico están en <a href="/clima/">/clima</a>.</p>
   {% include "parciales/firma.html" %}
 </main>
 {% endblock %}

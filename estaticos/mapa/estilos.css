@@ -669,3 +669,10 @@ textarea.nota { width: 100%; min-height: 64px; padding: 10px 12px; border: 2px s
   .vertical-cabecera, .fila { grid-template-columns: 200px 48px minmax(0, 1fr); column-gap: 12px; }
   .navegador { margin: 0 0 12px; padding: 10px 0 8px; }
 }
+
+/* Línea del tiempo sin columna de lluvia: hora y reportes. La lluvia es solo un hito. */
+.fila { grid-template-columns: 44px minmax(0, 1fr); }
+.hito.clase-lluvia::before { background: #2f6fb3; }
+.fila .hito.clase-lluvia { margin: 2px 0; padding: 7px 10px 7px 22px; border-radius: 10px; background: var(--fondo-suave); }
+.fila .hito.clase-lluvia::before { left: 8px; top: 12px; }
+@media (min-width: 700px) { .fila { grid-template-columns: 52px minmax(0, 1fr); } }
