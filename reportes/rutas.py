@@ -8,6 +8,7 @@ urlpatterns = [
     path("reportar/", vistas.reportar, name="reportar"),
     path("cerca/", vistas.cerca, name="cerca"),
     path("lluvia/", vistas.lluvia, name="lluvia"),
+    path("informes/", vistas.informes, name="informes"),
     path("r/<str:id_publico>/", vistas.ficha, name="ficha"),
     path("r/<str:id_publico>/confirmar/", vistas.confirmar, name="confirmar"),
     path("app.webmanifest", vistas.manifiesto_app, name="manifiesto_app"),

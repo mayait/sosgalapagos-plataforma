@@ -269,6 +269,13 @@ a { color: inherit; }
 .fila-sub { font-size: 12.5px; color: var(--gris); }
 .fila-distancia { flex: none; font-size: 12.5px; color: var(--gris); }
 
+/* Informes y mapas en PDF (los mismos de la portada) */
+.informes-titulo { margin-top: 22px; }
+.informe { display: flex; gap: 12px; align-items: flex-start; padding: 11px 0; border-bottom: 1px solid var(--linea); text-decoration: none; }
+.informe img, .informe-sin-portada { flex: none; width: 56px; height: 74px; object-fit: cover; border-radius: 6px; border: 1px solid var(--linea); background: var(--fondo-suave); }
+.informe-sin-portada { display: grid; place-items: center; font: 800 11px/1 var(--titulo); color: var(--gris); }
+.informe-resumen { display: block; margin: 2px 0 3px; font-size: 12.5px; line-height: 1.35; color: var(--gris); }
+
 /* ── Ficha del reporte ───────────────────────────────────────────────────── */
 .ficha-volver { border: 0; background: none; padding: 6px 0; font-size: 13px; color: var(--gris); }
 .ficha-cabecera { display: flex; gap: 12px; align-items: center; margin: 6px 0 10px; }

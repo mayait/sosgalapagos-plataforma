@@ -4,6 +4,11 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 
 ## 2026-11-21 · Puesta en producción
 
+- **Lo nuevo del sitio son los informes y mapas en PDF de la portada.** Los publica el repo de datos en `/descargas/` desde las 13:06. Su índice no se sirve por la web: la portada lo lee del disco. *Qué se hace:* el mapa monta esa carpeta en solo lectura y muestra la misma lista bajo «Cerca de aquí». Si el índice no existe (como en la Mac), la sección no aparece. Aquí solo se enlaza lo ya publicado; qué se publica lo decide Julián en el repo de datos.
+- **Otra sesión despliega el sitio mientras tanto.** La ruta `/mapa/` que dejé fusionada en el `Caddyfile` ya estaba activa en el servidor (respondía 502) antes de que la plataforma estuviera arriba. *Qué se hace:* una ruta nueva en Caddy solo se fusiona cuando el servicio al que apunta ya responde, o se avisa a quien despliega.
+
+- **La dirección es `/riesgos/`, no `/mapa/` (indicación de Julián).** `/mapa/` se parecía demasiado a `/mapas/`, que es el visor de capas. *Qué se hace:* todo vive bajo `/riesgos/`. Las entradas de abajo que dicen `/mapa/` son de antes del cambio.
+
 - **El sitio actual ya usa `/api` y `/admin`.** El plan ponía la API nueva en `/api/`. *Qué se hace:* todo lo de la plataforma vive bajo `/mapa/` (API, administración, estáticos y fotos). Una sola ruta nueva en Caddy y ningún choque.
 - **El despliegue del sitio borra los contenedores que no conoce** (`docker compose up --remove-orphans`). Si la plataforma compartiera su proyecto de Compose, el siguiente despliegue del sitio la borraría. *Qué se hace:* proyecto de Compose aparte (`sosgalapagos-plataforma`), unido a la red del sitio.
 - **Reiniciar Caddy corta todo el sitio.** Y como el `Caddyfile` se monta como archivo suelto, un `git pull` no llega al contenedor. *Qué se hace:* se copia el archivo al contenedor, se valida y se recarga en caliente (`caddy reload`), sin reiniciar.

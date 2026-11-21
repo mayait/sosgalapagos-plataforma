@@ -64,7 +64,7 @@
     paso: 1, tipo: '', profundidad: '', gravedad: 'cuidado', gravedadTocada: false, nota: '',
     foto: null, lat: null, lon: null, precision: null, origen: '',
     vistoEn: new Date().toISOString(), enviando: false, error: '',
-    tituloFinal: '', textoFinal: '', enlaceFinal: '/mapa/', mini: null,
+    tituloFinal: '', textoFinal: '', enlaceFinal: '/riesgos/', mini: null,
 
     init() {
       this.$watch('paso', (p) => { if (p === 4) this.$nextTick(() => this.abrirMiniMapa()); });
@@ -142,7 +142,7 @@
         this.textoFinal = datos.duplicado
           ? 'Alguien ya había avisado de esto aquí mismo. Tu aviso confirma que sigue ahí y renueva el plazo.'
           : 'Ya aparece en el mapa como «por verificar». Se retira solo cuando pase su plazo.';
-        this.enlaceFinal = '/mapa/?r=' + datos.id;
+        this.enlaceFinal = '/riesgos/?r=' + datos.id;
         this.paso = 5;
       } catch (e) {
         // Sin señal: queda guardado en el teléfono con la hora en que se vio.

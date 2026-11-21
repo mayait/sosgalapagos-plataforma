@@ -18,6 +18,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from zonas.models import zona_de
 
 from . import clima, fotos, reglas
+from . import informes as informes_publicados
 from .models import Gravedad, Profundidad, Reporte, TipoConfirmacion, TipoRiesgo
 
 GALLETA = "dispositivo"
@@ -50,10 +51,10 @@ def _configuracion():
         "capasSiempreGrupos": settings.CAPAS_SIEMPRE_GRUPOS,
         "capasApagadasAlAbrir": settings.CAPAS_APAGADAS_AL_ABRIR,
         "estaticos": settings.STATIC_URL,
-        "vivos": "/mapa/api/reportes/vivos.geojson",
+        "vivos": "/riesgos/api/reportes/vivos.geojson",
         "cerca": reverse("reportes:cerca"),
         "lluvia": reverse("reportes:lluvia"),
-        "ficha": "/mapa/r/",
+        "ficha": "/riesgos/r/",
         "reportar": reverse("reportes:reportar"),
     }
 
@@ -222,6 +223,12 @@ def lluvia(request):
     return render(request, "parciales/lluvia.html", {"lluvia": clima.nivel(clima.zona_por_punto(lon, lat))})
 
 
+@require_GET
+def informes(request):
+    """Informes y mapas en PDF ya publicados en la portada del sitio."""
+    return render(request, "parciales/informes.html", {"informes": informes_publicados.leer(), "url": settings.INFORMES_URL})
+
+
 @cache_control(max_age=3600)
 def manifiesto_app(request):
     e = settings.STATIC_URL
@@ -231,8 +238,8 @@ def manifiesto_app(request):
             "short_name": "SOS Galápagos",
             "description": "Reportes ciudadanos de lugares de riesgo. Información preliminar, no oficial.",
             "lang": "es",
-            "start_url": "/mapa/",
-            "scope": "/mapa/",
+            "start_url": "/riesgos/",
+            "scope": "/riesgos/",
             "display": "standalone",
             "background_color": "#ffffff",
             "theme_color": "#ffffff",
@@ -246,7 +253,7 @@ def manifiesto_app(request):
 
 
 def service_worker(request):
-    """Se sirve desde /mapa/ para que su alcance cubra todo el mapa."""
+    """Se sirve desde /riesgos/ para que su alcance cubra todo el mapa."""
     respuesta = render(request, "reportes/sw.js", {"estaticos": settings.STATIC_URL}, content_type="text/javascript")
     respuesta["Cache-Control"] = "no-cache"
     return respuesta

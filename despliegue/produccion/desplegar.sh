@@ -2,7 +2,7 @@
 # Despliega o actualiza el mapa de riesgos en el servidor. Solo añade: no reinicia el sitio.
 # Uso (en el servidor):  /opt/sosgalapagos-plataforma/despliegue/produccion/desplegar.sh
 #
-# La primera vez crea el .env con claves nuevas. La ruta /mapa/ en Caddy se añade aparte
+# La primera vez crea el .env con claves nuevas. La ruta /riesgos/ en Caddy se añade aparte
 # (ver despliegue/servidor.md): este guion no toca el Caddy del sitio.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -23,7 +23,7 @@ docker compose up -d --build
 
 echo "→ Esperando al mapa"
 for i in $(seq 1 40); do
-  if docker compose exec -T plataforma python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/mapa/api/reportes/vivos.geojson', timeout=5).status == 200 else 1)" 2>/dev/null; then
+  if docker compose exec -T plataforma python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/riesgos/api/reportes/vivos.geojson', timeout=5).status == 200 else 1)" 2>/dev/null; then
     echo "Mapa listo"; break
   fi
   sleep 3

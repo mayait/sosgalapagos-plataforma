@@ -7,7 +7,7 @@
   const SONDEO_MS = 4000;       // cada cuánto se pregunta si hay reportes nuevos
   const OPACIDAD_MINIMA = 0.4;  // un reporte a punto de vencer no desaparece del todo
 
-  // Enlace a un punto, igual que en /mapas: /mapa/#lat,lon,zoom
+  // Enlace a un punto, igual que en /mapas: /riesgos/#lat,lon,zoom
   const enlace = (() => {
     const m = decodeURIComponent(location.hash.slice(1)).match(/^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)(?:,(\d+(?:\.\d+)?))?$/);
     return m && Math.abs(+m[1]) <= 90 && Math.abs(+m[2]) <= 180 ? { centro: [+m[2], +m[1]], zoom: Math.min(19, +(m[3] || 16)) } : null;
@@ -157,6 +157,7 @@
   const hoja = document.getElementById('hoja');
   const detalle = document.getElementById('detalle');
   const cerca = document.getElementById('cerca');
+  const lista = document.getElementById('lista'); // lo que se ve cuando no hay ficha abierta
   // La hoja tiene tres alturas: asomada, media y abierta. Se arrastra o se toca el asa.
   const ASOMADA = 96;
   let alturaHoja = ASOMADA;
@@ -214,13 +215,13 @@
   }
   function cerrarFicha() {
     detalle.innerHTML = '';
-    cerca.hidden = false;
+    lista.hidden = false;
     history.replaceState(null, '', location.pathname + location.hash);
   }
   // Las capas de /mapas con fotos o texto largo (reportes de campo) se leen aquí, no en un globo.
   SOS.mostrarDetalle = function (html, lngLat) {
     detalle.innerHTML = html;
-    cerca.hidden = true;
+    lista.hidden = true;
     abrirHoja(true);
     hoja.querySelector('.hoja-cuerpo').scrollTop = 0;
     if (lngLat) centrarEn(lngLat);
@@ -228,7 +229,7 @@
   document.body.addEventListener('htmx:afterSwap', (e) => {
     if (e.target !== detalle) return;
     const ficha = detalle.querySelector('[data-ficha]');
-    cerca.hidden = Boolean(ficha);
+    lista.hidden = Boolean(ficha);
     if (!ficha) return;
     abrirHoja(true);
     hoja.querySelector('.hoja-cuerpo').scrollTop = 0;
@@ -459,7 +460,7 @@
     mapa.on('moveend', alMover);
     mapa.on('idle', actualizarVacio);
 
-    // Enlace directo a un reporte: /mapa/?r=<id>
+    // Enlace directo a un reporte: /riesgos/?r=<id>
     const id = new URLSearchParams(location.search).get('r');
     if (id) {
       const f = coleccion.features.find((x) => x.properties.id === id);

@@ -27,6 +27,8 @@ x-plataforma: &plataforma
   volumes:
     - medios:/medios
     - /srv/sosgalapagos-clima:/srv/clima:ro
+    # Informes y mapas en PDF de la portada: se lee su índice para enlazarlos desde el mapa.
+    - /srv/sosgalapagos-descargas:/srv/descargas:ro
   depends_on:
     postgis:
       condition: service_healthy

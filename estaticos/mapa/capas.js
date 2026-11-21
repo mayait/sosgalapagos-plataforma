@@ -606,7 +606,7 @@
   }
 
   // ── Enlaces a un lugar, iguales a los de /mapas ───────────────────────────
-  //   /mapa/#ptoayora   /mapa/#la-cascada   /mapa/#-0.7365,-90.3135,16 (lat,lon,zoom)
+  //   /riesgos/#ptoayora   /riesgos/#la-cascada   /riesgos/#-0.7365,-90.3135,16 (lat,lon,zoom)
   // Las coordenadas las atiende mapa.js al abrir; aquí van los nombres, que salen del manifiesto.
   const claveLugar = (t) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
   function lugares() {

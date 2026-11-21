@@ -1,17 +1,19 @@
 # Despliegue en el servidor
 
-El mapa de riesgos corre en el mismo servidor que el sitio (152.44.45.89), detrás del mismo Caddy, en `https://sosgalapagos.org/mapa/`.
+El mapa de riesgos corre en el mismo servidor que el sitio (152.44.45.89), detrás del mismo Caddy, en `https://sosgalapagos.org/riesgos/`.
 
 **Solo añade.** Es un proyecto de Compose aparte del sitio y no reinicia nada de lo que ya corre. `/mapas`, `/clima` y la portada no se tocan.
 
 ```
 Cloudflare ─► Caddy del sitio ─┬─ /mapas/  /clima/  /          lo de siempre
-                               └─ /mapa/*  ─► plataforma:8000   (este repo)
+                               └─ /riesgos/*  ─► plataforma:8000   (este repo)
                                                  │
                               postgis · trabajador · reloj      proyecto «sosgalapagos-plataforma»
 ```
 
-Todo lo de la plataforma vive bajo `/mapa/`: páginas, `/mapa/api/`, `/mapa/admin/`, estáticos y fotos. El sitio actual ya usa `/api` y `/admin`, así que no se comparten.
+La plataforma lee, en solo lectura, tres cosas que ya publican otros: la lluvia de `/clima` (`/srv/sosgalapagos-clima`), el índice de informes en PDF de la portada (`/srv/sosgalapagos-descargas`) y las capas de `/mapas` (por la web).
+
+Todo lo de la plataforma vive bajo `/riesgos/`: páginas, `/riesgos/api/`, `/riesgos/admin/`, estáticos y fotos. El sitio actual ya usa `/api` y `/admin`, así que no se comparten.
 
 ## 1. La primera vez
 
@@ -26,8 +28,8 @@ git clone https://github.com/mayait/sosgalapagos-plataforma.git /opt/sosgalapago
 Está en `mayait/sosgalapagos`, `deploy/sosgalapagos/Caddyfile`, antes del `handle` final:
 
 ```
-	redir /mapa /mapa/ permanent
-	handle /mapa/* {
+	redir /riesgos /riesgos/ permanent
+	handle /riesgos/* {
 		reverse_proxy plataforma:8000
 	}
 ```
@@ -53,8 +55,8 @@ El archivo del repo queda igual que el que está cargado, así que el próximo r
 ## 4. Comprobar
 
 ```bash
-curl -sI https://sosgalapagos.org/mapa/ | head -1
-curl -s  https://sosgalapagos.org/mapa/api/reportes/vivos.geojson | head -c 200
+curl -sI https://sosgalapagos.org/riesgos/ | head -1
+curl -s  https://sosgalapagos.org/riesgos/api/reportes/vivos.geojson | head -c 200
 curl -sI https://sosgalapagos.org/mapas/ | head -1      # sigue igual
 curl -sI https://sosgalapagos.org/clima/ | head -1      # sigue igual
 cd /opt/sosgalapagos-plataforma/despliegue/produccion && docker compose ps
@@ -62,7 +64,7 @@ cd /opt/sosgalapagos-plataforma/despliegue/produccion && docker compose ps
 
 ## 5. Volver atrás
 
-- **Quitar la ruta:** revertir el commit del `Caddyfile` y repetir el paso 2. `/mapa/` deja de responder y lo demás sigue igual.
+- **Quitar la ruta:** revertir el commit del `Caddyfile` y repetir el paso 2. `/riesgos/` deja de responder y lo demás sigue igual.
 - **Parar la plataforma:** `docker compose stop` en `despliegue/produccion`. Los datos quedan en los volúmenes `bd` y `medios`. No se borra nada.
 
 ## 6. Cuenta de coordinación
@@ -72,7 +74,7 @@ cd /opt/sosgalapagos-plataforma/despliegue/produccion
 docker compose exec plataforma python manage.py createsuperuser
 ```
 
-Se entra en `https://sosgalapagos.org/mapa/admin/`. Ahí se revisan y publican las fotos y notas de los vecinos.
+Se entra en `https://sosgalapagos.org/riesgos/admin/`. Ahí se revisan y publican las fotos y notas de los vecinos.
 
 ## Pendiente
 
