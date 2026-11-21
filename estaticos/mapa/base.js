@@ -80,8 +80,10 @@
       type: 'raster', tiles: urls, tileSize: 256, attribution: def.atribucion,
       maxzoom: Math.min(def.maxNativeZoom || def.maxZoom || 19, def.id === 'satelite' ? 16 : 19),
     });
-    // La imagen va debajo de los rótulos de la base (calles y lugares), que se siguen leyendo.
-    const primerRotulo = mapa.getStyle().layers.find((l) => l.type === 'symbol' && l.source === 'base');
+    // Sobre el satélite, la imagen va debajo de los rótulos de la base (calles y lugares), que se
+    // siguen leyendo. Las otras bases ya traen sus nombres dibujados: van encima de todo lo de la
+    // base, para que no salgan los nombres dos veces.
+    const primerRotulo = def.id === 'satelite' ? mapa.getStyle().layers.find((l) => l.type === 'symbol' && l.source === 'base') : null;
     mapa.addLayer({ id: 'base-raster', type: 'raster', source: 'base-raster', paint: { 'raster-fade-duration': 0 } }, primerRotulo ? primerRotulo.id : 'ancla-raster');
   };
 })();
