@@ -103,11 +103,19 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 MAPA_CENTRO = (-90.3145, -0.7435)  # longitud, latitud
 MAPA_ZOOM = 16
 
-# Capas de riesgo: el manifiesto y sus archivos salen del repo sosgalapagos-datos.
-# En la Mac se sirven desde el clon vecino; en el servidor, desde la URL publicada.
-CAPAS_DIR = Path(entorno("CAPAS_DIR", RAIZ.parent / "sosgalapagos-datos" / "mapas-galapagos" / "datos"))
-CAPAS_URL = entorno("CAPAS_URL", "/capas/")
+# Capas de riesgo: se leen de lo mismo que publica /mapas (repo sosgalapagos-datos):
+#   capas.json       manifiesto de grupos, capas, estilos y leyendas
+#   descargas.json   índice de descargas en Shapefile y GeoJSON de cada capa
+#   datos/<variante>/…  los archivos de cada capa
+# Así el mapa nuevo y /mapas muestran siempre las mismas capas, y cada una se
+# puede encender, apagar y descargar.
+CAPAS_URL = entorno("CAPAS_URL", "/mapas/")
+CAPAS_VARIANTE = "completo"  # islas completas, sin recorte
+# En la Mac no existe /mapas: se trae del sitio publicado y se guarda una copia local.
+CAPAS_ORIGEN = entorno("CAPAS_ORIGEN", "https://sosgalapagos.org/mapas/")
+CAPAS_COPIA = Path(entorno("CAPAS_COPIA", RAIZ / ".copia-mapas"))
 # Capas que arrancan encendidas. Son pocas a propósito: lo principal son los reportes.
+# La persona puede encender cualquiera; «Volver a las capas iniciales» regresa a estas.
 CAPAS_ENCENDIDAS = ["susceptibilidad", "quebradas", "barrios"]
 CAPAS_ENCENDIDAS_MOVIL = ["barrios"]
 

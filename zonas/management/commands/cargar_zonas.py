@@ -1,12 +1,15 @@
 """Carga el diccionario de zonas desde las capas del repo sosgalapagos-datos.
 
 Uso: manage.py cargar_zonas [carpeta de capas]
+Sin carpeta, lee las mismas capas que publica /mapas.
 Se puede correr las veces que haga falta: actualiza lo que ya existe y no borra nada.
 """
 import json
 from pathlib import Path
+from urllib.request import Request, urlopen
 
 from django.conf import settings
+
 from django.contrib.gis.geos import GEOSGeometry
 from django.core.management.base import BaseCommand
 
@@ -24,16 +27,22 @@ class Command(BaseCommand):
     help = "Carga barrios y sectores desde las capas de geodatos"
 
     def add_arguments(self, parser):
-        parser.add_argument("carpeta", nargs="?", default=str(settings.CAPAS_DIR))
+        parser.add_argument("carpeta", nargs="?", help="Carpeta con las capas. Sin ella, se bajan de lo que publica /mapas")
 
     def handle(self, carpeta, **opciones):
         total = 0
         for archivo, tipo, campo in CAPAS:
-            ruta = Path(carpeta) / archivo
-            if not ruta.exists():
-                self.stderr.write(f"No encuentro {ruta}")
+            try:
+                if carpeta:
+                    contenido = (Path(carpeta) / archivo).read_text()
+                else:
+                    url = f"{settings.CAPAS_ORIGEN}datos/{settings.CAPAS_VARIANTE}/{archivo}"
+                    with urlopen(Request(url, headers={"User-Agent": "sosgalapagos-plataforma"}), timeout=30) as r:
+                        contenido = r.read().decode()
+            except Exception as error:
+                self.stderr.write(f"No pude leer {archivo}: {error}")
                 continue
-            for f in json.loads(ruta.read_text())["features"]:
+            for f in json.loads(contenido)["features"]:
                 p = f["properties"]
                 nombre, isla = (p.get(campo) or "").strip(), (p.get("isla") or "").strip()
                 if not nombre or not isla:

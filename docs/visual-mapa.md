@@ -18,6 +18,7 @@ Capturas en [`capturas/`](capturas/):
 | `10-nuevo-movil-mapa.jpg` | **Mapa nuevo** en el teléfono (fase 1, en local) |
 | `11-nuevo-escritorio-mapa.png` | **Mapa nuevo** en el escritorio, con la lista de lo que hay cerca |
 | `12-nuevo-escritorio-capas-y-ficha.png` | **Mapa nuevo** con el panel Capas y la ficha de un reporte |
+| `13-nuevo-capas-con-descargas.jpg` | **Mapa nuevo:** panel Capas con las descargas de cada capa, como en `/mapas` |
 
 ### Vista inicial y disposición
 
@@ -105,6 +106,7 @@ Capturas en [`capturas/`](capturas/):
 | **Franja de lluvia y fichas de tiempo** (ahora, 24 h, todo el evento) | Son nuevas; no existen hoy |
 | **Botón grande Reportar** | Es la acción principal del producto nuevo |
 | Sin botón de subir GeoJSON al inicio | Se usa poco en la portada. Sigue disponible en `/mapas` |
+| **Descargas por capa y botones «Apagar todas» y «Volver a las iniciales»** | Son los principios de `/mapas`, que se mantienen: toda capa se enciende, se apaga y se descarga. El panel lee el manifiesto y el índice de descargas de `/mapas` |
 | Fondo blanco en todo, sin modo oscuro | Lo pide el encargo. La barra superior negra de hoy desaparece |
 
 ### Colores de estado propuestos

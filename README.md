@@ -15,7 +15,7 @@ Un mapa único donde la gente reporta **lugares de riesgo o peligro con fecha**,
 - **Los reportes vencen solos.** Cada tipo tiene su plazo (de 6 a 72 horas). El pin se destiñe con la edad y desaparece al vencer.
 - **«Sigue ahí»** renueva el plazo. **Dos «ya bajó»** de teléfonos distintos cierran el reporte.
 - **Duplicados:** un reporte del mismo tipo a menos de 50 m de uno vivo cuenta como confirmación.
-- **Capas de riesgo** del repo de datos, en un solo panel y cargadas solo al encenderlas.
+- **Capas de riesgo:** las mismas de `/mapas`, en un solo panel. Cada una se enciende, se apaga y se descarga en Shapefile y GeoJSON, y se baja solo al encenderla.
 - **Lluvia:** franja con el nivel preliminar de la zona, tomado de `/clima`.
 - **Instalable** como app. Sin señal guarda los reportes nuevos y los envía al volver la conexión.
 
@@ -23,7 +23,7 @@ Lo que falta está en [`docs/plan-tecnico.md`](docs/plan-tecnico.md): API Open31
 
 ## Arranque local
 
-En la Mac se usa `container` (Apple). Hace falta tener clonado al lado [`sosgalapagos-datos`](https://github.com/mayait/sosgalapagos-datos), de donde salen las capas.
+En la Mac se usa `container` (Apple). Las capas se traen de lo que publica `sosgalapagos.org/mapas/` y se guarda una copia en `.copia-mapas/`.
 
 ```bash
 # 1. Imágenes (una vez)

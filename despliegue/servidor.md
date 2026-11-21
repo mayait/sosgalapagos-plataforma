@@ -23,7 +23,6 @@ El `docker-compose.yml` y el `Caddyfile` de todo el servidor viven en `mayait/so
     environment:
       - BD_ANFITRION=postgis
       - CLIMA_ESTADO=/srv/clima/datos/estado.json
-      - CAPAS_URL=/mapas/datos/        # por confirmar con lo que publica /mapas
       - MEDIOS_DIR=/medios
     volumes:
       - plataformamedios:/medios
@@ -63,7 +62,6 @@ Van antes del `handle` final, que manda todo lo demás a la web actual.
 
 - [ ] Comprobar que la web actual no usa ya la ruta `/api/`.
 - [ ] Medir la memoria libre del servidor (4 vCPU, 8 GB).
-- [ ] Confirmar la URL pública del manifiesto de capas y de sus archivos.
 - [ ] Añadir la base nueva y las fotos al respaldo diario.
 - [ ] Correr `collectstatic` en la imagen y servir `/estaticos/` con WhiteNoise.
 - [ ] La cabecera `Permissions-Policy` de Caddy dice hoy `camera=()`. No afecta al botón de foto del formulario, que usa la cámara del sistema, pero hay que comprobarlo en un teléfono.

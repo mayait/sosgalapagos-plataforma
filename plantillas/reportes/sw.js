@@ -1,7 +1,7 @@
 /* Service worker del mapa. Guarda la interfaz, el mapa base y las capas ya vistas,
    para que la app instalada abra sin señal. Los reportes van siempre a la red:
    el mapa guarda la última respuesta por su cuenta y muestra de qué hora es. */
-const VERSION = 'sos-v2';
+const VERSION = 'sos-v3';
 const E = '{{ estaticos }}';
 const INTERFAZ = [
   '/mapa/', '/mapa/reportar/',
@@ -30,9 +30,10 @@ self.addEventListener('fetch', (e) => {
   // El mapa base se pide por trozos (Range). Se guarda el archivo entero una vez y de ahí se corta.
   if (url.pathname.endsWith('.pmtiles')) { e.respondWith(trozo(pedido)); return; }
 
-  // Lo que casi nunca cambia (librerías, mapa base, marca, capas): primero lo guardado.
+  // Lo que casi nunca cambia (librerías, mapa base, marca, archivos de capas): primero lo guardado.
+  // El manifiesto y el índice de descargas de /mapas van a la red, para ver enseguida una capa nueva.
   // El código propio (mapa/) va primero a la red, para que un cambio se vea al instante.
-  const estatico = ['terceros/', 'base/', 'marca/', 'app/'].some((d) => url.pathname.startsWith(E + d)) || url.pathname.startsWith('/capas/');
+  const estatico = ['terceros/', 'base/', 'marca/', 'app/'].some((d) => url.pathname.startsWith(E + d)) || url.pathname.startsWith('/mapas/datos/') || url.pathname.startsWith('/mapas/teselas/');
   if (estatico) {
     // Primero lo guardado, y se refresca por detrás.
     e.respondWith(

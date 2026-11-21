@@ -4,6 +4,9 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 
 ## 2026-11-21 · Fase 1
 
+- **Las capas deben seguir siendo activables, desactivables y descargables, como en `/mapas` (indicación de Julián).** La primera versión del panel leía un manifiesto viejo (`mapas-galapagos/datos/capas.json`, 24 capas, del 1-nov) y no ofrecía descargas. `/mapas` publica otro, más completo (56 capas) y con su índice de descargas. *Qué se hace:* el panel lee `capas.json` y `descargas.json` de `/mapas`, muestra los enlaces de Shapefile y GeoJSON de cada capa, y trae «Apagar todas las capas» y «Volver a las capas iniciales». No hay lista de capas propia: lo que se publica en `/mapas` aparece aquí.
+- **Hay tres manifiestos de capas distintos.** El de `mapas-galapagos/datos/` (entregable cerrado), el de la plataforma vieja (`/capas/galapagos-2026/`) y el de `/mapas`. El vigente es el de `/mapas`. *Qué se hace:* se usa solo ese.
+
 - **Un service worker que sirve primero lo guardado esconde los cambios.** Al corregir el CSS, el navegador siguió mostrando el archivo viejo. *Qué se hace:* el código propio (`estaticos/mapa/`) va primero a la red; solo las librerías, el mapa base, la marca y las capas se sirven primero desde lo guardado. Al cambiar esa lista se sube `VERSION` en `plantillas/reportes/sw.js`.
 - **En CSS, `display: flex` le gana al atributo `hidden`.** El panel Capas aparecía abierto aunque tenía `hidden`. *Qué se hace:* regla global `[hidden] { display: none !important; }`.
 - **El mapa base de Protomaps trae tiendas y restaurantes.** Tapaban los reportes. *Qué se hace:* se quitan las capas `pois` del estilo (`estaticos/mapa/base.js`).

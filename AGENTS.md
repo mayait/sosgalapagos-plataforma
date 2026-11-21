@@ -9,16 +9,17 @@ Plataforma de reportes de riesgo de SOS Galápagos: un mapa único donde la gent
 1. **No se toca producción ni el servidor sin aprobación explícita de Julián.** Subir a `main` no publica nada.
 2. **Nunca se borran archivos, datos ni contenedores.** Lo que se descarta se mueve a `Archivo/`. Un reporte cerrado tampoco se borra: queda en el archivo.
 3. **No se rompen `/mapas` ni `/clima`.** Este proyecto solo lee lo que publican.
-4. **No se copia código de ResponseGrid** (`mayait/sosgalapagos`, AGPL-3.0). Este proyecto es Apache 2.0. El visual se rehace desde [`docs/visual-mapa.md`](docs/visual-mapa.md).
-5. **Privacidad:**
+4. **Las capas conservan los principios de `/mapas`: toda capa se puede encender, apagar y descargar** (Shapefile y GeoJSON). El panel Capas lee el mismo `capas.json` y el mismo `descargas.json` que publica `/mapas`; no se mantiene una lista de capas aparte. Una capa nueva se añade en el repo de datos y aparece sola en los dos sitios.
+5. **No se copia código de ResponseGrid** (`mayait/sosgalapagos`, AGPL-3.0). Este proyecto es Apache 2.0. El visual se rehace desde [`docs/visual-mapa.md`](docs/visual-mapa.md).
+6. **Privacidad:**
    - Ningún dato personal público. Nunca nombres de menores ni cédulas.
    - Las fotos se guardan sin metadatos (`reportes/fotos.py`).
    - Los teléfonos nunca en claro: solo un resumen con clave.
    - La foto y la nota de un vecino no se publican hasta que coordinación las revise.
-6. **El mapa nunca dice «zona segura».** Donde no hay reportes dice «sin reportes activos». Hay una prueba que lo vigila.
-7. **Se dice «refugio», nunca «albergue».**
-8. **Repositorio público.** Sin secretos, sin endpoints de las fuentes de clima y nada de los repositorios privados.
-9. **Se trabaja en ramas con pull request.**
+7. **El mapa nunca dice «zona segura».** Donde no hay reportes dice «sin reportes activos». Hay una prueba que lo vigila.
+8. **Se dice «refugio», nunca «albergue».**
+9. **Repositorio público.** Sin secretos, sin endpoints de las fuentes de clima y nada de los repositorios privados.
+10. **Se trabaja en ramas con pull request.**
 
 ## Convenciones
 
@@ -40,6 +41,7 @@ Plataforma de reportes de riesgo de SOS Galápagos: un mapa único donde la gent
 | Cambiar un tipo de riesgo | El admin (`/admin/`), no el código |
 | Tocar el formulario | `plantillas/reportes/reportar.html` y `estaticos/mapa/reportar.js` |
 | Tocar los pines o el desteñido | `estaticos/mapa/mapa.js` |
-| Tocar el panel Capas | `estaticos/mapa/capas.js`. Las capas y sus estilos vienen del manifiesto del repo de datos |
+| Tocar el panel Capas | `estaticos/mapa/capas.js`. Las capas, sus estilos y sus descargas vienen de lo que publica `/mapas` |
+| Añadir o cambiar una capa | El repo `sosgalapagos-datos` (`geodatos/`), no este |
 | Cambiar el mapa base | `estaticos/mapa/base.js` |
 | Ver qué falta | [`docs/plan-tecnico.md`](docs/plan-tecnico.md), sección de fases |

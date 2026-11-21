@@ -10,6 +10,7 @@ from django.views.generic import RedirectView
 from django.views.static import serve
 
 from api.rutas import api
+from reportes.vistas import copia_de_mapas
 
 urlpatterns = [
     path("", RedirectView.as_view(url="/mapa/")),
@@ -19,8 +20,8 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    # Solo en la Mac: las fotos y las capas del repo de datos. En el servidor las sirve Caddy.
+    # Solo en la Mac: las fotos, y una copia de lo que publica /mapas. En el servidor los sirve Caddy.
     urlpatterns += [
         re_path(r"^medios/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
-        re_path(r"^capas/(?P<path>.*)$", serve, {"document_root": settings.CAPAS_DIR}),
+        re_path(r"^mapas/(?P<ruta>.*)$", copia_de_mapas),
     ]

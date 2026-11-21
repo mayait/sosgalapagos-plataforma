@@ -103,3 +103,11 @@ def prueba_el_mapa_nunca_dice_zona_segura(client):
     pagina = client.get("/mapa/").content.decode().lower()
     assert "zona segura" not in pagina
     assert "sin reportes activos" in pagina
+
+
+def prueba_el_mapa_lee_las_capas_de_lo_que_publica_mapas(client):
+    # Principio de /mapas: toda capa se enciende, se apaga y se descarga.
+    # Para eso el panel usa el mismo manifiesto y el mismo índice de descargas.
+    configuracion = client.get("/mapa/").context["configuracion"]
+    assert configuracion["capasUrl"] == "/mapas/"
+    assert configuracion["capasVariante"] == "completo"

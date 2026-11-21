@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
-from django.http import Http404, HttpResponse, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import timezone
@@ -45,6 +45,7 @@ def _configuracion():
         "centro": settings.MAPA_CENTRO,
         "zoom": settings.MAPA_ZOOM,
         "capasUrl": settings.CAPAS_URL,
+        "capasVariante": settings.CAPAS_VARIANTE,
         "capasEncendidas": settings.CAPAS_ENCENDIDAS,
         "capasEncendidasMovil": settings.CAPAS_ENCENDIDAS_MOVIL,
         "estaticos": settings.STATIC_URL,
@@ -248,3 +249,33 @@ def service_worker(request):
     respuesta = render(request, "reportes/sw.js", {"estaticos": settings.STATIC_URL}, content_type="text/javascript")
     respuesta["Cache-Control"] = "no-cache"
     return respuesta
+
+
+def copia_de_mapas(request, ruta):
+    """Solo en la Mac: sirve lo que publica /mapas, bajándolo una vez del sitio.
+
+    En el servidor esta vista no existe: /mapas lo sirve Caddy desde el repo de datos.
+    Los archivos de descarga (zip) no se copian: se manda al sitio publicado.
+    """
+    import mimetypes
+    import re
+    from urllib.request import Request, urlopen
+
+    if not settings.DEBUG or not re.fullmatch(r"[\w@./-]+", ruta) or ".." in ruta:
+        raise Http404
+    if ruta.startswith("descargas/"):
+        return HttpResponseRedirect(settings.CAPAS_ORIGEN + ruta)
+    local = settings.CAPAS_COPIA / ruta
+    es_indice = ruta in ("capas.json", "descargas.json")
+    if not local.exists() or es_indice:
+        try:
+            pedido = Request(settings.CAPAS_ORIGEN + ruta, headers={"User-Agent": "sosgalapagos-plataforma (desarrollo local)"})
+            with urlopen(pedido, timeout=30) as respuesta:
+                datos = respuesta.read()
+            local.parent.mkdir(parents=True, exist_ok=True)
+            local.write_bytes(datos)
+        except Exception:
+            if not local.exists():  # sin red y sin copia
+                raise Http404
+    tipo = "application/geo+json" if ruta.endswith(".geojson") else mimetypes.guess_type(ruta)[0] or "application/octet-stream"
+    return FileResponse(local.open("rb"), content_type=tipo)

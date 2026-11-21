@@ -7,8 +7,7 @@
 set -eu
 cd "$(dirname "$0")/.."
 IP_BD=$(container inspect sosg-bd | python3 -c "import json,sys; print(json.load(sys.stdin)[0]['status']['networks'][0]['ipv4Address'].split('/')[0])")
-DATOS=${SOSGALAPAGOS_DATOS:-$(cd .. && pwd)/sosgalapagos-datos}
-COMUN="--rm -e DEPURAR=1 -e BD_ANFITRION=$IP_BD -e CAPAS_DIR=/capas -v $(pwd):/app -v $DATOS/mapas-galapagos/datos:/capas"
+COMUN="--rm -e DEPURAR=1 -e BD_ANFITRION=$IP_BD -v $(pwd):/app"
 case "${1:-}" in
   servidor) container rm -f sosg-web >/dev/null 2>&1 || true
             exec container run -d --name sosg-web -p 8000:8000 $COMUN sosg-plataforma python manage.py runserver 0.0.0.0:8000 ;;

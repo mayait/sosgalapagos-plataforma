@@ -133,6 +133,18 @@ a { color: inherit; }
 .muestra.linea { width: 16px; height: 0; border-top: 3px solid; vertical-align: 3px; }
 .muestra.punto { width: 13px; height: 13px; border-radius: 50%; border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.25); color: #fff; font-size: 8.5px; font-weight: 700; line-height: 10px; text-align: center; vertical-align: -3px; }
 
+/* Descargas y acciones, como en /mapas */
+.capa-descargas { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 3px 0 0 39px; font-size: 11.5px; }
+.capa-descargas.todo { margin-left: 0; font-size: 13px; }
+.capa-descargas a { color: var(--tinta); font-weight: 600; text-decoration: none; white-space: nowrap; }
+.capa-descargas a:hover { color: var(--rojo); text-decoration: underline; }
+.capa-descargas i { font-style: normal; font-weight: 400; color: var(--gris-claro); }
+.capas-acciones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.capas-acciones button { border: 1px solid var(--linea); background: var(--blanco); border-radius: 7px; padding: 5px 9px; font-size: 12px; font-weight: 600; }
+.capas-activas { float: right; padding: 1px 7px; border-radius: 999px; background: var(--negro); color: var(--blanco); letter-spacing: 0; text-transform: none; font-size: 10.5px; }
+.capas-nota { margin: 0 0 6px; font-size: 11.5px; line-height: 1.35; color: var(--gris); }
+.globo-texto { margin: 6px 0 0; }
+
 /* Leyenda de pines y botón de ubicación */
 .leyenda {
   position: absolute; z-index: 4; left: 10px; bottom: 14px;
