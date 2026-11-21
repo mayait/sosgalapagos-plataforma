@@ -32,6 +32,7 @@ Plataforma de reportes de riesgo de SOS Galápagos: un mapa único donde la gent
 - **Teléfono primero:** cada cambio de interfaz se revisa a 360 y 390 px de ancho, y en la hoja inferior se comprueba que se puede bajar hasta el último elemento. Los botones miden al menos 44 px y nada debe provocar desplazamiento horizontal.
 - **Horas:** en la base, UTC. En pantalla, hora de Galápagos (UTC−6).
 - **En la Mac no hay Docker:** se usa `container` (Apple). Ver `despliegue/local.sh`.
+- **Las capas cambian en vivo.** Otro equipo publica modelos y capas en `/mapas` varias veces al día. Toda dirección de capa, tesela o descarga pasa por `conV()` (`estaticos/mapa/capas.js`), que le pone la versión publicada. Nunca se escribe una dirección de `/mapas` sin versión.
 - **Lecciones:** los errores y las decisiones se anotan en [`docs/lecciones.md`](docs/lecciones.md).
 
 ## Mapa rápido

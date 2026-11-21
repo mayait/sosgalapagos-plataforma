@@ -1,7 +1,7 @@
 {% load reportes_extras %}/* Service worker del mapa. Guarda la interfaz, el mapa base y las capas ya vistas,
    para que la app instalada abra sin señal. Los reportes van siempre a la red:
    el mapa guarda la última respuesta por su cuenta y muestra de qué hora es. */
-const VERSION = 'sos-v6';
+const VERSION = 'sos-v7';
 const E = '{{ estaticos }}';
 const INTERFAZ = [
   '/mapa/', '/mapa/reportar/',
@@ -39,7 +39,10 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(
       caches.open(VERSION).then(async (c) => {
         const guardado = await c.match(pedido);
-        const red = fetch(pedido).then((r) => { if (r.ok) c.put(pedido, r.clone()); return r; }).catch(() => guardado);
+        const red = fetch(pedido).then((r) => {
+          if (r.ok) { c.put(pedido, r.clone()); if (url.search) podar(c, url); }
+          return r;
+        }).catch(() => guardado);
         return guardado || red;
       }),
     );
@@ -56,6 +59,15 @@ self.addEventListener('fetch', (e) => {
     }).catch(() => caches.match(pedido).then((r) => r || caches.match(url.pathname, { ignoreSearch: true })).then((r) => r || new Response('', { status: 503 }))),
   );
 });
+
+// Las capas de /mapas llevan versión en la dirección. Al guardar una versión nueva de un
+// archivo se quitan del teléfono las versiones anteriores de ese mismo archivo.
+async function podar(cache, url) {
+  for (const k of await cache.keys()) {
+    const u = new URL(k.url);
+    if (u.pathname === url.pathname && u.search !== url.search) cache.delete(k);
+  }
+}
 
 async function trozo(pedido) {
   const cache = await caches.open(VERSION);

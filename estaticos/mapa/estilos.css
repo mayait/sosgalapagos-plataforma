@@ -179,6 +179,14 @@ a { color: inherit; }
   background: var(--negro); color: var(--blanco); white-space: nowrap;
 }
 
+.aviso-capas {
+  position: absolute; z-index: 8; left: 50%; transform: translateX(-50%); top: 104px;
+  padding: 7px 13px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+  background: var(--negro); color: var(--blanco); white-space: nowrap; box-shadow: var(--sombra);
+}
+.capas-version { margin: 10px 0 0; font-size: 11.5px; color: var(--gris); }
+.capas-version b { color: var(--tinta); }
+
 /* Botón principal */
 .reportar {
   display: inline-flex; align-items: center; justify-content: center; gap: 9px;

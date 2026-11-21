@@ -266,8 +266,14 @@ def copia_de_mapas(request, ruta):
         raise Http404
     if ruta.startswith("descargas/"):
         return HttpResponseRedirect(settings.CAPAS_ORIGEN + ruta)
-    local = settings.CAPAS_COPIA / ruta
-    es_indice = ruta in ("capas.json", "descargas.json")
+    # Cada publicación de /mapas tiene su versión (?v=…). La copia se guarda por versión,
+    # para que un modelo actualizado por otro equipo no quede tapado por una copia vieja.
+    version = request.GET.get("v", "")
+    if version and not re.fullmatch(r"[\w-]{1,80}", version):
+        raise Http404
+    sin_version = settings.CAPAS_COPIA / ruta
+    local = settings.CAPAS_COPIA / "v" / version / ruta if version else sin_version
+    es_indice = ruta in ("capas.json", "descargas.json", "version.txt")
     if not local.exists() or es_indice:
         try:
             pedido = Request(settings.CAPAS_ORIGEN + ruta, headers={"User-Agent": "sosgalapagos-plataforma (desarrollo local)"})
@@ -276,7 +282,9 @@ def copia_de_mapas(request, ruta):
             local.parent.mkdir(parents=True, exist_ok=True)
             local.write_bytes(datos)
         except Exception:
-            if not local.exists():  # sin red y sin copia
-                raise Http404
+            if not local.exists():
+                if not sin_version.exists():  # sin red y sin copia
+                    raise Http404
+                local = sin_version  # lo generado en la Mac y aún no publicado (p. ej. teselas/relieve3d)
     tipo = "application/geo+json" if ruta.endswith(".geojson") else mimetypes.guess_type(ruta)[0] or "application/octet-stream"
     return FileResponse(local.open("rb"), content_type=tipo)

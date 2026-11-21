@@ -13,10 +13,19 @@
   const ZOOM_ROTULOS = 15; // los rótulos de barrios y calles solo se ven de cerca
 
   const estado = { mapa: null, manifiesto: null, descargas: {}, todo: null, capas: [], orden: [], encendidas: new Set(), iniciales: [], puestas: {}, base: 'gris', limites: null, teselas: {} };
-  const GUARDADO = 'sos-capas-3';
+  const GUARDADO = 'sos-capas-4';
   const BASE_GUARDADA = 'sos-base'; // lo que la persona dejó encendido se recuerda en su teléfono
   const datosUrl = () => `${SOS.cfg.capasUrl}datos/${SOS.cfg.capasVariante}/`;
-  const recordar = () => { try { localStorage.setItem(GUARDADO, JSON.stringify([...estado.encendidas])); } catch (e) { /* sin espacio */ } };
+  // Otro equipo actualiza los modelos y las capas mientras el mapa está abierto. Cada
+  // publicación de /mapas tiene una versión; se pega a todas las direcciones (?v=…) para que
+  // el navegador nunca muestre un archivo viejo, y se vuelve a consultar cada dos minutos.
+  const CONSULTA_MS = 120000;
+  const conV = (u) => (estado.version ? `${u}${u.includes('?') ? '&' : '?'}v=${encodeURIComponent(estado.version.id)}` : u);
+  // Se guarda lo encendido y también qué capas existían: así una capa nueva que el otro
+  // equipo publique encendida aparece aunque la persona ya tuviera su elección guardada.
+  const recordar = () => {
+    try { localStorage.setItem(GUARDADO, JSON.stringify({ encendidas: [...estado.encendidas], conocidas: estado.capas.map((c) => c.id) })); } catch (e) { /* sin espacio */ }
+  };
   const texto = (v) => ['to-string', ['get', v]];
 
   // Expresión que elige un valor del estilo según la clase del elemento.
@@ -121,7 +130,7 @@
     if (capa.tipo === 'teselas') return construirTeselas(capa);
 
     if (!mapa.getSource(fuente)) {
-      mapa.addSource(fuente, { type: 'geojson', data: datosUrl() + capa.archivo, tolerance: 0.5 });
+      mapa.addSource(fuente, { type: 'geojson', data: conV(datosUrl() + capa.archivo), tolerance: 0.5 });
     }
     const e = capa.estilo || {};
 
@@ -210,7 +219,7 @@
       const [[s, o], [n, e]] = isla.bounds;
       if (!estado.mapa.getSource(id)) {
         estado.mapa.addSource(id, {
-          type: 'image', url: `${datosUrl()}raster/${clave}_${capa.raster}.png`,
+          type: 'image', url: conV(`${datosUrl()}raster/${clave}_${capa.raster}.png`),
           coordinates: [[o, n], [e, n], [e, s], [o, s]],
         });
       }
@@ -227,7 +236,7 @@
     const [[s, o], [n, e]] = t.limites;
     if (!estado.mapa.getSource(id)) {
       estado.mapa.addSource(id, {
-        type: 'raster', tiles: [`${location.origin}${SOS.cfg.capasUrl}teselas/${capa.teselas}/${t.relieve.url}`], tileSize: 256,
+        type: 'raster', tiles: [conV(`${location.origin}${SOS.cfg.capasUrl}teselas/${capa.teselas}/${t.relieve.url}`)], tileSize: 256,
         minzoom: t.relieve.zoom_min, maxzoom: t.relieve.zoom_max, bounds: [o, s, e, n], attribution: t.atribucion,
       });
     }
@@ -248,10 +257,10 @@
 
   async function encender(capa) {
     if (capa.tipo === 'raster' && !estado.limites) {
-      estado.limites = await fetch(datosUrl() + 'raster/limites.json').then((r) => r.json()).catch(() => ({}));
+      estado.limites = await fetch(conV(datosUrl() + 'raster/limites.json')).then((r) => r.json()).catch(() => ({}));
     }
     if (capa.tipo === 'teselas' && !estado.teselas[capa.teselas]) {
-      estado.teselas[capa.teselas] = await fetch(`${SOS.cfg.capasUrl}teselas/${capa.teselas}/teselas.json`).then((r) => r.json()).catch(() => null);
+      estado.teselas[capa.teselas] = await fetch(conV(`${SOS.cfg.capasUrl}teselas/${capa.teselas}/teselas.json`)).then((r) => r.json()).catch(() => null);
     }
     if (capa.marcador === 'reporte') await prepararMarcadores(capa);
     const antes = siguientePuesta(capa.id);
@@ -293,8 +302,8 @@
     if (!a) return '';
     const x = SOS.escapar, u = SOS.cfg.capasUrl;
     let h = '<span class="capa-descargas">';
-    if (a.shp) h += `<a href="${x(u + a.shp.url)}" download>↓ ${x(a.shp.formato || 'Shapefile')} <i>${x(a.shp.tam)}</i></a>`;
-    if (a.geojson) h += `<a href="${x(u + a.geojson.url)}" download="${x(capa.archivo || '')}">↓ GeoJSON <i>${x(a.geojson.tam)}</i></a>`;
+    if (a.shp) h += `<a href="${x(conV(u + a.shp.url))}" download>↓ ${x(a.shp.formato || 'Shapefile')} <i>${x(a.shp.tam)}</i></a>`;
+    if (a.geojson) h += `<a href="${x(conV(u + a.geojson.url))}" download="${x(capa.archivo || '')}">↓ GeoJSON <i>${x(a.geojson.tam)}</i></a>`;
     if (a.extra) h += `<a href="${x(a.extra.url)}" target="_blank" rel="noopener">↓ ${x(a.extra.texto)}</a>`;
     return h + '</span>';
   }
@@ -358,11 +367,12 @@
       }
       h += '</div>';
     }
+    if (estado.version && estado.version.texto) h = `<p class="capas-version">Capas y modelos actualizados: <b>${x(estado.version.texto)}</b></p>` + h;
     if (estado.todo) {
       const u = SOS.cfg.capasUrl;
       h += `<div class="capas-grupo"><div class="capas-titulo">Descargar todas las capas</div><span class="capa-descargas todo">
-        <a href="${x(u + estado.todo.shp.url)}" download>↓ Shapefile <i>${x(estado.todo.shp.tam)}</i></a>
-        <a href="${x(u + estado.todo.geojson.url)}" download>↓ GeoJSON <i>${x(estado.todo.geojson.tam)}</i></a></span>
+        <a href="${x(conV(u + estado.todo.shp.url))}" download>↓ Shapefile <i>${x(estado.todo.shp.tam)}</i></a>
+        <a href="${x(conV(u + estado.todo.geojson.url))}" download>↓ GeoJSON <i>${x(estado.todo.geojson.tam)}</i></a></span>
         <p class="capas-nota">Coordenadas WGS 84 (EPSG:4326). Cada archivo trae su fuente y su licencia. Los modelos son estimaciones propias, no datos oficiales. Visor completo en <a href="${x(u)}">/mapas</a>.</p></div>`;
     }
     const cuerpo = document.getElementById('capas-cuerpo'), altura = cuerpo.scrollTop;
@@ -429,51 +439,133 @@
     return h + `<p class="ficha-pie">${x(capa.fuente || '')}</p></article>`;
   }
 
+  // ── Versión de lo publicado en /mapas y actualización en vivo ─────────────
+  // version.txt lo escribe servidores/publicar.sh en cada publicación: «<commit> <fecha>».
+  // Si no existe, sirve de versión la huella (ETag) del manifiesto.
+  async function versionPublicada(respuestaManifiesto) {
+    try {
+      const t = await fetch(SOS.cfg.capasUrl + 'version.txt', { cache: 'no-cache' }).then((r) => (r.ok ? r.text() : ''));
+      const [commit, fecha] = t.trim().split(/\s+/);
+      if (commit && fecha && !Number.isNaN(Date.parse(fecha))) {
+        const texto = new Date(fecha).toLocaleString('es-EC', { timeZone: 'Pacific/Galapagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        return { id: `${commit}-${Date.parse(fecha) / 1000}`, texto: `${texto} (hora de Galápagos)` };
+      }
+    } catch (e) { /* se usa la huella del manifiesto */ }
+    const huella = respuestaManifiesto.headers.get('ETag') || respuestaManifiesto.headers.get('Last-Modified') || '';
+    return huella ? { id: huella.replace(/[^\w-]/g, ''), texto: '' } : null;
+  }
+
+  // Trae el manifiesto y el índice de descargas, y deja anotada la versión. Devuelve el manifiesto o null.
+  async function traer() {
+    try {
+      const r = await fetch(SOS.cfg.capasUrl + 'capas.json', { cache: 'no-cache' });
+      if (!r.ok) return null;
+      const m = await r.json();
+      estado.version = await versionPublicada(r);
+      const d = await fetch(conV(SOS.cfg.capasUrl + 'descargas.json'), { cache: 'no-cache' }).then((x) => x.json()).catch(() => null);
+      const variante = d && d.variantes && d.variantes[SOS.cfg.capasVariante];
+      if (variante) { estado.descargas = variante.archivos || {}; estado.todo = variante.todo || null; }
+      return m;
+    } catch (e) { return null; }
+  }
+
+  // Capas con las que se arranca: la elección guardada de la persona, más las capas nuevas
+  // que /mapas publique encendidas desde su última visita.
+  function arranqueCon(elegidas) {
+    if (Array.isArray(elegidas)) return elegidas; // formato anterior
+    if (!elegidas || !Array.isArray(elegidas.encendidas)) return estado.iniciales;
+    const conocidas = new Set(elegidas.conocidas || []);
+    const nuevas = estado.iniciales.filter((id) => !conocidas.has(id));
+    return elegidas.encendidas.concat(nuevas);
+  }
+
+  function quitarFuentes(capa) {
+    const base = 'capa-' + capa.id;
+    for (const id of Object.keys(estado.mapa.getStyle().sources)) {
+      if (id === base || id.startsWith(base + '-')) estado.mapa.removeSource(id);
+    }
+  }
+
+  function ordenar(m) {
+    estado.manifiesto = m;
+    estado.capas = m.grupos.flatMap((g) => g.capas);
+    const altura = { raster: 0, teselas: 0, poligono: 1, linea: 2, punto: 3 };
+    estado.orden = estado.capas.map((c, i) => [c, i]).sort((a, b) => (altura[a[0].tipo] - altura[b[0].tipo]) || (a[1] - b[1])).map(([c]) => c);
+    const movil = SOS.esMovil(), siempre = SOS.cfg.capasSiempreGrupos || [], apagadas = SOS.cfg.capasApagadasAlAbrir || [];
+    estado.iniciales = m.grupos.flatMap((g) => g.capas
+      .filter((c) => c.visible && !apagadas.includes(c.id) && (!movil || c.visible_movil !== false || siempre.includes(g.id)))
+      .map((c) => c.id));
+  }
+
+  // Pregunta si /mapas publicó algo nuevo. Si sí, vuelve a dibujar lo encendido con los datos
+  // nuevos, enciende las capas nuevas que vengan visibles y avisa.
+  let revisando = false;
+  async function revisar() {
+    if (revisando || !estado.manifiesto) return;
+    revisando = true;
+    try {
+      const antes = estado.version && estado.version.id;
+      const conocidas = new Set(estado.capas.map((c) => c.id));
+      const viejas = estado.orden.slice();
+      const versionVieja = estado.version;
+      const m = await traer();
+      if (!m) { estado.version = versionVieja; return; }
+      if (!estado.version || estado.version.id === antes) return;
+      const encendidas = [...estado.encendidas];
+      for (const capa of viejas) { apagar(capa); quitarFuentes(capa); }
+      estado.encendidas.clear(); estado.puestas = {}; estado.limites = null; estado.teselas = {};
+      ordenar(m);
+      const nuevas = estado.iniciales.filter((id) => !conocidas.has(id));
+      const quedan = new Set(encendidas.concat(nuevas));
+      for (const capa of estado.orden) {
+        if (quedan.has(capa.id)) { estado.encendidas.add(capa.id); await encender(capa); }
+      }
+      recordar();
+      if (!panel().hidden) pintar();
+      avisar(nuevas.length ? `Capas actualizadas. ${nuevas.length === 1 ? 'Hay una capa nueva' : `Hay ${nuevas.length} capas nuevas`}.` : 'Capas y modelos actualizados.');
+    } finally { revisando = false; }
+  }
+  function avisar(textoAviso) {
+    const caja = document.getElementById('aviso-capas');
+    if (!caja) return;
+    caja.textContent = textoAviso;
+    caja.hidden = false;
+    clearTimeout(avisar.t);
+    avisar.t = setTimeout(() => { caja.hidden = true; }, 7000);
+  }
+
   const panel = () => document.getElementById('capas-panel');
   function abrir() { panel().hidden = false; document.getElementById('capas-abrir').hidden = true; pintar(); }
   function cerrar() { panel().hidden = true; document.getElementById('capas-abrir').hidden = false; }
 
   SOS.capas = {
-    globo,
+    globo, revisar, conV,
     async iniciar(mapa) {
       estado.mapa = mapa;
       document.getElementById('capas-abrir').addEventListener('click', abrir);
       document.getElementById('capas-cerrar').addEventListener('click', cerrar);
       document.getElementById('capas-cuerpo').addEventListener('click', alHacerClic);
-      let m;
-      try {
-        m = await fetch(SOS.cfg.capasUrl + 'capas.json').then((r) => r.json());
-        const d = await fetch(SOS.cfg.capasUrl + 'descargas.json').then((r) => r.json()).catch(() => null);
-        const variante = d && d.variantes && d.variantes[SOS.cfg.capasVariante];
-        if (variante) { estado.descargas = variante.archivos || {}; estado.todo = variante.todo || null; }
-      } catch (e) {
+      const m = await traer();
+      if (!m) {
         document.getElementById('capas-abrir').hidden = true; // sin manifiesto no hay panel
         return;
       }
-      estado.manifiesto = m;
+      ordenar(m);
       // Mapa base al abrir: el que la persona eligió la última vez o, si no, el de los ajustes
       // (satélite). Sin conexión se queda la base gris, que está guardada en el teléfono.
       let base = SOS.cfg.baseInicial || 'gris';
       try { base = localStorage.getItem(BASE_GUARDADA) || base; } catch (err) { /* sin acceso */ }
       const def = (m.mapas_base || []).find((x) => x.id === base);
       if (def && navigator.onLine !== false) { estado.base = base; SOS.ponerBase(mapa, def); }
-      estado.capas = m.grupos.flatMap((g) => g.capas);
-      const altura = { raster: 0, teselas: 0, poligono: 1, linea: 2, punto: 3 };
-      estado.orden = estado.capas.map((c, i) => [c, i]).sort((a, b) => (altura[a[0].tipo] - altura[b[0].tipo]) || (a[1] - b[1])).map(([c]) => c);
-      // Arrancan encendidas las capas que el manifiesto de /mapas marca como visibles.
-      // En el teléfono se respetan las que /mapas apaga por pesadas, salvo el riesgo
-      // modelado y las quebradas, que salen siempre.
-      const movil = SOS.esMovil(), siempre = SOS.cfg.capasSiempreGrupos || [], apagadas = SOS.cfg.capasApagadasAlAbrir || [];
-      estado.iniciales = m.grupos.flatMap((g) => g.capas
-        .filter((c) => c.visible && !apagadas.includes(c.id) && (!movil || c.visible_movil !== false || siempre.includes(g.id)))
-        .map((c) => c.id));
       // Si la persona ya eligió capas en una visita anterior, se respeta su elección.
       let elegidas = null;
       try { elegidas = JSON.parse(localStorage.getItem(GUARDADO)); } catch (e) { /* nada guardado */ }
-      const arranque = Array.isArray(elegidas) ? elegidas : estado.iniciales;
+      const arranque = arranqueCon(elegidas);
       for (const capa of estado.orden) {
         if (arranque.includes(capa.id)) { estado.encendidas.add(capa.id); await encender(capa); }
       }
+      setInterval(() => { if (!document.hidden) revisar(); }, CONSULTA_MS);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) revisar(); });
       let anterior = Math.floor(mapa.getZoom());
       mapa.on('zoomend', () => {
         const z = Math.floor(mapa.getZoom());

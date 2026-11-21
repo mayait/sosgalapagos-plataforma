@@ -4,6 +4,14 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 
 ## 2026-11-21 · Fase 1
 
+- **Otro equipo actualiza los modelos mientras el mapa está en uso (aviso de Julián).** El 21-nov se publicaron varias versiones de `/mapas` en una mañana: reportes de campo por lotes, la susceptibilidad ajustada con lo observado y una capa nueva del flujo observado. El mapa pedía las capas sin versión, y el navegador, Cloudflare (10 min) y el service worker podían seguir mostrando un modelo viejo. *Qué se hace:*
+  - Cada publicación de `/mapas` deja su versión en `version.txt`. El mapa la pega a todas las direcciones de capas, teselas y descargas (`?v=…`).
+  - Con el mapa abierto, cada 2 minutos pregunta si hay publicación nueva. Si la hay, vuelve a dibujar lo encendido con los datos nuevos y avisa: «Capas y modelos actualizados».
+  - Una capa nueva que venga encendida aparece sola, aunque la persona ya tuviera su elección guardada.
+  - El panel Capas dice a qué hora se actualizaron las capas.
+  - En la Mac, la copia local se guarda por versión; lo generado y aún no publicado (las teselas del 3D) sirve de respaldo.
+- **No dar por fijo lo que publica otro equipo.** *Qué se hace:* antes de tocar algo que dependa de `/mapas`, se hace `git pull` en `sosgalapagos-datos` y se mira `version.txt` del sitio.
+
 - **Los reportes de campo se confundían con los pines nuevos.** Los dos eran círculos rojos. *Qué se hace (lo pidió Julián):* las capas con `marcador: reporte` del manifiesto se dibujan como cuadrados redondeados con un iconito (cámara si trae fotos, casa si es un refugio, «!» si es un aviso sin foto), del color de su gravedad. Los pines de los reportes nuevos siguen siendo redondos. Regla para lo que venga: **redondo = reporte de la plataforma; cuadrado = reporte de campo de `/mapas`.**
 
 - **La vista preferida es satélite con la capa de riesgo encima (indicación de Julián, con captura).** Se había aprobado la base gris, pero al verla en uso Julián mostró la que le gusta: foto de satélite, susceptibilidad en azules y quebradas. *Qué se hace:* el mapa abre en satélite (`MAPA_BASE_INICIAL`), con los nombres de calles en blanco encima de la foto. La base gris propia queda como opción y como respaldo sin conexión, porque el satélite son teselas de un tercero (Esri) que no se guardan en el teléfono. El mapa recuerda la base que cada persona elige.

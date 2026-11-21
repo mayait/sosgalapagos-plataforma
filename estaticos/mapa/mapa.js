@@ -297,12 +297,12 @@
     if (cota) return cota;
     const base = `${cfg.capasUrl}teselas/relieve3d/`;
     try {
-      const t = await fetch(base + 'teselas.json').then((r) => (r.ok ? r.json() : null));
+      const t = await fetch(SOS.capas.conV(base + 'teselas.json')).then((r) => (r.ok ? r.json() : null));
       if (t && t.cota && t.cota.codificacion === 'terrarium') {
         const [[sur, oeste], [norte, este]] = t.limites;
         return (cota = {
           type: 'raster-dem', encoding: 'terrarium', tileSize: 256,
-          tiles: [location.origin + base + t.cota.url], minzoom: t.cota.zoom_min, maxzoom: t.cota.zoom_max,
+          tiles: [SOS.capas.conV(location.origin + base + t.cota.url)], minzoom: t.cota.zoom_min, maxzoom: t.cota.zoom_max,
           bounds: [oeste, sur, este, norte], attribution: t.atribucion,
         });
       }
