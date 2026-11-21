@@ -4,6 +4,9 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 
 ## 2026-11-21 · Puesta en producción
 
+- **Muchos puntos no decían qué eran (lo pidió Julián: un «mouseover chiquito y simple»).** Había que tocar cada punto para saberlo. *Qué se hace:* al pasar el ratón sale una pista de dos líneas: qué es y su clase («Punto de inundación · Prioridad media · SC-020»). Vale para los puntos y las líneas de las capas y para los pines de los reportes. Los códigos no encabezan la pista, porque no explican nada. Las áreas no dan pista: cubren casi todo el mapa. En el teléfono no hay ratón: ahí se toca el punto.
+- **Cambiar solo el `#…` de la dirección no recarga la página.** Al probar, seguía corriendo el JavaScript anterior. *Qué se hace:* en las pruebas se navega a otra página y se vuelve.
+
 - **Publicado el 21-nov-2026 a las 14:17 (hora de Galápagos) en `https://sosgalapagos.org/riesgos/`.** Comprobado desde fuera: mapa, 59 capas, lluvia, informes, relieve propio del 3D, y `/mapas`, `/clima` y la portada igual que antes. No se probó crear un reporte en producción, para no dejar un reporte de prueba en el mapa público.
 - **Al subir las teselas desde la Mac con `tar` se colaron archivos `._*`** (metadatos de macOS), uno por tesela. No estorban, pero ocupan. *Qué se hace:* la próxima subida va con `COPYFILE_DISABLE=1 tar …` o con `rsync`.
 

@@ -341,6 +341,54 @@
     }, () => {}, { enableHighAccuracy: true, timeout: 8000 });
   });
 
+  // ── Pista al pasar el ratón: qué es cada punto, en chiquito ───────────────
+  // Solo donde hay ratón; en el teléfono se toca el punto y se abre su ficha.
+  const NOMBRES = {
+    gravedad: { cuidado: 'Pasar con cuidado', no_pasar: 'No pasar', peligro_vida: 'Peligro de vida' },
+    estado: { por_verificar: 'por verificar', confirmado: 'confirmado', bajando: 'bajando', cerrado: 'cerrado' },
+  };
+  function haceCuanto(segundos) {
+    const min = Math.max(0, Math.round((Date.now() / 1000 - segundos) / 60));
+    if (min < 1) return 'hace un momento';
+    if (min < 60) return `hace ${min} min`;
+    const h = Math.floor(min / 60);
+    return h < 24 ? `hace ${h} h` : `hace ${Math.floor(h / 24)} d`;
+  }
+  function pistaDe(punto) {
+    if (mapa.getLayer('reportes-pin')) {
+      const f = mapa.queryRenderedFeatures(punto, { layers: ['reportes-pin', 'reportes-grupo'] })[0];
+      if (f && f.properties.cluster) return { titulo: `${f.properties.point_count} reportes`, detalle: 'Toca para acercarte' };
+      if (f) {
+        const p = f.properties;
+        return { titulo: p.tipo_nombre, detalle: `${NOMBRES.gravedad[p.gravedad] || ''} · ${haceCuanto(p.visto)} · ${NOMBRES.estado[p.estado] || ''}` };
+      }
+    }
+    return SOS.capas.pista(punto);
+  }
+  if (window.matchMedia('(hover: hover)').matches) {
+    const globito = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: 'pista', offset: 12, maxWidth: '240px' });
+    let pendiente = null, ultima = '';
+    const quitar = () => { globito.remove(); ultima = ''; mapa.getCanvas().style.cursor = ''; };
+    mapa.on('mousemove', (e) => {
+      if (pendiente) return;
+      pendiente = requestAnimationFrame(() => {
+        pendiente = null;
+        const t = pistaDe(e.point);
+        if (!t) { if (ultima) quitar(); return; }
+        mapa.getCanvas().style.cursor = 'pointer';
+        const clave = t.titulo + '|' + t.detalle;
+        if (clave !== ultima) {
+          ultima = clave;
+          globito.setHTML(`<b>${SOS.escapar(t.titulo)}</b>${t.detalle ? `<span>${SOS.escapar(t.detalle)}</span>` : ''}`);
+        }
+        globito.setLngLat(e.lngLat).addTo(mapa);
+      });
+    });
+    mapa.on('mouseout', quitar);
+    mapa.on('movestart', quitar);
+    mapa.on('click', quitar);
+  }
+
   // ── Vista 3D ──────────────────────────────────────────────────────────────
   // Relieve del terreno y edificios con altura. Se enciende a pedido, porque pesa más.
   // La cota sale de las teselas propias que publica /mapas (DTM de 1 m de la SGIAR en
