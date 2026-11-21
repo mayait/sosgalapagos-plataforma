@@ -402,6 +402,33 @@
     mapa.on('click', quitar);
   }
 
+  // ── Reportar en un punto: pulsación larga (teléfono) o clic derecho (ratón) ──
+  // Sale un aviso pequeño en ese punto con el botón «Reportar aquí». No abre el formulario
+  // directamente: una pulsación larga sin querer no debe sacar a nadie del mapa.
+  let aqui = null;
+  function ofrecerReporte(lngLat) {
+    if (aqui) aqui.remove();
+    const enlace = `${cfg.reportar}?lat=${lngLat.lat.toFixed(6)}&lon=${lngLat.lng.toFixed(6)}`;
+    aqui = new maplibregl.Popup({ className: 'aqui', closeButton: true, maxWidth: '220px', offset: 6 })
+      .setLngLat(lngLat)
+      .setHTML(`<a class="reportar compacto en-globo" href="${enlace}">Reportar aquí</a>`)
+      .addTo(mapa);
+    if (navigator.vibrate) navigator.vibrate(12);
+  }
+  // En 3D el botón derecho gira el mapa: ahí no se ofrece el reporte.
+  mapa.on('contextmenu', (e) => { if (en3d) return; e.preventDefault(); ofrecerReporte(e.lngLat); });
+  // En el teléfono «contextmenu» no siempre llega (iPhone): se mide la pulsación a mano.
+  let pulso = null, inicio = null;
+  const soltar = () => { clearTimeout(pulso); pulso = null; };
+  mapa.on('touchstart', (e) => {
+    soltar();
+    if (e.originalEvent.touches.length !== 1) return;
+    inicio = e.point;
+    pulso = setTimeout(() => { pulso = null; ofrecerReporte(e.lngLat); }, 600);
+  });
+  mapa.on('touchmove', (e) => { if (pulso && inicio && e.point.dist(inicio) > 10) soltar(); });
+  for (const fin of ['touchend', 'touchcancel', 'dragstart', 'zoomstart', 'pitchstart', 'rotatestart']) mapa.on(fin, soltar);
+
   // ── Vista 3D ──────────────────────────────────────────────────────────────
   // Relieve del terreno y edificios con altura. Se enciende a pedido, porque pesa más.
   // La cota sale de las teselas propias que publica /mapas (DTM de 1 m de la SGIAR en

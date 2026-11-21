@@ -14,6 +14,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 # Lo que estaticos/mapa/capas.js sabe leer. Al enseñarle algo nuevo, se añade aquí.
 TIPOS = {"poligono", "linea", "punto", "raster", "teselas"}
+MARCADORES = {"reporte", "corazon"}  # formas de marcador que el mapa sabe dibujar
 CLAVES = {
     "capa": {"id", "titulo", "tipo", "archivo", "visible", "visible_movil", "fuente", "descripcion", "elementos", "estilo",
              "clasificar", "estilo_si", "filtro", "patron", "borde", "rotulo", "popup", "leyenda", "zoom_min", "opacidad",
@@ -60,6 +61,8 @@ class Command(BaseCommand):
                 donde = capa["id"]
                 if capa["tipo"] not in TIPOS:
                     nuevo.append(f"{donde}: tipo de capa «{capa['tipo']}»")
+                if capa.get("marcador") and capa["marcador"] not in MARCADORES:
+                    nuevo.append(f"{donde}: marcador «{capa['marcador']}»")
                 revisar("capa", donde, capa)
                 for parte in ("estilo", "rotulo", "popup", "borde", "patron", "filtro"):
                     revisar(parte, donde, capa.get(parte))

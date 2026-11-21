@@ -162,3 +162,41 @@ def prueba_los_peligros_siguen_llevando_su_clase(client):
     client.post("/riesgos/reportar/", DATOS)
     datos = json.loads(client.get("/riesgos/api/reportes/vivos.geojson").content)
     assert datos["features"][0]["properties"]["clase"] == "riesgo"
+
+
+def prueba_el_formulario_ofrece_camara_y_galeria(client):
+    pagina = client.get("/riesgos/reportar/").content.decode()
+    assert 'capture="environment"' in pagina          # cámara
+    assert pagina.count('type="file"') == 2            # y otra entrada sin «capture»: galería
+    assert "Elegir de la galería" in pagina
+
+
+def prueba_las_paginas_de_informe_y_descargas_abren(client):
+    informe = client.get("/riesgos/informe/").content.decode()
+    assert "Línea del tiempo" in informe and "Estación de lluvia" in informe and "no es información oficial" in informe
+    descargas = client.get("/riesgos/descargas/").content.decode()
+    assert "Shapefile y GeoJSON" in descargas and "no datos oficiales" in descargas
+    mapa = client.get("/riesgos/").content.decode()
+    assert "/riesgos/informe/" in mapa and "/riesgos/descargas/" in mapa
+
+
+def prueba_la_lluvia_por_hora_se_recorta_al_periodo(client, monkeypatch):
+    from reportes import clima
+
+    monkeypatch.setattr(clima, "horario", lambda: {"inicio": "2026-11-21T00:00:00Z", "series": {"a/uno": {"lluvia_mm": [0, 1.5, None, 4, 9]}}})
+    monkeypatch.setattr(clima, "estado", lambda: {"estaciones": [{"fuente": "a", "estacion": "uno", "nombre": "Uno", "isla": "Santa Cruz"}]})
+    d = client.get("/riesgos/api/lluvia.json", {"desde": "2026-11-21T01:00:00Z", "hasta": "2026-11-21T03:00:00Z", "estacion": "a/uno"}).json()
+    assert d["mm"] == [1.5, None, 4] and d["inicio"] == "2026-11-21T01:00:00Z"
+    assert d["estaciones"] == [{"id": "a/uno", "nombre": "Uno", "isla": "Santa Cruz"}]
+    sin = client.get("/riesgos/api/lluvia.json", {"desde": "2026-11-21T01:00:00Z", "hasta": "2026-11-21T03:00:00Z", "estacion": "no/existe"}).json()
+    assert sin["mm"] == [] and sin["inicio"] is None
+
+
+def prueba_el_geojson_dice_la_isla(client):
+    from zonas.models import Zona
+    from django.contrib.gis.geos import Polygon
+
+    Zona.objects.create(nombre="Las Acacias", isla="Santa Cruz", geometria=Polygon.from_bbox((-90.32, -0.75, -90.31, -0.74)))
+    client.post("/riesgos/reportar/", DATOS)
+    p = json.loads(client.get("/riesgos/api/reportes/vivos.geojson?periodo=evento").content)["features"][0]["properties"]
+    assert p["isla"] == "Santa Cruz" and p["zona"] == "Las Acacias"

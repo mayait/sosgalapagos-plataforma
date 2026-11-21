@@ -23,6 +23,7 @@ x-plataforma: &plataforma
     - BD_CLAVE=${POSTGRES_PASSWORD}
     # Lluvia: el JSON que escribe el recolector de /clima cada 5 minutos. Solo lectura.
     - CLIMA_ESTADO=/srv/clima/datos/estado.json
+    - CLIMA_HORARIO=/srv/clima/datos/horario.json
     - MEDIOS_DIR=/medios
     - RELIEVE_DIR=/relieve
   volumes:
