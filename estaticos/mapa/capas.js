@@ -483,6 +483,34 @@
     return true;
   }
 
+  // ── Pista al pasar el ratón ───────────────────────────────────────────────
+  // Texto corto que dice qué es un punto o una línea de una capa, sin tener que tocarlo.
+  // Devuelve { titulo, detalle } o null. Los polígonos no dan pista: cubren casi todo el mapa.
+  function pista(punto) {
+    // Solo las capas de puntos y de líneas; el borde de un área no cuenta.
+    const ids = estado.capas.filter((c) => c.tipo === 'punto' || c.tipo === 'linea')
+      .flatMap((c) => estado.puestas[c.id] || [])
+      .filter((id) => estado.mapa.getLayer(id) && !id.endsWith('-halo') && !id.endsWith('-rotulo') && !id.endsWith('-simbolo') && !id.endsWith('-area'));
+    if (!ids.length) return null;
+    const r = 5, caja = [[punto.x - r, punto.y - r], [punto.x + r, punto.y + r]];
+    const tocados = estado.mapa.queryRenderedFeatures(caja, { layers: ids });
+    const f = tocados.find((x) => x.geometry.type === 'Point') || tocados[0];
+    if (!f) return null;
+    const capa = estado.capas.find((c) => f.layer.source === 'capa-' + c.id);
+    if (!capa) return null;
+    const datos = f.properties, c = capa.clasificar, p = capa.popup || {};
+    // La clase del elemento («Prioridad alta», «Gravedad 3: grave»…), si la capa clasifica.
+    let clase = '';
+    if (c && c.rangos) clase = (c.rangos.find((x) => (Number(datos[c.propiedad]) || 0) <= x.hasta) || {}).etiqueta || '';
+    else if (c) clase = ((c.valores || {})[String(datos[c.propiedad])] || c.otro || {}).etiqueta || '';
+    const nombre = datos[p.titulo] != null && String(datos[p.titulo]).length <= 70 ? String(datos[p.titulo]) + (p.sufijo_titulo || '') : '';
+    const queEs = capa.corto || capa.titulo;
+    // Un código («SC-020», «CR-SCZ-0006») no explica nada: ahí manda qué es el punto.
+    const esCodigo = /^[A-Z0-9_-]+$/i.test(nombre) && /\d/.test(nombre);
+    if (!nombre || esCodigo) return { titulo: queEs, detalle: [clase, nombre].filter(Boolean).join(' · ') };
+    return { titulo: nombre, detalle: [clase, queEs].filter(Boolean).join(' · ') };
+  }
+
   // Ficha de un elemento de una capa, con sus fotos (rutas relativas a capa.fotos_base).
   function fichaDeCapa(capa, datos, fotos) {
     const p = capa.popup, x = SOS.escapar, base = datosUrl() + (capa.fotos_base || '');
@@ -634,7 +662,7 @@
   function cerrar() { panel().hidden = true; document.getElementById('capas-abrir').hidden = false; }
 
   SOS.capas = {
-    globo, revisar, conV,
+    globo, revisar, conV, pista,
     async iniciar(mapa) {
       estado.mapa = mapa;
       document.getElementById('capas-abrir').addEventListener('click', abrir);
