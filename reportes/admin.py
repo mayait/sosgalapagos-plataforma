@@ -1,7 +1,7 @@
 from django.contrib.gis import admin
 
 from . import reglas
-from .models import Confirmacion, Estado, MotivoCierre, Reporte, TipoRiesgo
+from .models import Confirmacion, Estado, FotoReporte, MotivoCierre, Reporte, TipoRiesgo
 
 
 @admin.register(TipoRiesgo)
@@ -17,13 +17,18 @@ class ConfirmacionEnLinea(admin.TabularInline):
     can_delete = False
 
 
+class FotoEnLinea(admin.TabularInline):
+    model = FotoReporte
+    extra = 0
+
+
 @admin.register(Reporte)
 class ReporteAdmin(admin.GISModelAdmin):
-    list_display = ("id_publico", "tipo", "gravedad", "estado", "contenido_visible", "zona", "visto_en", "vence_en", "fuente")
+    list_display = ("id_publico", "titulo", "tipo", "gravedad", "estado", "contenido_visible", "zona", "visto_en", "vence_en", "fuente")
     list_filter = ("estado", "tipo__clase", "tipo", "gravedad", "fuente", "contenido_visible")
-    search_fields = ("id_publico", "nota")
+    search_fields = ("id_publico", "titulo", "nota")
     readonly_fields = ("id_publico", "vence_en", "huella", "creado_en", "cerrado_en", "motivo_cierre")
-    inlines = [ConfirmacionEnLinea]
+    inlines = [FotoEnLinea, ConfirmacionEnLinea]
     actions = ["verificar", "publicar_contenido", "cerrar"]
 
     # Un reporte nunca se borra: se cierra y queda en el archivo.

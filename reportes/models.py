@@ -110,6 +110,8 @@ class Reporte(models.Model):
     estado = models.CharField(max_length=15, choices=Estado, default=Estado.POR_VERIFICAR, db_index=True)
     fuente = models.CharField(max_length=12, choices=Fuente, default=Fuente.VECINO)
 
+    # Nombre propio del aviso («Centro de acopio USFQ San Cristóbal»). Si falta, se usa el del tipo.
+    titulo = models.CharField("título", max_length=80, blank=True)
     foto = models.ImageField(upload_to="reportes/%Y/%m/", null=True, blank=True)
     nota = models.CharField(max_length=280, blank=True)
     # La foto y la nota de un vecino no se publican hasta que coordinación las ve:
@@ -132,7 +134,11 @@ class Reporte(models.Model):
         indexes = [models.Index(fields=["estado", "vence_en"])]
 
     def __str__(self):
-        return f"{self.tipo} · {self.id_publico}"
+        return f"{self.titulo or self.tipo} · {self.id_publico}"
+
+    @property
+    def nombre(self):
+        return self.titulo or self.tipo.nombre
 
     def save(self, *args, **kwargs):
         if self.vence_en is None:
@@ -140,6 +146,20 @@ class Reporte(models.Model):
 
             self.vence_en = calcular_vence(self.visto_en, self.tipo.plazo_horas)
         super().save(*args, **kwargs)
+
+
+class FotoReporte(models.Model):
+    """Fotos adicionales de un aviso. La primera sigue en Reporte.foto. Se guardan sin metadatos."""
+
+    reporte = models.ForeignKey(Reporte, on_delete=models.CASCADE, related_name="fotos_extra")
+    foto = models.ImageField(upload_to="reportes/%Y/%m/")
+    pie = models.CharField(max_length=140, blank=True)
+    orden = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "foto adicional"
+        verbose_name_plural = "fotos adicionales"
+        ordering = ["orden", "id"]
 
 
 class TipoConfirmacion(models.TextChoices):

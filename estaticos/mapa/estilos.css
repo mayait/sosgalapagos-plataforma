@@ -264,9 +264,9 @@ a { color: inherit; }
 .estado-por_verificar .fila-icono, .fila-icono.estado-por_verificar { background: var(--blanco); color: var(--por-verificar); box-shadow: inset 0 0 0 2px var(--por-verificar); }
 .estado-bajando .fila-icono, .fila-icono.estado-bajando { background: var(--ambar); }
 .estado-cerrado .fila-icono, .fila-icono.estado-cerrado { background: #c8c8c8; }
-/* Clases de aviso: lo bueno va en amarillo con icono oscuro; donar o colaborar, en negro. */
+/* Clases de aviso: lo bueno va en amarillo con icono oscuro; donar o colaborar, en rosa con corazón. */
 .clase-bueno .fila-icono, .fila-icono.clase-bueno { background: #f2b400; color: var(--tinta); }
-.clase-ayuda .fila-icono, .fila-icono.clase-ayuda { background: var(--negro); color: var(--blanco); }
+.clase-ayuda .fila-icono, .fila-icono.clase-ayuda { background: #db2777; color: var(--blanco); }
 .clase-bueno.estado-por_verificar .fila-icono, .fila-icono.clase-bueno.estado-por_verificar,
 .clase-ayuda.estado-por_verificar .fila-icono, .fila-icono.clase-ayuda.estado-por_verificar { background: var(--blanco); color: var(--por-verificar); }
 .opcion.clase-bueno svg { color: #b98900; }
@@ -347,6 +347,9 @@ a { color: inherit; }
 .fotos figure:first-child img { aspect-ratio: 16 / 10; }
 .fotos button, .foto-grande { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
 .fotos img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; background: var(--fondo-suave); }
+.fotos.extra { grid-template-columns: 1fr 1fr; margin-top: 8px; }
+.fotos.extra figure:first-child { grid-column: auto; }
+.fotos.extra figure:first-child img { aspect-ratio: 4 / 3; }
 .fotos-cuenta { margin: -4px 0 10px; font-size: 12px; color: var(--gris); }
 
 /* Visor de fotos: pantalla completa, fondo blanco. */
@@ -514,7 +517,7 @@ textarea.nota { width: 100%; min-height: 64px; padding: 10px 12px; border: 2px s
 .hito.clase-campo::before { border-radius: 3px; background: #581c87; }
 .hito.clase-bueno::before { background: #f2b400; }
 .hito.clase-buena::before { border-radius: 3px; background: #db2777; }
-.hito.clase-ayuda::before { background: var(--negro); }
+.hito.clase-ayuda::before { background: #db2777; }
 .hito time { font-size: 13px; font-weight: 700; padding-top: 1px; }
 .hito a { display: flex; gap: 10px; text-decoration: none; min-width: 0; }
 .hito img { flex: none; width: 64px; height: 64px; object-fit: cover; border-radius: 8px; background: var(--fondo-suave); }

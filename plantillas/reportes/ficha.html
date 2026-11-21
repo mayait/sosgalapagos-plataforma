@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static reportes_extras %}
-{% block titulo %}{{ r.tipo.nombre }}{% endblock %}
+{% block titulo %}{{ r.nombre }}{% endblock %}
 {% block contenido %}
 <main class="pagina">
   <div id="detalle">{% include "parciales/ficha.html" %}</div>

@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   const SOS = window.SOS, cfg = SOS.cfg;
-  const COLOR = { por_verificar: '#6b7280', confirmado: '#e11b22', bajando: '#d97706', cerrado: '#b4b4b4', bueno: '#f2b400', ayuda: '#000000' };
+  const COLOR = { por_verificar: '#6b7280', confirmado: '#e11b22', bajando: '#d97706', cerrado: '#b4b4b4', bueno: '#f2b400', ayuda: '#db2777' }; // el rosa es el de los corazones de «Buenas noticias y ayuda»
   const SONDEO_MS = 4000;       // cada cuánto se pregunta si hay reportes nuevos
   const OPACIDAD_MINIMA = 0.4;  // un reporte a punto de vencer no desaparece del todo
 
@@ -137,7 +137,7 @@
       id: 'reportes-pin', type: 'circle', source: 'reportes', filter: suelto,
       paint: {
         'circle-radius': radio,
-        // Sin verificar, hueco. Cerrado, gris. Lo bueno, amarillo; donar o colaborar, negro.
+        // Sin verificar, hueco. Cerrado, gris. Lo bueno, amarillo; donar o colaborar, rosa.
         // Los peligros, según su estado: rojo confirmado, ámbar bajando.
         'circle-color': ['case',
           ['==', ['get', 'estado'], 'por_verificar'], '#ffffff',
@@ -373,7 +373,7 @@
       if (f) {
         const p = f.properties;
         const partes = [p.clase === 'riesgo' ? NOMBRES.gravedad[p.gravedad] : '', haceCuanto(p.visto), NOMBRES.estado[p.estado]];
-        return { titulo: p.tipo_nombre, detalle: partes.filter(Boolean).join(' · ') };
+        return { titulo: p.titulo || p.tipo_nombre, detalle: [p.titulo ? p.tipo_nombre : ''].concat(partes).filter(Boolean).join(' · ') };
       }
     }
     return SOS.capas.pista(punto);
