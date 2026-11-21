@@ -1,7 +1,7 @@
 {% load reportes_extras %}/* Service worker del mapa. Guarda la interfaz, el mapa base y las capas ya vistas,
    para que la app instalada abra sin señal. Los reportes van siempre a la red:
    el mapa guarda la última respuesta por su cuenta y muestra de qué hora es. */
-const VERSION = 'sos-v9';
+const VERSION = 'sos-v10';
 const E = '{{ estaticos }}';
 const INTERFAZ = [
   '/riesgos/', '/riesgos/reportar/',
@@ -25,7 +25,7 @@ self.addEventListener('fetch', (e) => {
   const pedido = e.request;
   const url = new URL(pedido.url);
   if (pedido.method !== 'GET' || url.origin !== location.origin) return;
-  if (url.pathname.startsWith('/riesgos/api/') || url.pathname.startsWith('/riesgos/admin/') || url.pathname.startsWith('/riesgos/medios/')) return; // siempre a la red
+  if (url.pathname.startsWith('/riesgos/api/') || url.pathname.startsWith('/riesgos/admin/') || url.pathname.startsWith('/riesgos/medios/') || url.pathname.startsWith('/riesgos/relieve3d/')) return; // siempre a la red
 
   // El mapa base se pide por trozos (Range). Se guarda el archivo entero una vez y de ahí se corta.
   if (url.pathname.endsWith('.pmtiles')) { e.respondWith(trozo(pedido)); return; }

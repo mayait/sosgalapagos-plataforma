@@ -134,3 +134,15 @@ def prueba_los_informes_publicados_se_enlazan_y_lo_mal_formado_se_descarta(clien
 def prueba_sin_indice_de_informes_no_se_muestra_la_seccion(client, settings, tmp_path):
     settings.INFORMES_DIR = tmp_path / "no-existe"
     assert client.get("/riesgos/informes/").content.strip() == b""
+
+
+def prueba_el_relieve_del_3d_se_sirve_y_el_mar_da_404(client, settings, tmp_path):
+    (tmp_path / "cota" / "8" / "63").mkdir(parents=True)
+    (tmp_path / "teselas.json").write_text('{"cota": {"codificacion": "terrarium"}}')
+    (tmp_path / "cota" / "8" / "63" / "128.png").write_bytes(b"png")
+    settings.RELIEVE_DIR = tmp_path
+    assert client.get("/riesgos/relieve3d/teselas.json").status_code == 200
+    tesela = client.get("/riesgos/relieve3d/cota/8/63/128.png")
+    assert tesela.status_code == 200 and "max-age" in tesela["Cache-Control"]
+    assert client.get("/riesgos/relieve3d/cota/8/1/1.png").status_code == 404
+    assert client.get("/riesgos/relieve3d/../ajustes.py").status_code in (400, 404)  # nada fuera de la carpeta

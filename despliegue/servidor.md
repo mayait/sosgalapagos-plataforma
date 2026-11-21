@@ -76,8 +76,17 @@ docker compose exec plataforma python manage.py createsuperuser
 
 Se entra en `https://sosgalapagos.org/riesgos/admin/`. Ahí se revisan y publican las fotos y notas de los vecinos.
 
+## Relieve del 3D
+
+Las teselas de cota se generan en `sosgalapagos-datos` (`geodatos/scripts/37_teselas_relieve3d.py`) y se suben a una carpeta propia de la plataforma, sin tocar `/mapas`:
+
+```bash
+rsync -az geodatos/teselas/relieve3d/ root@152.44.45.89:/srv/sosgalapagos-relieve3d/
+```
+
+La plataforma las sirve en `/riesgos/relieve3d/`. No hace falta reiniciar nada.
+
 ## Pendiente
 
 - [ ] Sumar la base (`bd`) y las fotos (`medios`) al respaldo diario del servidor.
-- [ ] Publicar las teselas de cota del 3D con `/mapas` (PR 101 de `sosgalapagos-datos`). Mientras tanto el 3D usa un relieve de respaldo.
 - [ ] Marcar `version.txt` de `/mapas` como «no guardar» en Caddy, para que el mapa se entere antes de una publicación nueva.
