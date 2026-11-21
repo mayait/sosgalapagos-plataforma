@@ -200,3 +200,28 @@ def prueba_el_geojson_dice_la_isla(client):
     client.post("/riesgos/reportar/", DATOS)
     p = json.loads(client.get("/riesgos/api/reportes/vivos.geojson?periodo=evento").content)["features"][0]["properties"]
     assert p["isla"] == "Santa Cruz" and p["zona"] == "Las Acacias"
+
+
+def prueba_crear_aviso_de_coordinacion_con_titulo_fotos_y_plazo_largo(client, settings, tmp_path):
+    from datetime import timedelta
+
+    from django.core.management import call_command
+    from django.utils import timezone
+
+    settings.MEDIA_ROOT = tmp_path / "medios"
+    fotos_dir = tmp_path / "entrada"
+    fotos_dir.mkdir()
+    for n in (1, 2):
+        (fotos_dir / f"{n}.jpg").write_bytes(foto_con_gps().read())
+    call_command(
+        "crear_aviso", tipo="donar_colaborar", lat=-0.89553, lon=-89.60884, titulo="Centro de acopio USFQ San Cristóbal",
+        nota="Se reciben víveres empacados y kits de higiene.", dias=14, foto=[str(fotos_dir / "1.jpg"), str(fotos_dir / "2.jpg")],
+    )
+    r = Reporte.objects.get()
+    assert r.estado == Estado.CONFIRMADO and r.contenido_visible and r.tipo.icono == "corazon"
+    assert r.vence_en > timezone.now() + timedelta(days=13)
+    assert r.fotos_extra.count() == 1 and not Image.open(r.fotos_extra.get().foto.path).getexif()
+    ficha = client.get(f"/riesgos/r/{r.id_publico}/").content.decode()
+    assert "Centro de acopio USFQ San Cristóbal" in ficha and ficha.count("data-foto=") == 2
+    p = json.loads(client.get("/riesgos/api/reportes/vivos.geojson").content)["features"][0]["properties"]
+    assert p["titulo"] == "Centro de acopio USFQ San Cristóbal" and p["icono"] == "corazon" and p["clase"] == "ayuda"

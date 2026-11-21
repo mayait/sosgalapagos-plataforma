@@ -44,7 +44,7 @@
       const p = f.properties, [lon, lat] = f.geometry.coordinates;
       const estados = { por_verificar: 'por verificar', confirmado: 'confirmado', bajando: 'bajando', cerrado: 'cerrado' };
       return {
-        t: p.visto * 1000, clase: p.clase, titulo: p.tipo_nombre, lugar: p.zona || '', zona: p.zona || '', isla: p.isla || islaDe(lon, lat),
+        t: p.visto * 1000, clase: p.clase, titulo: p.titulo || p.tipo_nombre, lugar: p.zona || '', zona: p.zona || '', isla: p.isla || islaDe(lon, lat),
         detalle: estados[p.estado] || '', texto: '', foto: '', nFotos: 0, lon, lat, enlace: `${cfg.mapa}?r=${encodeURIComponent(p.id)}`,
       };
     });

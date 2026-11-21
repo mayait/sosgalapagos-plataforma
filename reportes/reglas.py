@@ -52,7 +52,7 @@ def buscar_duplicado(tipo, punto, ahora=None):
 
 
 @transaction.atomic
-def crear_reporte(*, tipo, punto, huella, fuente=Fuente.VECINO, visto_en=None, ahora=None, **campos):
+def crear_reporte(*, tipo, punto, huella, fuente=Fuente.VECINO, visto_en=None, ahora=None, vence_en=None, **campos):
     """Crea un reporte o, si ya hay uno igual muy cerca, lo confirma.
 
     Los reportes de vecinos y de WhatsApp entran «por verificar» y con la foto y
@@ -77,7 +77,8 @@ def crear_reporte(*, tipo, punto, huella, fuente=Fuente.VECINO, visto_en=None, a
         huella=huella,
         fuente=fuente,
         visto_en=visto_en,
-        vence_en=calcular_vence(visto_en, tipo.plazo_horas),
+        # Coordinación puede fijar el vencimiento (un centro de acopio dura más que su plazo por defecto).
+        vence_en=vence_en or calcular_vence(visto_en, tipo.plazo_horas),
         estado=Estado.CONFIRMADO if de_confianza else Estado.POR_VERIFICAR,
         contenido_visible=de_confianza,
         **campos,
