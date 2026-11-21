@@ -18,7 +18,8 @@ Un mapa único donde la gente reporta **lugares de riesgo o peligro con fecha**,
 - **Los reportes vencen solos.** Cada tipo tiene su plazo (de 6 a 72 horas). El pin se destiñe con la edad y desaparece al vencer.
 - **«Sigue ahí»** renueva el plazo. **Dos «ya bajó»** de teléfonos distintos cierran el reporte.
 - **Duplicados:** un reporte del mismo tipo a menos de 50 m de uno vivo cuenta como confirmación.
-- **Capas de riesgo:** las mismas de `/mapas`, en un solo panel. El riesgo modelado y las quebradas arrancan encendidos. Cada una se enciende, se apaga y se descarga en Shapefile y GeoJSON, y se baja solo al encenderla.
+- **Capas de riesgo:** las que publica el repo de datos bajo `/mapas/…`, en un solo panel. Este es el único mapa del sitio: `/mapas/` redirige aquí desde el 21-nov-2026. El riesgo modelado y las quebradas arrancan encendidos. Cada una se enciende, se apaga y se descarga en Shapefile y GeoJSON, y se baja solo al encenderla.
+- **Buscador y «Mis puntos»:** la lupa busca calles, barrios, lugares y coordenadas; los puntos propios se guardan solo en el navegador.
 - **Capas siempre al día:** si otro equipo publica un modelo nuevo en `/mapas`, el mapa abierto lo recoge en un par de minutos y avisa.
 - **Reportes de campo con fotos:** la capa de reportes ciudadanos que publica `/mapas` se abre con su texto y sus fotos.
 - **Vista 3D** a pedido: relieve propio (DTM de 1 m de la SGIAR en Santa Cruz y Copernicus en el resto) y edificios con altura.

@@ -1,32 +1,49 @@
-# Plan para dar de baja el visor de `/mapas`
+# Baja del visor de `/mapas`
 
-*Revisado el 21-nov-2026 sobre `/mapas` (versión `ef10236`, 60 capas) y `/riesgos/` en producción.*
+**Hecho el 21-nov-2026.** `/riesgos/` es el único mapa de `sosgalapagos.org`. Quien entra a `/mapas/` llega a `/riesgos/`.
 
-**Conclusión: todavía no es buen momento.** Hoy `/riesgos/` ya muestra todas las capas de `/mapas` y permite descargarlas, pero al visor de `/mapas` le quedan tres herramientas por llevar a `/riesgos/` (buscador, punto de análisis y descarga de imagen), hay una inundación en curso y el equipo de datos publica en `/mapas` varias veces al día. La baja se puede hacer en cuanto se cumplan los cinco criterios de la [sección 3](#3-cuándo-es-buen-momento).
+Julián lo decidió ese día: mantener dos visores ya costaba trabajo doble, y lo que el visor de `/mapas` tenía de más o se llevó a `/riesgos/` o no hacía falta. Se hizo sin esperar a los cinco criterios de la sección 3 (ver «Lo que queda abierto»).
 
-Una precisión que cambia todo el plan: **lo que se da de baja es el visor, no los datos.** `/riesgos/` lee de `/mapas/` el manifiesto, las capas, las descargas, las teselas y las fotos. Esas direcciones tienen que seguir existiendo.
+Una precisión que no cambia: **se dio de baja el visor, no los datos.** `/riesgos/` lee de `/mapas/` el manifiesto, las capas, las descargas, las teselas y las fotos. Esas direcciones siguen existiendo y no se pueden retirar.
 
-## Estado y recomendación (21-nov-2026, tarde)
+## Qué se hizo
 
-**Recomendación: quedarse solo con `/riesgos/`.** Mantener dos visores ya costó trabajo doble el mismo día: tres manifiestos distintos, un marcador nuevo (`corazon`) que cada visor dibuja a su manera, y mejoras que el equipo de datos hace en un visor que va a desaparecer. Cada día que conviven, la diferencia crece.
+| Paso | Dónde | Estado |
+|---|---|---|
+| Buscador (lupa junto a «Capas») y «Mis puntos» en `/riesgos/` | `sosgalapagos-plataforma`, `estaticos/mapa/buscar.js` | Hecho, en producción |
+| Enlaces bajo la firma: lluvia en vivo, descarga de capas y repositorio | `plantillas/parciales/firma.html` | Hecho |
+| Redirección 302 de `/mapas`, `/mapas/` y `/mapas/index.html` a `/riesgos/` | `sosgalapagos`, `deploy/sosgalapagos/Caddyfile` | Hecho, en producción |
+| Portada: botón del encabezado y pie a `/riesgos/`; se quita la tarjeta «Mapas y capas» | `sosgalapagos`, `portada-galapagos.ts` | Hecho, en producción |
+| El visor sale del repo de datos y deja de generarse | `sosgalapagos-datos`: `Archivo/visor-mapas/`, `10_publicar_web.py` | Hecho |
+| Documentación y árbol de repositorios (ahora seis) | Los seis `AGENTS.md` | Hecho |
 
-Lo que no conviene es hacerlo de golpe hoy. Hay una advertencia del INAMHI vigente hasta el 24-nov, y el visor de `/mapas` tiene herramientas que usan los equipos técnicos y que `/riesgos/` aún no tiene.
+## Qué pasó con cada función del visor
 
-| Criterio | Estado |
+| Función | Decisión |
 |---|---|
-| 1. Paridad de herramientas | **0 de 3.** Faltan buscador, punto de análisis y descarga de imagen. «Mis puntos» y la exposición por isla no se hacen en `/riesgos/` (decisión de Julián, 21-nov) |
-| 2. Probado en teléfonos reales | **Pendiente.** Solo simulación en escritorio |
-| 3. Siete días estables | **Día 1.** En producción desde el 21-nov, 14:17 |
-| 4. Acuerdo con el equipo de datos | **Sin hablar.** Siguen mejorando su visor (hoy: versión para teléfono, enlaces a lugares, corazones) |
-| 5. Fuera de la fase aguda | **No.** Advertencia n.º 89 del INAMHI vigente hasta el 24-nov |
+| Capas, leyendas, mapas base, descargas, enlaces a lugares | Ya estaban en `/riesgos/` |
+| Buscador de calle, barrio, lugar o coordenadas | Llevado a `/riesgos/` |
+| «Mis puntos» | Llevado a `/riesgos/`. Usa la misma clave del navegador (`sosgalapagos-mapas-mis-puntos-v1`) y el mismo formato: como las dos direcciones son del mismo dominio, nadie perdió lo que tenía guardado |
+| Punto de análisis (riesgo, cota y cuenca en un punto) | No se lleva: quien lo necesite descarga las capas |
+| Descargar imagen con leyenda y modo captura | No se lleva |
+| Tabla de exposición por isla | Irá como PDF en las descargas de la portada (pendiente, equipo de datos) |
+| Cota bajo el cursor | No se lleva: está la vista 3D |
 
-Avances desde la mañana que acercan la baja: las descargas de capas ya están en `/riesgos/descargas/` y en la portada; los enlaces a lugares son los mismos; `/riesgos/` dibuja las 60 capas y se actualiza solo con cada publicación.
+## Cómo volver atrás
 
-**Camino corto que propongo:**
+En el `Caddyfile` del sitio se quitan las dos líneas `@visor` / `redir @visor /riesgos/ 302` del bloque de `/mapas`, se cambia `redir /mapas /riesgos/ 302` por `redir /mapas /mapas/ permanent` y se recarga Caddy en caliente (`despliegue/servidor.md`, sección 2). El `index.html` del visor sigue en el servidor (`/srv/sosgalapagos-mapas/`): la publicación de datos ya no lo sube ni lo borra. Su fuente está en `Archivo/visor-mapas/` del repo de datos. La redirección es temporal (302) a propósito.
 
-1. **Hoy:** avisar al equipo de datos de que el visor único será `/riesgos/` y que dejen de invertir en el suyo (criterio 4). Es lo que más trabajo ahorra.
-2. **Esta semana:** construir en `/riesgos/` el buscador, el punto de análisis y la descarga de imagen. «Mis puntos» y la tabla de exposición por isla no se llevan a `/riesgos/` (decisión de Julián, 21-nov).
-3. **Cuando pase la advertencia y con una prueba en teléfono real:** redirección temporal de `/mapas/` a `/riesgos/` (paso 3 de este plan). Fecha más temprana razonable: la semana del 30-nov.
+## Lo que queda abierto
+
+- **Probar en teléfonos reales**, incluido un Android de gama baja. Todas las pruebas son en un navegador de escritorio a 360 y 390 px.
+- **Avisar al equipo de datos**: sus publicaciones siguen igual (`servidores/publicar.sh mapas`), pero los cambios de visualización ahora se piden en `sosgalapagos-plataforma`.
+- **Tabla de exposición por isla** en PDF.
+- **Pasar el 302 a 301** cuando lleve unas semanas sin problemas (un 301 lo recuerdan los navegadores).
+- `/clima/` enlazaba al visor para la capa de refugios. El enlace ya apunta a `/riesgos/` en el repo de datos; llega al servidor con el próximo `servidores/publicar.sh clima`. Mientras tanto la redirección lo cubre.
+
+---
+
+*Lo que sigue es el plan original, tal como se escribió la mañana del 21-nov-2026. Se conserva como registro.*
 
 ## 1. Qué hay bajo `/mapas` y qué pasa con cada cosa
 
