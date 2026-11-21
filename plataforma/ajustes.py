@@ -115,11 +115,17 @@ CAPAS_VARIANTE = "completo"  # islas completas, sin recorte
 # En la Mac no existe /mapas: se trae del sitio publicado y se guarda una copia local.
 CAPAS_ORIGEN = entorno("CAPAS_ORIGEN", "https://sosgalapagos.org/mapas/")
 CAPAS_COPIA = Path(entorno("CAPAS_COPIA", RAIZ / ".copia-mapas"))
-# Capas que arrancan encendidas. Son pocas a propósito: lo principal son los reportes.
-# La persona puede encender cualquiera; «Volver a las capas iniciales» regresa a estas.
-# «reportes_21nov» son los reportes de campo con fotos de la emergencia en curso.
-CAPAS_ENCENDIDAS = ["reportes_21nov", "susceptibilidad", "quebradas", "barrios"]
-CAPAS_ENCENDIDAS_MOVIL = ["reportes_21nov", "barrios"]
+# Capas que arrancan encendidas: las mismas que /mapas marca como visibles en su
+# manifiesto (reportes de campo, riesgo modelado, quebradas, puntos clave, barrios…).
+# No hay lista propia: si el repo de datos añade una capa visible, aquí también sale.
+# En el teléfono /mapas apaga las capas pesadas («visible_movil»: false). Aquí eso se
+# respeta, salvo en estos grupos, que deben salir siempre: el riesgo de inundación
+# modelado y las quebradas (indicación de Julián, 21-nov-2026).
+CAPAS_SIEMPRE_GRUPOS = ["lluvia", "hidrografia"]
+# Única excepción: los puntos de salud, refugios y seguridad arrancan apagados aunque
+# /mapas los encienda. Son círculos rojos, verdes y morados que se confunden con los
+# pines de los reportes. Se encienden desde el panel Capas como cualquier otra.
+CAPAS_APAGADAS_AL_ABRIR = ["puntos_criticos"]
 
 # Lluvia: el JSON que publica /clima. Ruta de archivo en el servidor o URL en la Mac.
 CLIMA_ESTADO = entorno("CLIMA_ESTADO", "https://sosgalapagos.org/clima/datos/estado.json")

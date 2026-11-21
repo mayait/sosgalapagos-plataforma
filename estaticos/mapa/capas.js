@@ -13,7 +13,7 @@
   const ZOOM_ROTULOS = 15; // los rótulos de barrios y calles solo se ven de cerca
 
   const estado = { mapa: null, manifiesto: null, descargas: {}, todo: null, capas: [], encendidas: new Set(), iniciales: [], puestas: {}, base: 'gris', limites: null, teselas: {} };
-  const GUARDADO = 'sos-capas'; // lo que la persona dejó encendido se recuerda en su teléfono
+  const GUARDADO = 'sos-capas-3'; // lo que la persona dejó encendido se recuerda en su teléfono
   const datosUrl = () => `${SOS.cfg.capasUrl}datos/${SOS.cfg.capasVariante}/`;
   const recordar = () => { try { localStorage.setItem(GUARDADO, JSON.stringify([...estado.encendidas])); } catch (e) { /* sin espacio */ } };
   const texto = (v) => ['to-string', ['get', v]];
@@ -406,8 +406,13 @@
       }
       estado.manifiesto = m;
       estado.capas = m.grupos.flatMap((g) => g.capas);
-      // En el teléfono arrancan menos capas: pesan y tapan los reportes.
-      estado.iniciales = SOS.esMovil() ? SOS.cfg.capasEncendidasMovil : SOS.cfg.capasEncendidas;
+      // Arrancan encendidas las capas que el manifiesto de /mapas marca como visibles.
+      // En el teléfono se respetan las que /mapas apaga por pesadas, salvo el riesgo
+      // modelado y las quebradas, que salen siempre.
+      const movil = SOS.esMovil(), siempre = SOS.cfg.capasSiempreGrupos || [], apagadas = SOS.cfg.capasApagadasAlAbrir || [];
+      estado.iniciales = m.grupos.flatMap((g) => g.capas
+        .filter((c) => c.visible && !apagadas.includes(c.id) && (!movil || c.visible_movil !== false || siempre.includes(g.id)))
+        .map((c) => c.id));
       // Si la persona ya eligió capas en una visita anterior, se respeta su elección.
       let elegidas = null;
       try { elegidas = JSON.parse(localStorage.getItem(GUARDADO)); } catch (e) { /* nada guardado */ }

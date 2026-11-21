@@ -4,6 +4,10 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 
 ## 2026-11-21 · Fase 1
 
+- **El riesgo modelado y las quebradas arrancan encendidos (indicación de Julián).** La primera versión abría con pocas capas para no tapar los reportes, y en el teléfono solo con los barrios. *Qué se hace:* arrancan encendidas las capas que `/mapas` marca como visibles en su manifiesto, sin lista propia. En el teléfono se respetan las que `/mapas` apaga por pesadas, salvo los grupos de riesgo de inundación y de quebradas, que salen siempre (`CAPAS_SIEMPRE_GRUPOS`).
+- **Los puntos de salud y refugios se confunden con los pines.** Son círculos rojos con «+» muy parecidos a un reporte confirmado. *Qué se hace:* es la única capa visible de `/mapas` que aquí arranca apagada (`CAPAS_APAGADAS_AL_ABRIR`). Queda por decidir si se les cambia la forma para poder encenderlos por defecto.
+- **La susceptibilidad pesa 2,3 MB comprimida.** Ahora se baja también en el teléfono. *Qué se hace:* se deja así por indicación; si la prueba en un teléfono de gama baja va lenta, la salida es servirla en teselas vectoriales.
+
 - **El mar debe distinguirse de la tierra (indicación de Julián).** Con la base toda en gris, la costa casi no se leía. *Qué se hace:* la tierra sigue gris y el mar va en azul claro (`estaticos/mapa/base.js`).
 - **El navegador también guarda JavaScript viejo por su cuenta.** Tras cambiar el color del mar, la página siguió usando el `base.js` anterior aunque el service worker ya iba primero a la red: la respuesta salía de la memoria del navegador. *Qué se hace:* el service worker pide el código propio con `cache: 'no-cache'`, que obliga a revalidar con el servidor.
 
