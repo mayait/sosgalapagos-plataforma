@@ -4,6 +4,9 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 
 ## 2026-11-21 · Puesta en producción
 
+- **Publicado el 21-nov-2026 a las 14:17 (hora de Galápagos) en `https://sosgalapagos.org/riesgos/`.** Comprobado desde fuera: mapa, 59 capas, lluvia, informes, relieve propio del 3D, y `/mapas`, `/clima` y la portada igual que antes. No se probó crear un reporte en producción, para no dejar un reporte de prueba en el mapa público.
+- **Al subir las teselas desde la Mac con `tar` se colaron archivos `._*`** (metadatos de macOS), uno por tesela. No estorban, pero ocupan. *Qué se hace:* la próxima subida va con `COPYFILE_DISABLE=1 tar …` o con `rsync`.
+
 - **El relieve de respaldo del 3D tiene agujas falsas.** En producción, con el relieve de terceros, salía un pico inexistente junto a Puerto Ayora. *Qué se hace:* el relieve propio se sube a una carpeta de la plataforma (`/srv/sosgalapagos-relieve3d`) y se sirve en `/riesgos/relieve3d/`. No se puso en la carpeta de `/mapas` porque su publicación borra lo que no reconoce y es de otro equipo.
 
 - **El primer despliegue marcó fallo con todo arriba.** El guion comprueba el servicio desde dentro del contenedor como `localhost`, y `localhost` no estaba entre los nombres que Django acepta en producción: respondía 400. *Qué se hace:* `localhost` va en `ANFITRIONES`. Lo que no vi en la Mac: allí probé desde fuera del contenedor, con el nombre que sí estaba permitido.
