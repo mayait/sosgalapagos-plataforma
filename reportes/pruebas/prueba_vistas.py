@@ -162,7 +162,7 @@ def prueba_el_formulario_ofrece_camara_y_galeria(client):
 
 def prueba_las_paginas_de_informe_y_descargas_abren(client):
     informe = client.get("/riesgos/informe/").content.decode()
-    assert "Línea del tiempo" in informe and "Estación de lluvia" in informe and "no es información oficial" in informe
+    assert "Línea del tiempo" in informe and "Estación de lluvia" not in informe and "no es información oficial" in informe
     descargas = client.get("/riesgos/descargas/").content.decode()
     assert "Shapefile y GeoJSON" in descargas and "no datos oficiales" in descargas
     mapa = client.get("/riesgos/").content.decode()
@@ -236,3 +236,9 @@ def prueba_el_informe_se_llama_linea_del_tiempo(client):
     assert "<h1 class=\"form-titulo\">Línea del tiempo</h1>" in html
     assert 'id="g-nav"' in html and 'id="saltos"' in html  # navegador para moverse rápido en el tiempo
     assert "no es información oficial" in html
+
+
+@pytest.mark.django_db
+def prueba_el_mapa_ofrece_ver_como_lista(client):
+    html = client.get("/riesgos/").content.decode()
+    assert ">Ver como lista</a>" in html
