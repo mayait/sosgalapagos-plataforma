@@ -1,0 +1,37 @@
+SOS Galápagos — plataforma de reportes de riesgo
+
+Copyright 2026 Universidad San Francisco de Quito (USFQ)
+
+Desarrollado en USFQ Galápagos.
+Responsable: Julián Maya (jamaya@usfq.edu.ec), Universidad San Francisco de Quito (USFQ).
+Repositorio: https://github.com/mayait/sosgalapagos-plataforma
+
+Este producto incluye software desarrollado en la Universidad San Francisco de
+Quito (USFQ). El código se distribuye bajo la Licencia Apache, versión 2.0
+(archivo LICENSE). Según su sección 4(d), toda redistribución o trabajo
+derivado debe conservar este aviso NOTICE.
+
+Los reportes, textos y demás contenido propio se distribuyen bajo Creative
+Commons Atribución 4.0 Internacional (CC BY 4.0; archivo LICENCIA-CC-BY-4.0.txt).
+
+Los reportes los hace la comunidad. Son información preliminar, no oficial.
+
+Componentes de terceros incluidos en estaticos/ (conservan su licencia):
+
+  MapLibre GL JS 5.24.1        BSD de 3 cláusulas   estaticos/terceros/LICENCIA-maplibre.txt
+  PMTiles 4.5.0                BSD de 3 cláusulas   https://github.com/protomaps/PMTiles
+  Protomaps Basemaps 5.7.2     BSD de 3 cláusulas   https://github.com/protomaps/basemaps
+  htmx 2.0.4                   BSD de cero cláusulas https://github.com/bigskysoftware/htmx
+  Alpine.js 3.14.8             MIT                   https://github.com/alpinejs/alpine
+  Noto Sans (glifos)           SIL OFL 1.1           https://github.com/protomaps/basemaps-assets
+  Zalando Sans Expanded        SIL OFL 1.1           estaticos/marca/ZalandoSansExpanded-OFL.txt
+
+Mapa base (estaticos/base/galapagos.pmtiles): © colaboradores de OpenStreetMap,
+bajo la Open Database License (ODbL). Extracto hecho con la herramienta de
+Protomaps a partir de su compilación del 21-nov-2026.
+
+Los logotipos de la USFQ (estaticos/marca/*.svg) son marcas de la Universidad
+San Francisco de Quito. No se distribuyen bajo la licencia Apache ni CC BY.
+
+Este proyecto no contiene código de ResponseGrid (AGPL-3.0). El visual del mapa
+se rehízo desde cero a partir de docs/visual-mapa.md.
