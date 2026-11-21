@@ -57,6 +57,53 @@
     mapa.addImage(p.id, g.getImageData(0, 0, n, n), { pixelRatio: 2 });
   }
 
+  // ── Marcadores de los reportes de campo ───────────────────────────────────
+  // Las capas con «marcador: reporte» (los reportes ciudadanos que publica /mapas) no se
+  // dibujan como círculos: llevan un cuadrado redondeado con un iconito. Así no se confunden
+  // con los pines de los reportes nuevos, que son redondos.
+  //   cámara = trae fotos · casa = refugio · signo de admiración = aviso sin foto
+  const GLIFOS = {
+    foto: (color) => `<path d="M4.5 9.2h3l1.5-2.2h6l1.5 2.2h3v8.6h-15z" fill="#ffffff" stroke="none"/><circle cx="12" cy="13.3" r="2.7" fill="${color}" stroke="none"/>`,
+    refugio: () => '<path d="M4.5 12L12 6l7.5 6"/><path d="M7 10.5V18h10v-7.5"/>',
+    aviso: () => '<path d="M12 6.5v7" stroke-width="2.6"/><path d="M12 17.2v.3" stroke-width="2.6"/>',
+  };
+  function clasesDe(capa) {
+    const c = capa.clasificar || { valores: {} };
+    const lista = Object.entries(c.valores).map(([valor, v]) => [valor, v.fillColor || '#888888']);
+    lista.push(['otro', (c.otro && c.otro.fillColor) || (capa.estilo && capa.estilo.fillColor) || '#888888']);
+    return lista;
+  }
+  function prepararMarcadores(capa) {
+    const tareas = [];
+    for (const [valor, color] of clasesDe(capa)) {
+      for (const [glifo, trazo] of Object.entries(GLIFOS)) {
+        const nombre = `marc-${capa.id}-${valor}-${glifo}`;
+        if (estado.mapa.hasImage(nombre)) continue;
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 28 28">
+          <rect x="2" y="2" width="24" height="24" rx="7" fill="${color}" stroke="#ffffff" stroke-width="2.4"/>
+          <g transform="translate(2 2)" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${trazo(color)}</g></svg>`;
+        tareas.push(new Promise((listo) => {
+          const img = new Image(56, 56);
+          img.onload = () => { if (!estado.mapa.hasImage(nombre)) estado.mapa.addImage(nombre, img, { pixelRatio: 2 }); listo(); };
+          img.onerror = listo;
+          img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+        }));
+      }
+    }
+    return Promise.all(tareas);
+  }
+  function capaDeMarcadores(capa, fuente) {
+    const c = capa.clasificar;
+    const valores = c ? Object.keys(c.valores) : [];
+    const clase = c ? ['match', texto(c.propiedad), valores, texto(c.propiedad), 'otro'] : 'otro';
+    const conFotos = ['all', ['has', 'fotos'], ['>', ['length', ['get', 'fotos']], 0]];
+    const glifo = ['case', ['==', ['get', 'tipo'], 'refugio'], 'refugio', conFotos, 'foto', 'aviso'];
+    return {
+      id: fuente + '-marcador', type: 'symbol',
+      layout: { 'icon-image': ['concat', `marc-${capa.id}-`, clase, '-', glifo], 'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.7, 16, 1], 'icon-allow-overlap': true, 'icon-ignore-placement': true },
+    };
+  }
+
   // Devuelve las capas de MapLibre que dibujan una capa del manifiesto.
   function construir(capa) {
     const mapa = estado.mapa;
@@ -122,7 +169,9 @@
       } else agregar(solidas);
     }
 
-    if (capa.tipo === 'punto' && !capa.solo_rotulo) {
+    if (capa.tipo === 'punto' && capa.marcador === 'reporte') {
+      agregar(capaDeMarcadores(capa, fuente));
+    } else if (capa.tipo === 'punto' && !capa.solo_rotulo) {
       agregar({
         id: fuente + '-punto', type: 'circle',
         paint: { 'circle-radius': e.radius || 6, 'circle-color': porClase(capa, 'fillColor', '#3388ff'), 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1.5 },
@@ -204,6 +253,7 @@
     if (capa.tipo === 'teselas' && !estado.teselas[capa.teselas]) {
       estado.teselas[capa.teselas] = await fetch(`${SOS.cfg.capasUrl}teselas/${capa.teselas}/teselas.json`).then((r) => r.json()).catch(() => null);
     }
+    if (capa.marcador === 'reporte') await prepararMarcadores(capa);
     const antes = siguientePuesta(capa.id);
     const ids = [];
     for (const def of construir(capa)) {
@@ -260,13 +310,14 @@
     const e = capa.estilo || {};
     const clases = Object.values(capa.clasificar.valores).concat(capa.clasificar.otro ? [capa.clasificar.otro] : []);
     return clases.map((v) => ({
-      forma: capa.tipo === 'punto' ? 'punto' : capa.tipo === 'linea' ? 'linea' : 'cuadro',
+      forma: capa.marcador === 'reporte' ? 'marcador' : capa.tipo === 'punto' ? 'punto' : capa.tipo === 'linea' ? 'linea' : 'cuadro',
       color: v.fillColor || v.color || e.fillColor || e.color || '#888',
       simbolo: v.simbolo, discontinua: Boolean(v.dashArray), texto: v.etiqueta,
     }));
   }
   function muestra(l) {
     const c = SOS.escapar(l.color);
+    if (l.forma === 'marcador') return `<i class="muestra marcador" style="background:${c}"></i>`;
     if (l.forma === 'punto') return `<i class="muestra punto" style="background:${c}">${SOS.escapar(l.simbolo || '')}</i>`;
     if (l.forma === 'linea') return `<i class="muestra linea" style="border-top-color:${c};border-top-style:${l.discontinua ? 'dashed' : 'solid'}"></i>`;
     return `<i class="muestra cuadro" style="background:${c}"></i>`;
@@ -300,6 +351,7 @@
           if (c.zoom_min && zoom < c.zoom_min) h += '<span class="capa-lejos">Acércate para verla.</span>';
           if (c.descripcion) h += `<em>${x(c.descripcion)}</em>`;
           for (const l of leyenda(c)) h += `<span>${muestra(l)}${x(l.texto)}</span>`;
+          if (c.marcador === 'reporte') h += '<span class="capa-glifos">Cámara: con fotos · Casa: refugio · Signo «!»: aviso sin foto</span>';
           h += '</div>';
         }
         h += '</div>';

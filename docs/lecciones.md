@@ -4,6 +4,8 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 
 ## 2026-11-21 · Fase 1
 
+- **Los reportes de campo se confundían con los pines nuevos.** Los dos eran círculos rojos. *Qué se hace (lo pidió Julián):* las capas con `marcador: reporte` del manifiesto se dibujan como cuadrados redondeados con un iconito (cámara si trae fotos, casa si es un refugio, «!» si es un aviso sin foto), del color de su gravedad. Los pines de los reportes nuevos siguen siendo redondos. Regla para lo que venga: **redondo = reporte de la plataforma; cuadrado = reporte de campo de `/mapas`.**
+
 - **La vista preferida es satélite con la capa de riesgo encima (indicación de Julián, con captura).** Se había aprobado la base gris, pero al verla en uso Julián mostró la que le gusta: foto de satélite, susceptibilidad en azules y quebradas. *Qué se hace:* el mapa abre en satélite (`MAPA_BASE_INICIAL`), con los nombres de calles en blanco encima de la foto. La base gris propia queda como opción y como respaldo sin conexión, porque el satélite son teselas de un tercero (Esri) que no se guardan en el teléfono. El mapa recuerda la base que cada persona elige.
 
 - **Un globo con texto largo se sale de la pantalla del teléfono.** Al tocar un área afectada salía un globo más alto que el mapa, tapado por la leyenda. *Qué se hace:* ningún elemento de capa abre un globo; todos se leen en la hoja (teléfono) o en el panel (escritorio).
