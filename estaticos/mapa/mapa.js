@@ -345,7 +345,10 @@
   // La cota sale de las teselas propias que publica /mapas (DTM de 1 m de la SGIAR en
   // Santa Cruz y Copernicus en el resto; sosgalapagos-datos, 37_teselas_relieve3d.py).
   // Si todavía no están publicadas, se usa Terrain Tiles (AWS), de unos 30 m.
-  const RELIEVE = { exageracion: 1.6, inclinacion: 62 };
+  // La exageración multiplica la altura del terreno. Santa Cruz es de pendiente suave: con
+  // menos de ×2 casi no se nota el relieve. Se puede subir y bajar con los controles.
+  const RELIEVE = { exageracion: 2.4, minima: 1, maxima: 4, paso: 0.4, inclinacion: 64 };
+  let exageracion = RELIEVE.exageracion;
   let en3d = false, cota = null;
   async function fuenteDeCota() {
     if (cota) return cota;
@@ -370,11 +373,13 @@
   async function alternar3d() {
     en3d = !en3d;
     document.getElementById('relieve').setAttribute('aria-pressed', String(en3d));
+    document.getElementById('controles3d').hidden = !en3d;
+    document.body.classList.toggle('en-3d', en3d);
     if (en3d) {
       const fuente = await fuenteDeCota();
       if (!en3d) return; // se apagó mientras cargaba
       if (!mapa.getSource('elevacion')) mapa.addSource('elevacion', fuente);
-      mapa.setTerrain({ source: 'elevacion', exaggeration: RELIEVE.exageracion });
+      mapa.setTerrain({ source: 'elevacion', exaggeration: exageracion });
       // Sombreado para que el relieve se lea. Usa su propia fuente, como pide MapLibre.
       if (!mapa.getSource('elevacion-sombras')) mapa.addSource('elevacion-sombras', Object.assign({}, fuente, { attribution: '' }));
       if (!mapa.getLayer('sombras-3d')) {
@@ -405,6 +410,30 @@
     }
   }
   document.getElementById('relieve').addEventListener('click', alternar3d);
+
+  // Controles del 3D: girar, volver al norte, inclinar y exagerar el relieve.
+  const marcarExageracion = () => {
+    document.getElementById('exageracion').textContent = '×' + exageracion.toFixed(1).replace('.', ',');
+  };
+  marcarExageracion();
+  document.getElementById('controles3d').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-3d]');
+    if (!b || !en3d) return;
+    const hacer = b.dataset['3d'];
+    if (hacer === 'girar-izq') mapa.easeTo({ bearing: mapa.getBearing() - 30, duration: 350 });
+    if (hacer === 'girar-der') mapa.easeTo({ bearing: mapa.getBearing() + 30, duration: 350 });
+    if (hacer === 'norte') mapa.easeTo({ bearing: 0, duration: 400 });
+    if (hacer === 'inclinar-mas') mapa.easeTo({ pitch: Math.min(mapa.getMaxPitch(), mapa.getPitch() + 10), duration: 300 });
+    if (hacer === 'inclinar-menos') mapa.easeTo({ pitch: Math.max(0, mapa.getPitch() - 10), duration: 300 });
+    if (hacer === 'relieve-mas' || hacer === 'relieve-menos') {
+      const d = hacer === 'relieve-mas' ? RELIEVE.paso : -RELIEVE.paso;
+      exageracion = Math.round(Math.min(RELIEVE.maxima, Math.max(RELIEVE.minima, exageracion + d)) * 10) / 10;
+      mapa.setTerrain({ source: 'elevacion', exaggeration: exageracion });
+      marcarExageracion();
+    }
+  });
+  // La «N» gira con el mapa: señala siempre el norte.
+  mapa.on('rotate', () => { document.getElementById('brujula').style.transform = `rotate(${-mapa.getBearing()}deg)`; });
 
   // ── Arranque ──────────────────────────────────────────────────────────────
   mapa.on('load', async () => {

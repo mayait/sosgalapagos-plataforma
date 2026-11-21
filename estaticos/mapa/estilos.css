@@ -170,6 +170,18 @@ a { color: inherit; }
   font: 800 12px/1 var(--titulo); letter-spacing: 0.02em;
 }
 .relieve[aria-pressed="true"] { background: var(--negro); color: var(--blanco); border-color: var(--negro); }
+/* Controles del 3D: una columna sobre el botón 3D. Girar, norte, inclinar y exagerar el relieve. */
+.controles3d {
+  position: absolute; z-index: 4; right: 10px; bottom: 214px; width: 44px;
+  display: flex; flex-direction: column; align-items: stretch; border-radius: 22px; overflow: hidden; padding: 3px 0;
+}
+.controles3d button { border: 0; background: none; height: 38px; font-size: 19px; line-height: 1; color: var(--tinta); }
+.controles3d button:active { background: var(--fondo-suave); }
+.controles3d .norte { font: 800 12px/1 var(--titulo); color: var(--rojo); border-top: 1px solid var(--linea); border-bottom: 1px solid var(--linea); }
+.controles3d .norte span { display: inline-block; transition: transform 0.15s; }
+.controles3d [data-3d="relieve-mas"] { border-top: 1px solid var(--linea); font-size: 13px; }
+.controles3d [data-3d="relieve-menos"] { font-size: 13px; }
+.exageracion { text-align: center; font-size: 10.5px; font-weight: 700; color: var(--gris); line-height: 1.1; }
 .sin-reportes {
   position: absolute; z-index: 4; left: 50%; transform: translateX(-50%); bottom: 70px;
   padding: 6px 13px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: var(--gris);
@@ -361,11 +373,15 @@ a { color: inherit; }
   .capas-boton, .capas-panel { right: calc(var(--panel-ancho) + 10px); }
   .ubicarme { right: calc(var(--panel-ancho) + 10px); bottom: 34px; }
   .relieve, .con-hoja .relieve { right: calc(var(--panel-ancho) + 10px); bottom: 86px; }
+  .controles3d { right: calc(var(--panel-ancho) + 10px); bottom: 216px; }
   .leyenda { bottom: 14px; }
   .con-hoja .leyenda { bottom: 14px; }
   .con-hoja .ubicarme { bottom: 34px; }
   .con-hoja .sin-reportes { bottom: 60px; left: calc((100% - var(--panel-ancho)) / 2); }
   .con-hoja .maplibregl-ctrl-bottom-right { bottom: 132px; right: 0; }
+  /* Con el 3D encendido, los botones de zoom ceden su sitio a los controles del 3D. */
+  .en-3d .maplibregl-ctrl-bottom-right .maplibregl-ctrl-group { display: none; }
+  .controles3d { bottom: 138px; }
   .con-hoja .maplibregl-ctrl-bottom-left { bottom: 0; }
   .hoja {
     left: auto; top: 0; width: var(--panel-ancho); height: auto;
