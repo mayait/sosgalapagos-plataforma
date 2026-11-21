@@ -22,7 +22,6 @@ Un mapa único donde la gente reporta **lugares de riesgo o peligro con fecha**,
 - **Capas siempre al día:** si otro equipo publica un modelo nuevo en `/mapas`, el mapa abierto lo recoge en un par de minutos y avisa.
 - **Reportes de campo con fotos:** la capa de reportes ciudadanos que publica `/mapas` se abre con su texto y sus fotos.
 - **Vista 3D** a pedido: relieve propio (DTM de 1 m de la SGIAR en Santa Cruz y Copernicus en el resto) y edificios con altura.
-- **Informes y mapas en PDF:** enlaza los mismos que publica la portada del sitio.
 - **Lluvia:** franja con el nivel preliminar de la zona, tomado de `/clima`.
 - **Instalable** como app. Sin señal guarda los reportes nuevos y los envía al volver la conexión.
 

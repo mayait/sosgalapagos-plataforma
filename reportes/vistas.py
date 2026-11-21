@@ -19,7 +19,6 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from zonas.models import zona_de
 
 from . import clima, fotos, reglas
-from . import informes as informes_publicados
 from .models import Gravedad, Profundidad, Reporte, TipoConfirmacion, TipoRiesgo
 
 GALLETA = "dispositivo"
@@ -226,12 +225,6 @@ def lluvia(request):
     if lat is None or lon is None:
         lon, lat = settings.MAPA_CENTRO
     return render(request, "parciales/lluvia.html", {"lluvia": clima.nivel(clima.zona_por_punto(lon, lat))})
-
-
-@require_GET
-def informes(request):
-    """Informes y mapas en PDF ya publicados en la portada del sitio."""
-    return render(request, "parciales/informes.html", {"informes": informes_publicados.leer(), "url": settings.INFORMES_URL})
 
 
 @require_GET

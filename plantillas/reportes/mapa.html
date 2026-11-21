@@ -71,7 +71,6 @@
           <a href="{% url 'reportes:descargas' %}">Descargar capas</a>
         </nav>
         <div id="cerca" hx-get="{% url 'reportes:cerca' %}" hx-trigger="load" hx-swap="innerHTML"></div>
-        <div id="informes" hx-get="{% url 'reportes:informes' %}" hx-trigger="load" hx-swap="innerHTML"></div>
         {% include "parciales/firma.html" %}
       </div>
     </div>

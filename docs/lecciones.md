@@ -4,6 +4,8 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 
 ## 2026-11-21 · Puesta en producción
 
+- **Los informes en PDF van solo en la portada (indicación de Julián).** Los había puesto también bajo «Cerca de aquí» en el mapa al leer «pon todo lo nuevo». *Qué se hace:* se quitó la sección; el código quedó en `Archivo/informes-en-riesgos/`. Antes de repetir en el mapa algo que ya está en la portada, se pregunta.
+
 - **El satélite no llega igual de cerca en todas las islas.** Al abrir el centro de acopio en San Cristóbal, el mapa mostraba teselas grises con «Map data not yet available». El proveedor responde con esa imagen en vez de un error, así que no se puede detectar. *Qué se hace:* el satélite se pide hasta el zoom 16 y de ahí se amplía. Lo vi por mirar el mapa en otra isla; todas mis pruebas anteriores eran en Puerto Ayora.
 
 - **Un centro de acopio no es un reporte de paso (lo pidió Julián: «un corazón en la USFQ San Cristóbal»).** Faltaban tres cosas: nombre propio, varias fotos y un plazo que no lo borre a los tres días. *Qué se hace:* los avisos tienen `titulo` opcional y fotos adicionales; coordinación puede fijar el vencimiento; y hay una orden, `manage.py crear_aviso`, para crearlos confirmados y visibles. «Dónde donar o colaborar» pasa a pin rosa con corazón, el mismo rosa de los corazones de `/mapas`.

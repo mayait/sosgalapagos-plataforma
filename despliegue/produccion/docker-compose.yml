@@ -29,8 +29,6 @@ x-plataforma: &plataforma
   volumes:
     - medios:/medios
     - /srv/sosgalapagos-clima:/srv/clima:ro
-    # Informes y mapas en PDF de la portada: se lee su índice para enlazarlos desde el mapa.
-    - /srv/sosgalapagos-descargas:/srv/descargas:ro
     # Relieve propio del 3D (teselas de cota). Se sube con rsync; ver despliegue/servidor.md.
     - /srv/sosgalapagos-relieve3d:/relieve:ro
   depends_on:

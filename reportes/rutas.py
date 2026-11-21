@@ -8,7 +8,6 @@ urlpatterns = [
     path("reportar/", vistas.reportar, name="reportar"),
     path("cerca/", vistas.cerca, name="cerca"),
     path("lluvia/", vistas.lluvia, name="lluvia"),
-    path("informes/", vistas.informes, name="informes"),
     path("informe/", vistas.informe, name="informe"),
     path("descargas/", vistas.descargas, name="descargas"),
     path("r/<str:id_publico>/", vistas.ficha, name="ficha"),

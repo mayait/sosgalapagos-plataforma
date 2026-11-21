@@ -145,10 +145,6 @@ CLIMA_HORARIO = entorno("CLIMA_HORARIO", "https://sosgalapagos.org/clima/datos/h
 RELIEVE_DIR = Path(entorno("RELIEVE_DIR", RAIZ / ".copia-mapas" / "teselas" / "relieve3d"))
 RELIEVE_URL = "/riesgos/relieve3d/"
 
-# Informes y mapas en PDF de la portada: carpeta con indice.json (ver reportes/informes.py).
-INFORMES_DIR = Path(entorno("INFORMES_DIR", "/srv/descargas"))
-INFORMES_URL = entorno("INFORMES_URL", "/descargas/")
-
 # ── Reglas de vida del reporte (PRELIMINARES; ver reportes/reglas.py) ─────────
 DUPLICADO_METROS = 50          # mismo tipo y más cerca que esto = confirmación del existente
 YA_BAJO_PARA_CERRAR = 2        # confirmaciones «ya bajó» de dispositivos distintos
