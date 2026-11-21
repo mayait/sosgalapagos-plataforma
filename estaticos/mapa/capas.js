@@ -690,6 +690,8 @@
 
   SOS.capas = {
     globo, revisar, conV, pista,
+    manifiesto: () => estado.manifiesto,
+    datos: datosUrl,
     async iniciar(mapa) {
       estado.mapa = mapa;
       document.getElementById('capas-abrir').addEventListener('click', abrir);
