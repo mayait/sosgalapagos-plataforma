@@ -28,6 +28,7 @@ def _propiedades(r):
         "id": r.id_publico,
         "tipo": r.tipo.codigo,
         "tipo_nombre": r.tipo.nombre,
+        "clase": r.tipo.clase,  # riesgo, bueno o ayuda
         "icono": r.tipo.icono,
         "gravedad": r.gravedad,
         "profundidad": r.profundidad,

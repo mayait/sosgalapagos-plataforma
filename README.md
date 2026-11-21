@@ -12,6 +12,7 @@ Un mapa único donde la gente reporta **lugares de riesgo o peligro con fecha**,
 
 - **Mapa** a pantalla completa en el teléfono y con panel lateral en el escritorio. Abre en satélite con la capa de riesgo encima; sin señal usa una base gris propia de 5 MB.
 - **Reportar** sin cuenta: foto, qué pasa, hasta dónde llega el agua y dónde es.
+- **Tres clases de aviso:** un peligro, algo bueno (pin amarillo con corazón) y dónde donar o colaborar (pin negro con caja de regalo).
 - **Los reportes vencen solos.** Cada tipo tiene su plazo (de 6 a 72 horas). El pin se destiñe con la edad y desaparece al vencer.
 - **«Sigue ahí»** renueva el plazo. **Dos «ya bajó»** de teléfonos distintos cierran el reporte.
 - **Duplicados:** un reporte del mismo tipo a menos de 50 m de uno vivo cuenta como confirmación.

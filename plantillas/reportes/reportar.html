@@ -28,13 +28,18 @@
   <section x-show="paso === 2">
     <h1 class="form-titulo">¿Qué está pasando?</h1>
     <p class="form-ayuda">Elige lo que más se parece.</p>
+    {# Tres clases de aviso: un peligro, algo bueno y dónde ayudar #}
+    {% regroup tipos by get_clase_display as grupos %}
+    {% for grupo in grupos %}
+    <div class="campo-titulo">{{ grupo.grouper }}</div>
     <div class="rejilla">
-      {% for t in tipos %}
-      <button type="button" class="opcion" :aria-pressed="tipo === '{{ t.codigo }}'" @click="elegirTipo('{{ t.codigo }}')">
+      {% for t in grupo.list %}
+      <button type="button" class="opcion clase-{{ t.clase }}" :aria-pressed="tipo === '{{ t.codigo }}'" @click="elegirTipo('{{ t.codigo }}', '{{ t.clase }}')">
         <svg><use href="#i-{{ t.icono }}"/></svg>{{ t.nombre }}
       </button>
       {% endfor %}
     </div>
+    {% endfor %}
   </section>
 
   {# 3 · Profundidad #}
@@ -71,15 +76,15 @@
     </div>
     <p class="mini-nota" x-text="textoUbicacion"></p>
 
-    <div class="campo-titulo">¿Se puede pasar?</div>
-    <div class="chips">
+    <div class="campo-titulo" x-show="clase === 'riesgo'">¿Se puede pasar?</div>
+    <div class="chips" x-show="clase === 'riesgo'">
       {% for valor, nombre in gravedades %}
       <button type="button" :aria-pressed="gravedad === '{{ valor }}'" @click="gravedad = '{{ valor }}'">{{ nombre }}</button>
       {% endfor %}
     </div>
 
-    <div class="campo-titulo">Nota (opcional)</div>
-    <textarea class="nota" maxlength="280" x-model="nota" placeholder="Ejemplo: el agua corre fuerte hacia la esquina"></textarea>
+    <div class="campo-titulo" x-text="clase === 'riesgo' ? 'Nota (opcional)' : 'Cuéntalo en una línea'"></div>
+    <textarea class="nota" maxlength="280" x-model="nota" :placeholder="ejemploDeNota"></textarea>
     <p class="nota-ayuda">No escribas nombres, teléfonos ni cédulas. La foto y la nota se publican cuando coordinación las revise; el punto aparece de inmediato.</p>
 
     <p class="form-error" x-show="error" x-text="error" role="alert"></p>

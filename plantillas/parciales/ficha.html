@@ -2,11 +2,11 @@
 <article class="ficha" data-ficha="{{ r.id_publico }}" data-lon="{{ r.punto.x|stringformat:'f' }}" data-lat="{{ r.punto.y|stringformat:'f' }}">
   <button class="ficha-volver" type="button" data-cerrar-ficha>← Volver a la lista</button>
   <header class="ficha-cabecera">
-    <span class="fila-icono estado-{{ r.estado }}"><svg><use href="#i-{{ r.tipo.icono }}"/></svg></span>
+    <span class="fila-icono estado-{{ r.estado }} clase-{{ r.tipo.clase }}"><svg><use href="#i-{{ r.tipo.icono }}"/></svg></span>
     <div>
       <h2 class="ficha-titulo">{{ r.tipo.nombre }}</h2>
       <span class="etiqueta estado-{{ r.estado }}">{{ r.get_estado_display }}</span>
-      <span class="etiqueta gravedad-{{ r.gravedad }}">{{ r.get_gravedad_display }}</span>
+      {% if r.tipo.clase == "riesgo" %}<span class="etiqueta gravedad-{{ r.gravedad }}">{{ r.get_gravedad_display }}</span>{% endif %}
     </div>
   </header>
 
@@ -21,7 +21,7 @@
     {% if r.profundidad != "sin_dato" %}<li><span>Agua</span> {{ r.get_profundidad_display|lower }}</li>{% endif %}
     {% if r.zona %}<li><span>Zona</span> {{ r.zona.nombre }}</li>{% endif %}
     <li><span>Fuente</span> {{ r.get_fuente_display }}</li>
-    <li><span>Avisos</span> {{ sigue }} «sigue ahí» · {{ bajo }} «ya bajó»</li>
+    <li><span>Avisos</span> {{ sigue }} «sigue ahí» · {{ bajo }} «{% if r.tipo.clase == "riesgo" %}ya bajó{% else %}ya no está{% endif %}»</li>
   </ul>
 
   {% if r.nota and r.contenido_visible %}<p class="ficha-nota">{{ r.nota }}</p>{% endif %}
@@ -30,8 +30,8 @@
   {% if r.estado != "cerrado" %}
   <div class="ficha-botones">
     <button class="boton lleno" hx-post="{% url 'reportes:confirmar' r.id_publico %}" hx-vals='{"tipo":"sigue_ahi"}' hx-target="#detalle">Sigue ahí<small>Lo estoy viendo ahora</small></button>
-    <button class="boton" hx-post="{% url 'reportes:confirmar' r.id_publico %}" hx-vals='{"tipo":"ya_bajo"}' hx-target="#detalle">Ya bajó<small>Ya se puede pasar</small></button>
+    <button class="boton" hx-post="{% url 'reportes:confirmar' r.id_publico %}" hx-vals='{"tipo":"ya_bajo"}' hx-target="#detalle">{% if r.tipo.clase == "riesgo" %}Ya bajó<small>Ya se puede pasar</small>{% else %}Ya no está<small>Ya terminó o cerró</small>{% endif %}</button>
   </div>
   {% endif %}
-  <p class="ficha-pie">Reporte {{ r.id_publico }}. Lo hizo la comunidad; no es un dato oficial. Si hay peligro de vida, llama al 911.</p>
+  <p class="ficha-pie">Reporte {{ r.id_publico }}. Lo hizo la comunidad; no es un dato oficial.{% if r.tipo.clase == "riesgo" %} Si hay peligro de vida, llama al 911.{% endif %}</p>
 </article>
