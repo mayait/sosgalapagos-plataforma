@@ -115,8 +115,8 @@ def prueba_el_mapa_lee_las_capas_de_lo_que_publica_mapas(client):
     assert {"lluvia", "hidrografia"} <= set(configuracion["capasSiempreGrupos"])
 
 
-def prueba_el_mapa_abre_en_satelite(client):
-    assert client.get("/riesgos/").context["configuracion"]["baseInicial"] == "satelite"
+def prueba_el_mapa_abre_en_calles(client):
+    assert client.get("/riesgos/").context["configuracion"]["baseInicial"] == "calles"
 
 
 def prueba_el_mapa_no_lista_los_informes_en_pdf(client):

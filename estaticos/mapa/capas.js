@@ -702,7 +702,7 @@
       }
       ordenar(m);
       // Mapa base al abrir: el que la persona eligió la última vez o, si no, el de los ajustes
-      // (satélite). Sin conexión se queda la base gris, que está guardada en el teléfono.
+      // (calles). Sin conexión se queda la base gris, que está guardada en el teléfono.
       let base = SOS.cfg.baseInicial || 'gris';
       try { base = localStorage.getItem(BASE_GUARDADA) || base; } catch (err) { /* sin acceso */ }
       const def = (m.mapas_base || []).find((x) => x.id === base);

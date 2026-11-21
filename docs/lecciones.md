@@ -4,6 +4,8 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 
 ## 2026-11-21 · Puesta en producción
 
+- **`/riesgos/` abre en calles (indicación de Julián).** Antes abría en satélite. *Qué se hace:* `MAPA_BASE_INICIAL = "calles"`. Quien ya eligió otra base la conserva, porque el mapa recuerda la elección de cada persona. De paso se corrigió que con calles o topográfico los nombres salían dos veces (los de la imagen y los del mapa propio encima).
+
 - **Los informes en PDF van solo en la portada (indicación de Julián).** Los había puesto también bajo «Cerca de aquí» en el mapa al leer «pon todo lo nuevo». *Qué se hace:* se quitó la sección; el código quedó en `Archivo/informes-en-riesgos/`. Antes de repetir en el mapa algo que ya está en la portada, se pregunta.
 
 - **El satélite no llega igual de cerca en todas las islas.** Al abrir el centro de acopio en San Cristóbal, el mapa mostraba teselas grises con «Map data not yet available». El proveedor responde con esa imagen en vez de un error, así que no se puede detectar. *Qué se hace:* el satélite se pide hasta el zoom 16 y de ahí se amplía. Lo vi por mirar el mapa en otra isla; todas mis pruebas anteriores eran en Puerto Ayora.

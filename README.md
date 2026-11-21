@@ -10,7 +10,7 @@ Un mapa único donde la gente reporta **lugares de riesgo o peligro con fecha**,
 
 ## Qué hace hoy (fase 1)
 
-- **Mapa** a pantalla completa en el teléfono y con panel lateral en el escritorio. Abre en satélite con la capa de riesgo encima; sin señal usa una base gris propia de 5 MB.
+- **Mapa** a pantalla completa en el teléfono y con panel lateral en el escritorio. Abre en calles con la capa de riesgo encima; sin señal usa una base gris propia de 5 MB.
 - **Reportar** sin cuenta: foto (de la cámara o de la galería), qué pasa, hasta dónde llega el agua y dónde es. Con una pulsación larga en el mapa se reporta en ese punto.
 - **Informe** (`/riesgos/informe/`): línea del tiempo con todos los reportes y la lluvia por hora, con filtros por isla, zona, clase y fechas.
 - **Descargar capas** (`/riesgos/descargas/`): todas las capas en Shapefile y GeoJSON.

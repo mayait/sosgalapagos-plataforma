@@ -104,10 +104,10 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # Vista inicial: centro de Puerto Ayora, a nivel de calles (ver docs/visual-mapa.md).
 MAPA_CENTRO = (-90.3145, -0.7435)  # longitud, latitud
 MAPA_ZOOM = 16
-# Mapa base al abrir: «satelite» con la capa de riesgo encima es la vista preferida
-# (Julián, 21-nov-2026). Son teselas de un tercero (Esri): sin conexión el mapa usa la
-# base gris propia, que va guardada en el teléfono. Otras: gris, calles, topografico.
-MAPA_BASE_INICIAL = "satelite"
+# Mapa base al abrir: «calles» (Julián, 21-nov-2026; antes fue «satelite»). Es el mismo
+# con el que abre /mapas. Son teselas de un tercero (OpenStreetMap): sin conexión el mapa
+# usa la base gris propia, que va guardada en el teléfono. Otras: gris, satelite, topografico.
+MAPA_BASE_INICIAL = "calles"
 
 # Capas de riesgo: se leen de lo mismo que publica /mapas (repo sosgalapagos-datos):
 #   capas.json       manifiesto de grupos, capas, estilos y leyendas
