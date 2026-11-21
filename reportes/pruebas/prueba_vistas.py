@@ -214,3 +214,17 @@ def prueba_crear_aviso_de_coordinacion_con_titulo_fotos_y_plazo_largo(client, se
     assert "Centro de acopio USFQ San Cristóbal" in ficha and ficha.count("data-foto=") == 2
     p = json.loads(client.get("/riesgos/api/reportes/vivos.geojson").content)["features"][0]["properties"]
     assert p["titulo"] == "Centro de acopio USFQ San Cristóbal" and p["icono"] == "corazon" and p["clase"] == "ayuda"
+
+
+@pytest.mark.django_db
+def prueba_el_mapa_trae_buscador_y_enlaces_del_pie(client):
+    """/riesgos/ es el mapa único: lleva el buscador, «Mis puntos» y, bajo la firma, los enlaces."""
+    html = client.get("/riesgos/").content.decode()
+    assert 'id="buscar-abrir"' in html and 'id="mis-puntos"' in html
+    assert "mapa/buscar.js" in html
+    pie = html[html.index('class="firma"'):]
+    assert 'href="/clima/"' in pie
+    assert 'href="/riesgos/descargas/"' in pie
+    assert "github.com/mayait/sosgalapagos-plataforma" in pie
+    # El visor de /mapas ya no se enlaza: de /mapas/ solo se leen los datos.
+    assert 'href="/mapas/"' not in html

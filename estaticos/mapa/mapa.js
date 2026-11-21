@@ -411,7 +411,8 @@
     const enlace = `${cfg.reportar}?lat=${lngLat.lat.toFixed(6)}&lon=${lngLat.lng.toFixed(6)}`;
     aqui = new maplibregl.Popup({ className: 'aqui', closeButton: true, maxWidth: '220px', offset: 6 })
       .setLngLat(lngLat)
-      .setHTML(`<a class="reportar compacto en-globo" href="${enlace}">Reportar aquí</a>`)
+      .setHTML(`<a class="reportar compacto en-globo" href="${enlace}">Reportar aquí</a>`
+        + `<button type="button" class="enlace-boton" data-guardar-punto="${lngLat.lat.toFixed(6)},${lngLat.lng.toFixed(6)}">Guardar en mis puntos</button>`)
       .addTo(mapa);
     if (navigator.vibrate) navigator.vibrate(12);
   }
@@ -534,6 +535,7 @@
     ponerCapasDeReportes();
     await traerReportes(true);
     SOS.capas.iniciar(mapa);
+    SOS.buscador.iniciar(mapa);
 
     mapa.on('click', 'reportes-pin', (e) => { e.preventDefault(); abrirFicha(e.features[0].properties.id); });
     mapa.on('click', 'reportes-grupo', async (e) => {

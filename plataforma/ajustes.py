@@ -98,6 +98,9 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 8 * 1024 * 1024
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 X_FRAME_OPTIONS = "SAMEORIGIN"  # igual que la cabecera que ya pone Caddy
+# OpenStreetMap rechaza las teselas pedidas sin decir desde qué sitio (403 «Access blocked»).
+# Django por defecto no envía el origen a otros dominios; aquí se envía solo el dominio, nunca la ruta.
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # ── Mapa ──────────────────────────────────────────────────────────────────────

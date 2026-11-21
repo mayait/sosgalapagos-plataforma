@@ -16,6 +16,13 @@
     </div>
   </div>
 
+  <button class="buscar-boton flotante" type="button" id="buscar-abrir" aria-label="Buscar una calle, un barrio o un lugar"><svg><use href="#i-lupa"/></svg></button>
+  <div class="buscar flotante" id="buscar" role="search" hidden>
+    <svg aria-hidden="true"><use href="#i-lupa"/></svg>
+    <input type="search" id="buscar-texto" placeholder="Calle, barrio, lugar o lat, lon" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Buscar en el mapa" aria-controls="buscar-resultados">
+    <button type="button" id="buscar-cerrar" aria-label="Cerrar el buscador">×</button>
+    <ul id="buscar-resultados" role="listbox" hidden></ul>
+  </div>
   <button class="capas-boton flotante" type="button" id="capas-abrir">Capas</button>
   <section class="capas-panel flotante" id="capas-panel" hidden aria-label="Capas del mapa">
     <div class="capas-cabecera"><span>Capas</span><button type="button" id="capas-cerrar" aria-label="Cerrar capas">×</button></div>
@@ -68,9 +75,9 @@
       <div id="lista">
         <nav class="atajos" aria-label="Más">
           <a href="{% url 'reportes:informe' %}">Informe: línea del tiempo y lluvia</a>
-          <a href="{% url 'reportes:descargas' %}">Descargar capas</a>
         </nav>
         <div id="cerca" hx-get="{% url 'reportes:cerca' %}" hx-trigger="load" hx-swap="innerHTML"></div>
+        <section id="mis-puntos" class="mis-puntos" aria-label="Mis puntos"></section>
         {% include "parciales/firma.html" %}
       </div>
     </div>
@@ -87,5 +94,6 @@
 <script src="{% propio 'mapa/comun.js' %}"></script>
 <script src="{% propio 'mapa/base.js' %}"></script>
 <script src="{% propio 'mapa/capas.js' %}"></script>
+<script src="{% propio 'mapa/buscar.js' %}"></script>
 <script src="{% propio 'mapa/mapa.js' %}"></script>
 {% endblock %}
