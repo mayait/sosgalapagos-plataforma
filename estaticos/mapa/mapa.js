@@ -7,11 +7,17 @@
   const SONDEO_MS = 4000;       // cada cuánto se pregunta si hay reportes nuevos
   const OPACIDAD_MINIMA = 0.4;  // un reporte a punto de vencer no desaparece del todo
 
+  // Enlace a un punto, igual que en /mapas: /mapa/#lat,lon,zoom
+  const enlace = (() => {
+    const m = decodeURIComponent(location.hash.slice(1)).match(/^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)(?:,(\d+(?:\.\d+)?))?$/);
+    return m && Math.abs(+m[1]) <= 90 && Math.abs(+m[2]) <= 180 ? { centro: [+m[2], +m[1]], zoom: Math.min(19, +(m[3] || 16)) } : null;
+  })();
+
   const mapa = new maplibregl.Map({
     container: 'mapa',
     style: SOS.estiloBase(),
-    center: cfg.centro,
-    zoom: cfg.zoom,
+    center: enlace ? enlace.centro : cfg.centro,
+    zoom: enlace ? enlace.zoom : cfg.zoom,
     minZoom: 7,
     maxZoom: 19,
     maxPitch: 75,
@@ -209,7 +215,7 @@
   function cerrarFicha() {
     detalle.innerHTML = '';
     cerca.hidden = false;
-    history.replaceState(null, '', location.pathname);
+    history.replaceState(null, '', location.pathname + location.hash);
   }
   // Las capas de /mapas con fotos o texto largo (reportes de campo) se leen aquí, no en un globo.
   SOS.mostrarDetalle = function (html, lngLat) {
@@ -226,7 +232,7 @@
     if (!ficha) return;
     abrirHoja(true);
     hoja.querySelector('.hoja-cuerpo').scrollTop = 0;
-    history.replaceState(null, '', '?r=' + ficha.dataset.ficha);
+    history.replaceState(null, '', '?r=' + ficha.dataset.ficha + location.hash);
   });
   document.body.addEventListener('click', (e) => {
     if (e.target.closest('[data-cerrar-ficha]')) cerrarFicha();
@@ -251,6 +257,9 @@
     actualizarVacio();
     clearTimeout(espera);
     espera = setTimeout(() => {
+      // La URL sigue al mapa (lat,lon,zoom), para poder copiar el enlace de lo que se está viendo.
+      const v = mapa.getCenter();
+      history.replaceState(null, '', `${location.pathname}${location.search}#${v.lat.toFixed(5)},${v.lng.toFixed(5)},${Math.round(mapa.getZoom() * 10) / 10}`);
       pedirCerca();
       // La franja de lluvia cambia solo si el mapa pasó a otra zona de clima.
       const c = mapa.getCenter();

@@ -4,6 +4,17 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 
 ## 2026-11-21 · Fase 1
 
+- **`/mapas` cambió y el mapa no sabía dibujar parte de lo nuevo (lo pidió revisar Julián).** Entre las 09:15 y las 11:13 el manifiesto pasó de 56 a 59 capas y estrenó formas de estilo. Lo que faltaba:
+  - **Rangos numéricos** (`clasificar.rangos`, en «Población por manzana»): encender esa capa lanzaba un error.
+  - **`fill: false`** (límite urbano): se dibujaba con relleno.
+  - **Trazo discontinuo según el dato** (`estilo_si`, áreas por validar): salían con línea continua.
+  - **Áreas dentro de una capa de líneas** (el agua empozada del flujo observado): sin relleno.
+  - **Reportes de campo:** `/mapas` ahora marca con borde punteado la ubicación aproximada, usa un triángulo para el aviso sin foto y pinta los refugios en verde. Se adoptó el mismo significado, conservando el cuadrado.
+  - **Borde oscuro** en los puntos que caen en susceptibilidad alta o media.
+  - **Enlaces a un lugar** (`#ptoayora`, `#la-cascada`, `#lat,lon,zoom`): ahora también funcionan en `/mapa/`.
+  *Qué se hace:* todo eso está corregido, y hay una orden que lo vigila: `manage.py revisar_capas` baja el manifiesto publicado y avisa de cualquier tipo de capa o clave de estilo que el mapa no conozca.
+- **Revisar «que las capas se ven» no es encender tres.** Los fallos estaban en capas apagadas por defecto. *Qué se hace:* la revisión enciende las 59 capas una por una y recoge los errores del mapa.
+
 - **Otro equipo actualiza los modelos mientras el mapa está en uso (aviso de Julián).** El 21-nov se publicaron varias versiones de `/mapas` en una mañana: reportes de campo por lotes, la susceptibilidad ajustada con lo observado y una capa nueva del flujo observado. El mapa pedía las capas sin versión, y el navegador, Cloudflare (10 min) y el service worker podían seguir mostrando un modelo viejo. *Qué se hace:*
   - Cada publicación de `/mapas` deja su versión en `version.txt`. El mapa la pega a todas las direcciones de capas, teselas y descargas (`?v=…`).
   - Con el mapa abierto, cada 2 minutos pregunta si hay publicación nueva. Si la hay, vuelve a dibujar lo encendido con los datos nuevos y avisa: «Capas y modelos actualizados».

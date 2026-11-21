@@ -33,6 +33,7 @@ Plataforma de reportes de riesgo de SOS Galápagos: un mapa único donde la gent
 - **Horas:** en la base, UTC. En pantalla, hora de Galápagos (UTC−6).
 - **En la Mac no hay Docker:** se usa `container` (Apple). Ver `despliegue/local.sh`.
 - **Las capas cambian en vivo.** Otro equipo publica modelos y capas en `/mapas` varias veces al día. Toda dirección de capa, tesela o descarga pasa por `conV()` (`estaticos/mapa/capas.js`), que le pone la versión publicada. Nunca se escribe una dirección de `/mapas` sin versión.
+- **Después de cada publicación de `/mapas`:** `despliegue/local.sh revisar_capas`. Si avisa de algo nuevo, se enseña a `estaticos/mapa/capas.js` y se añade a la lista de la orden.
 - **Lecciones:** los errores y las decisiones se anotan en [`docs/lecciones.md`](docs/lecciones.md).
 
 ## Mapa rápido

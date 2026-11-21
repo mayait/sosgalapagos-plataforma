@@ -33,14 +33,25 @@
     const c = capa.clasificar;
     let base = (capa.estilo && capa.estilo[clave]) ?? defecto;
     if (!c) return base;
+    if (c.rangos) {
+      // Rangos numéricos (p. ej. población por manzana): gana el primero cuyo tope alcanza al valor.
+      if (!c.rangos.some((r) => r[clave] != null)) return base;
+      const n = ['coalesce', ['to-number', ['get', c.propiedad], 0], 0];
+      return ['case', ...c.rangos.flatMap((r) => [['<=', n, r.hasta], r[clave] ?? base]), base];
+    }
     if (c.otro && c.otro[clave] != null) base = c.otro[clave]; // clase para lo que no entra en ninguna
     const pares = [];
-    for (const [valor, estilo] of Object.entries(c.valores)) {
+    for (const [valor, estilo] of Object.entries(c.valores || {})) {
       if (estilo[clave] != null) pares.push(valor, estilo[clave]);
     }
     return pares.length ? ['match', texto(c.propiedad), ...pares, base] : base;
   }
   const trazo = (d) => (d ? d.split(/[ ,]+/).map(Number) : null);
+
+  // Condición de una regla «estilo_si» del manifiesto (igual_a / distinto_de) como expresión.
+  function condicionDe(regla) {
+    return regla.igual_a !== undefined ? ['==', ['get', regla.propiedad], regla.igual_a] : ['!=', ['get', regla.propiedad], regla.distinto_de];
+  }
 
   function filtroDe(capa) {
     const f = capa.filtro;
@@ -70,27 +81,34 @@
   // Las capas con «marcador: reporte» (los reportes ciudadanos que publica /mapas) no se
   // dibujan como círculos: llevan un cuadrado redondeado con un iconito. Así no se confunden
   // con los pines de los reportes nuevos, que son redondos.
-  //   cámara = trae fotos · casa = refugio · signo de admiración = aviso sin foto
+  // Significan lo mismo que en /mapas, que los dibuja como gotas:
+  //   cámara = trae fotos · triángulo = aviso sin foto · casa verde = refugio
+  //   borde punteado oscuro = ubicación aproximada o por confirmar
+  const VERDE_REFUGIO = '#16a34a';
   const GLIFOS = {
-    foto: (color) => `<path d="M4.5 9.2h3l1.5-2.2h6l1.5 2.2h3v8.6h-15z" fill="#ffffff" stroke="none"/><circle cx="12" cy="13.3" r="2.7" fill="${color}" stroke="none"/>`,
-    refugio: () => '<path d="M4.5 12L12 6l7.5 6"/><path d="M7 10.5V18h10v-7.5"/>',
-    aviso: () => '<path d="M12 6.5v7" stroke-width="2.6"/><path d="M12 17.2v.3" stroke-width="2.6"/>',
+    foto: (color, tinta) => `<path d="M4.5 9.2h3l1.5-2.2h6l1.5 2.2h3v8.6h-15z" fill="${tinta}" stroke="none"/><circle cx="12" cy="13.3" r="2.7" fill="${color}" stroke="none"/>`,
+    aviso: (color, tinta) => `<path d="M12 5.6l7 12.2H5z" fill="${tinta}" stroke="${tinta}" stroke-width="1.2" stroke-linejoin="round"/><rect x="11.2" y="9.8" width="1.6" height="4.2" fill="${color}" stroke="none"/><circle cx="12" cy="15.8" r="1" fill="${color}" stroke="none"/>`,
+    refugio: (color, tinta) => `<path d="M4.5 12L12 6l7.5 6" stroke="${tinta}"/><path d="M7 10.5V18h10v-7.5" stroke="${tinta}"/>`,
   };
   function clasesDe(capa) {
-    const c = capa.clasificar || { valores: {} };
-    const lista = Object.entries(c.valores).map(([valor, v]) => [valor, v.fillColor || '#888888']);
+    const c = capa.clasificar || {};
+    const lista = Object.entries(c.valores || {}).map(([valor, v]) => [valor, v.fillColor || '#888888']);
     lista.push(['otro', (c.otro && c.otro.fillColor) || (capa.estilo && capa.estilo.fillColor) || '#888888']);
     return lista;
   }
   function prepararMarcadores(capa) {
     const tareas = [];
-    for (const [valor, color] of clasesDe(capa)) {
-      for (const [glifo, trazo] of Object.entries(GLIFOS)) {
-        const nombre = `marc-${capa.id}-${valor}-${glifo}`;
+    const variantes = clasesDe(capa).flatMap(([valor, color]) => ['foto', 'aviso'].map((g) => [valor, color, g]));
+    variantes.push(['refugio', VERDE_REFUGIO, 'refugio']);
+    for (const [valor, color, glifo] of variantes) {
+      for (const aprox of [false, true]) {
+        const nombre = `marc-${capa.id}-${valor}-${glifo}${aprox ? '-aprox' : ''}`;
         if (estado.mapa.hasImage(nombre)) continue;
+        const tinta = color.toLowerCase() === '#facc15' ? '#422006' : '#ffffff'; // sobre amarillo, tinta oscura
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 28 28">
           <rect x="2" y="2" width="24" height="24" rx="7" fill="${color}" stroke="#ffffff" stroke-width="2.4"/>
-          <g transform="translate(2 2)" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${trazo(color)}</g></svg>`;
+          ${aprox ? '<rect x="2" y="2" width="24" height="24" rx="7" fill="none" stroke="#111111" stroke-width="1.3" stroke-dasharray="3 2.5"/>' : ''}
+          <g transform="translate(2 2)" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${GLIFOS[glifo](color, tinta)}</g></svg>`;
         tareas.push(new Promise((listo) => {
           const img = new Image(56, 56);
           img.onload = () => { if (!estado.mapa.hasImage(nombre)) estado.mapa.addImage(nombre, img, { pixelRatio: 2 }); listo(); };
@@ -103,13 +121,15 @@
   }
   function capaDeMarcadores(capa, fuente) {
     const c = capa.clasificar;
-    const valores = c ? Object.keys(c.valores) : [];
-    const clase = c ? ['match', texto(c.propiedad), valores, texto(c.propiedad), 'otro'] : 'otro';
+    const valores = c ? Object.keys(c.valores || {}) : [];
+    const esRefugio = ['==', ['get', 'tipo'], 'refugio'];
+    const clase = ['case', esRefugio, 'refugio', valores.length ? ['match', texto(c.propiedad), valores, texto(c.propiedad), 'otro'] : 'otro'];
     const conFotos = ['all', ['has', 'fotos'], ['>', ['length', ['get', 'fotos']], 0]];
-    const glifo = ['case', ['==', ['get', 'tipo'], 'refugio'], 'refugio', conFotos, 'foto', 'aviso'];
+    const glifo = ['case', esRefugio, 'refugio', conFotos, 'foto', 'aviso'];
+    const aprox = ['case', ['in', ['coalesce', ['get', 'precision'], ''], ['literal', ['aproximada', 'por_confirmar']]], '-aprox', ''];
     return {
       id: fuente + '-marcador', type: 'symbol',
-      layout: { 'icon-image': ['concat', `marc-${capa.id}-`, clase, '-', glifo], 'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.7, 16, 1], 'icon-allow-overlap': true, 'icon-ignore-placement': true },
+      layout: { 'icon-image': ['concat', `marc-${capa.id}-`, clase, '-', glifo, aprox], 'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.7, 16, 1], 'icon-allow-overlap': true, 'icon-ignore-placement': true },
     };
   }
 
@@ -138,7 +158,7 @@
       if (capa.patron) {
         ponerRayado(mapa, capa.patron);
         agregar({ id: fuente + '-relleno', type: 'fill', paint: { 'fill-pattern': capa.patron.id } });
-      } else if ((e.fillOpacity ?? 0.2) > 0 || capa.clasificar) {
+      } else if (e.fill !== false && ((e.fillOpacity ?? 0.2) > 0 || capa.clasificar)) {
         agregar({
           id: fuente + '-relleno', type: 'fill',
           paint: {
@@ -150,17 +170,31 @@
       if ((e.weight ?? 1) > 0) {
         const pintura = { 'line-color': porClase(capa, 'color', '#3388ff'), 'line-width': porClase(capa, 'weight', 1.5), 'line-opacity': e.opacity ?? 1 };
         if (e.dashArray) pintura['line-dasharray'] = trazo(e.dashArray);
-        agregar({ id: fuente + '-borde', type: 'line', paint: pintura });
+        // «estilo_si» con trazo discontinuo (áreas por validar): esas entidades van en su propia
+        // capa, porque MapLibre no admite el trazo por elemento.
+        const regla = (capa.estilo_si || []).find((r) => r.estilo && r.estilo.dashArray);
+        if (regla) {
+          const cond = condicionDe(regla);
+          agregar({ id: fuente + '-borde', type: 'line', filter: filtro ? ['all', filtro, ['!', cond]] : ['!', cond], paint: pintura });
+          agregar({ id: fuente + '-borde-si', type: 'line', filter: filtro ? ['all', filtro, cond] : cond, paint: Object.assign({}, pintura, { 'line-dasharray': trazo(regla.estilo.dashArray) }) });
+        } else agregar({ id: fuente + '-borde', type: 'line', paint: pintura });
       }
     }
 
     if (capa.tipo === 'linea') {
       const forma = { 'line-cap': 'round', 'line-join': 'round' };
+      // Una capa de líneas puede traer áreas (el agua empozada del flujo observado): se rellenan.
+      if (capa.clasificar && Object.values(capa.clasificar.valores || {}).some((v) => v.fillColor)) {
+        agregar({
+          id: fuente + '-area', type: 'fill', filter: ['==', ['geometry-type'], 'Polygon'],
+          paint: { 'fill-color': porClase(capa, 'fillColor', 'rgba(0,0,0,0)'), 'fill-opacity': porClase(capa, 'fillOpacity', 0.2) },
+        });
+      }
       if (capa.borde) {
         agregar({ id: fuente + '-halo', type: 'line', layout: forma, paint: { 'line-color': capa.borde.color, 'line-width': capa.borde.weight, 'line-opacity': capa.borde.opacity ?? 1 } });
       }
       // MapLibre no admite trazo discontinuo por elemento: las clases con trazo van en su propia capa.
-      const conTrazo = capa.clasificar ? Object.entries(capa.clasificar.valores).filter(([, v]) => v.dashArray) : [];
+      const conTrazo = capa.clasificar ? Object.entries(capa.clasificar.valores || {}).filter(([, v]) => v.dashArray) : [];
       const pintura = { 'line-color': porClase(capa, 'color', '#3388ff'), 'line-width': porClase(capa, 'weight', 2), 'line-opacity': porClase(capa, 'opacity', 1) };
       if (e.dashArray) pintura['line-dasharray'] = trazo(e.dashArray);
       const solidas = { id: fuente + '-linea', type: 'line', layout: e.dashArray ? {} : forma, paint: pintura };
@@ -183,9 +217,14 @@
     } else if (capa.tipo === 'punto' && !capa.solo_rotulo) {
       agregar({
         id: fuente + '-punto', type: 'circle',
-        paint: { 'circle-radius': e.radius || 6, 'circle-color': porClase(capa, 'fillColor', '#3388ff'), 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1.5 },
+        paint: {
+          'circle-radius': e.radius || 6, 'circle-color': porClase(capa, 'fillColor', '#3388ff'),
+          // Borde oscuro y grueso: el punto cae en susceptibilidad alta o media (igual que en /mapas).
+          'circle-stroke-color': ['case', ['to-boolean', ['get', 'en_susc_alta_media']], '#111827', '#ffffff'],
+          'circle-stroke-width': ['case', ['to-boolean', ['get', 'en_susc_alta_media']], 2.5, 1.5],
+        },
       });
-      const simbolos = capa.clasificar ? Object.entries(capa.clasificar.valores).filter(([, v]) => v.simbolo) : [];
+      const simbolos = capa.clasificar ? Object.entries(capa.clasificar.valores || {}).filter(([, v]) => v.simbolo) : [];
       if (simbolos.length) {
         agregar({
           id: fuente + '-simbolo', type: 'symbol',
@@ -314,19 +353,37 @@
 
   // ── Leyendas ──────────────────────────────────────────────────────────────
   function leyenda(capa) {
+    if (capa.solo_rotulo) return [];
     if (capa.leyenda) return capa.leyenda.map(([color, t]) => ({ forma: 'cuadro', color, texto: t }));
-    if (!capa.clasificar) return [];
-    const e = capa.estilo || {};
-    const clases = Object.values(capa.clasificar.valores).concat(capa.clasificar.otro ? [capa.clasificar.otro] : []);
-    return clases.map((v) => ({
-      forma: capa.marcador === 'reporte' ? 'marcador' : capa.tipo === 'punto' ? 'punto' : capa.tipo === 'linea' ? 'linea' : 'cuadro',
-      color: v.fillColor || v.color || e.fillColor || e.color || '#888',
+    const c = capa.clasificar, e = capa.estilo || {};
+    if (!c) return [];
+    if (capa.marcador === 'reporte') {
+      return Object.values(c.valores || {}).concat(c.otro ? [c.otro] : [])
+        .map((v) => ({ forma: 'marcador', color: v.fillColor || '#888', texto: v.etiqueta }))
+        .concat([
+          { forma: 'marcador', color: '#6b7280', glifo: 'foto', texto: 'Cámara: reporte con foto' },
+          { forma: 'marcador', color: '#6b7280', glifo: 'aviso', texto: 'Triángulo: reporte sin foto' },
+          { forma: 'marcador', color: VERDE_REFUGIO, glifo: 'refugio', texto: 'Casa: refugio' },
+          { forma: 'marcador', color: '#6b7280', aprox: true, texto: 'Borde punteado: ubicación aproximada o por confirmar' },
+        ]);
+    }
+    const forma = capa.tipo === 'punto' ? 'punto' : capa.tipo === 'linea' ? 'linea' : 'cuadro';
+    const clases = (c.rangos || Object.values(c.valores || {})).concat(c.otro ? [c.otro] : []);
+    const lista = clases.map((v) => ({
+      forma, color: (forma === 'linea' ? v.color || e.color : v.fillColor || v.color || e.fillColor || e.color) || '#888',
       simbolo: v.simbolo, discontinua: Boolean(v.dashArray), texto: v.etiqueta,
     }));
+    for (const r of capa.estilo_si || []) {
+      if (r.etiqueta) lista.push({ forma: 'linea', color: '#6b7280', discontinua: Boolean(r.estilo && r.estilo.dashArray), texto: r.etiqueta });
+    }
+    return lista;
   }
   function muestra(l) {
     const c = SOS.escapar(l.color);
-    if (l.forma === 'marcador') return `<i class="muestra marcador" style="background:${c}"></i>`;
+    if (l.forma === 'marcador') {
+      const dibujo = l.glifo ? `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${GLIFOS[l.glifo](l.color, '#ffffff')}</svg>` : '';
+      return `<i class="muestra marcador${l.glifo ? ' grande' : ''}${l.aprox ? ' aprox' : ''}" style="background:${c}">${dibujo}</i>`;
+    }
     if (l.forma === 'punto') return `<i class="muestra punto" style="background:${c}">${SOS.escapar(l.simbolo || '')}</i>`;
     if (l.forma === 'linea') return `<i class="muestra linea" style="border-top-color:${c};border-top-style:${l.discontinua ? 'dashed' : 'solid'}"></i>`;
     return `<i class="muestra cuadro" style="background:${c}"></i>`;
@@ -360,7 +417,6 @@
           if (c.zoom_min && zoom < c.zoom_min) h += '<span class="capa-lejos">Acércate para verla.</span>';
           if (c.descripcion) h += `<em>${x(c.descripcion)}</em>`;
           for (const l of leyenda(c)) h += `<span>${muestra(l)}${x(l.texto)}</span>`;
-          if (c.marcador === 'reporte') h += '<span class="capa-glifos">Cámara: con fotos · Casa: refugio · Signo «!»: aviso sin foto</span>';
           h += '</div>';
         }
         h += '</div>';
@@ -390,6 +446,7 @@
     if (b.dataset.ir) {
       const [[s, o], [n, este]] = m.islas[b.dataset.ir].bounds;
       estado.mapa.fitBounds([[o, s], [este, n]], { padding: 30, duration: 600 });
+      history.replaceState(null, '', location.pathname + location.search + '#' + claveLugar(b.dataset.ir));
       if (SOS.esMovil()) cerrar();
     }
     if (b.dataset.base) {
@@ -534,6 +591,30 @@
     avisar.t = setTimeout(() => { caja.hidden = true; }, 7000);
   }
 
+  // ── Enlaces a un lugar, iguales a los de /mapas ───────────────────────────
+  //   /mapa/#ptoayora   /mapa/#la-cascada   /mapa/#-0.7365,-90.3135,16 (lat,lon,zoom)
+  // Las coordenadas las atiende mapa.js al abrir; aquí van los nombres, que salen del manifiesto.
+  const claveLugar = (t) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  function lugares() {
+    const l = { archipielago: [[-1.6, -92.1], [0.8, -89.1]], lacascada: [[-0.7362, -90.3168], [-0.7322, -90.3105]], bellavista: [[-0.7, -90.333], [-0.689, -90.32]] };
+    for (const [nombre, v] of Object.entries((estado.manifiesto && estado.manifiesto.islas) || {})) l[claveLugar(nombre)] = v.bounds;
+    for (const [alias, k] of Object.entries({ ptoayora: 'puertoayora', ayora: 'puertoayora', cascada: 'lacascada', galapagos: 'archipielago' })) if (l[k]) l[alias] = l[k];
+    return l;
+  }
+  function irSegunURL() {
+    let h = '';
+    try { h = decodeURIComponent(location.hash.slice(1)); } catch (e) { return false; }
+    const m = h.match(/^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)(?:,(\d+(?:\.\d+)?))?$/);
+    if (m && Math.abs(+m[1]) <= 90 && Math.abs(+m[2]) <= 180) {
+      estado.mapa.jumpTo({ center: [+m[2], +m[1]], zoom: Math.min(19, +(m[3] || 16)) });
+      return true;
+    }
+    const b = lugares()[claveLugar(h)];
+    if (!b) return false;
+    estado.mapa.fitBounds([[b[0][1], b[0][0]], [b[1][1], b[1][0]]], { padding: 20, duration: 0 });
+    return true;
+  }
+
   const panel = () => document.getElementById('capas-panel');
   function abrir() { panel().hidden = false; document.getElementById('capas-abrir').hidden = true; pintar(); }
   function cerrar() { panel().hidden = true; document.getElementById('capas-abrir').hidden = false; }
@@ -564,6 +645,8 @@
       for (const capa of estado.orden) {
         if (arranque.includes(capa.id)) { estado.encendidas.add(capa.id); await encender(capa); }
       }
+      if (location.hash.length > 1 && !/^#-?\d/.test(location.hash)) irSegunURL(); // nombre de lugar
+      window.addEventListener('hashchange', irSegunURL);
       setInterval(() => { if (!document.hidden) revisar(); }, CONSULTA_MS);
       document.addEventListener('visibilitychange', () => { if (!document.hidden) revisar(); });
       let anterior = Math.floor(mapa.getZoom());

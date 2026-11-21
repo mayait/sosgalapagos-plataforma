@@ -133,7 +133,9 @@ a { color: inherit; }
 .muestra.cuadro { width: 16px; height: 10px; border-radius: 2px; }
 .muestra.linea { width: 16px; height: 0; border-top: 3px solid; vertical-align: 3px; }
 .muestra.marcador { width: 13px; height: 13px; border-radius: 4px; border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.25); vertical-align: -3px; }
-.capa-glifos { margin-top: 2px; }
+.muestra.marcador.grande { width: 17px; height: 17px; border-radius: 5px; vertical-align: -4px; }
+.muestra.marcador.grande svg { display: block; width: 100%; height: 100%; }
+.muestra.marcador.aprox { outline: 1.5px dashed #111; outline-offset: -2px; }
 .muestra.punto { width: 13px; height: 13px; border-radius: 50%; border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.25); color: #fff; font-size: 8.5px; font-weight: 700; line-height: 10px; text-align: center; vertical-align: -3px; }
 
 /* Descargas y acciones, como en /mapas */

@@ -48,6 +48,7 @@ despliegue/local.sh servidor
 | Orden | Qué hace |
 |---|---|
 | `despliegue/local.sh pruebas` | Corre las pruebas |
+| `despliegue/local.sh revisar_capas` | Avisa si `/mapas` publica algo que el mapa todavía no sabe dibujar |
 | `despliegue/local.sh createsuperuser` | Crea la cuenta para entrar a `/admin/` |
 | `despliegue/local.sh sembrar_demo --cantidad 200` | Añade 200 reportes al azar, para probar el rendimiento en un teléfono |
 | `despliegue/local.sh db_worker` | Trabajador de tareas en segundo plano |
