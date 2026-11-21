@@ -1,7 +1,7 @@
 /* Service worker del mapa. Guarda la interfaz, el mapa base y las capas ya vistas,
    para que la app instalada abra sin señal. Los reportes van siempre a la red:
    el mapa guarda la última respuesta por su cuenta y muestra de qué hora es. */
-const VERSION = 'sos-v3';
+const VERSION = 'sos-v4';
 const E = '{{ estaticos }}';
 const INTERFAZ = [
   '/mapa/', '/mapa/reportar/',

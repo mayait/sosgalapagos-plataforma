@@ -16,6 +16,8 @@ Un mapa único donde la gente reporta **lugares de riesgo o peligro con fecha**,
 - **«Sigue ahí»** renueva el plazo. **Dos «ya bajó»** de teléfonos distintos cierran el reporte.
 - **Duplicados:** un reporte del mismo tipo a menos de 50 m de uno vivo cuenta como confirmación.
 - **Capas de riesgo:** las mismas de `/mapas`, en un solo panel. Cada una se enciende, se apaga y se descarga en Shapefile y GeoJSON, y se baja solo al encenderla.
+- **Reportes de campo con fotos:** la capa de reportes ciudadanos que publica `/mapas` se abre con su texto y sus fotos.
+- **Vista 3D** a pedido: relieve del terreno y edificios con altura.
 - **Lluvia:** franja con el nivel preliminar de la zona, tomado de `/clima`.
 - **Instalable** como app. Sin señal guarda los reportes nuevos y los envía al volver la conexión.
 

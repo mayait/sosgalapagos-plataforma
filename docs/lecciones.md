@@ -4,6 +4,13 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 
 ## 2026-11-21 · Fase 1
 
+- **El logotipo de la USFQ va una sola vez, abajo y muy sutil (indicación de Julián).** La primera versión lo ponía también en la cabecera del panel. *Qué se hace:* solo en la firma del pie, a 18 px de alto y tenue.
+- **La vista 3D depende de un tercero.** Las teselas de cota del DTM de 1 m que publica `/mapas` solo existen en el zoom 16, y MapLibre necesita varios niveles para el relieve. *Qué se hace:* el 3D usa Terrain Tiles (AWS, unos 30 m) y se pide solo al tocar el botón, nunca al abrir. Para usar el relieve propio haría falta generar esas teselas en más niveles en el repo de datos.
+- **El 3D sin sombreado no se nota.** Santa Cruz tiene pendientes suaves y el terreno se veía plano. *Qué se hace:* al activar el 3D se añade una capa de sombreado.
+- **Las fotos de una capa llegan como texto.** MapLibre entrega las propiedades con listas (las `fotos` de los reportes de campo) como cadena JSON. *Qué se hace:* se convierten antes de usarlas (`estaticos/mapa/capas.js`).
+- **Un globo con fotos no sirve en el teléfono.** *Qué se hace:* los elementos de una capa que traen fotos o un párrafo se abren en la hoja inferior, igual que un reporte.
+- **Revisión de teléfono sin teléfono.** La ventana del navegador no siempre acepta un ancho de teléfono. *Qué se hace:* se carga el mapa en marcos de 390 y 360 px del mismo origen y se miden las cajas con un guion: así salieron la franja de lluvia desbordada, la atribución tapada y el asa de 22 px. No reemplaza la prueba en un teléfono real.
+
 - **Las capas deben seguir siendo activables, desactivables y descargables, como en `/mapas` (indicación de Julián).** La primera versión del panel leía un manifiesto viejo (`mapas-galapagos/datos/capas.json`, 24 capas, del 1-nov) y no ofrecía descargas. `/mapas` publica otro, más completo (56 capas) y con su índice de descargas. *Qué se hace:* el panel lee `capas.json` y `descargas.json` de `/mapas`, muestra los enlaces de Shapefile y GeoJSON de cada capa, y trae «Apagar todas las capas» y «Volver a las capas iniciales». No hay lista de capas propia: lo que se publica en `/mapas` aparece aquí.
 - **Hay tres manifiestos de capas distintos.** El de `mapas-galapagos/datos/` (entregable cerrado), el de la plataforma vieja (`/capas/galapagos-2026/`) y el de `/mapas`. El vigente es el de `/mapas`. *Qué se hace:* se usa solo ese.
 

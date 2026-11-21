@@ -116,8 +116,9 @@ CAPAS_ORIGEN = entorno("CAPAS_ORIGEN", "https://sosgalapagos.org/mapas/")
 CAPAS_COPIA = Path(entorno("CAPAS_COPIA", RAIZ / ".copia-mapas"))
 # Capas que arrancan encendidas. Son pocas a propósito: lo principal son los reportes.
 # La persona puede encender cualquiera; «Volver a las capas iniciales» regresa a estas.
-CAPAS_ENCENDIDAS = ["susceptibilidad", "quebradas", "barrios"]
-CAPAS_ENCENDIDAS_MOVIL = ["barrios"]
+# «reportes_21nov» son los reportes de campo con fotos de la emergencia en curso.
+CAPAS_ENCENDIDAS = ["reportes_21nov", "susceptibilidad", "quebradas", "barrios"]
+CAPAS_ENCENDIDAS_MOVIL = ["reportes_21nov", "barrios"]
 
 # Lluvia: el JSON que publica /clima. Ruta de archivo en el servidor o URL en la Mac.
 CLIMA_ESTADO = entorno("CLIMA_ESTADO", "https://sosgalapagos.org/clima/datos/estado.json")

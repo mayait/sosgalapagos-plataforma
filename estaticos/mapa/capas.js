@@ -343,6 +343,13 @@
     const capa = estado.capas.find((c) => f.layer.source === 'capa-' + c.id);
     if (!capa || !capa.popup) return false;
     const p = capa.popup, x = SOS.escapar, datos = f.properties;
+    // Reportes de campo: con fotos o un párrafo, se leen mejor en la hoja que en un globo.
+    let fotos = p.fotos ? datos[p.fotos] : null;
+    if (typeof fotos === 'string') { try { fotos = JSON.parse(fotos); } catch (err) { fotos = null; } }
+    if ((Array.isArray(fotos) && fotos.length) || (p.texto && datos[p.texto])) {
+      SOS.mostrarDetalle(fichaDeCapa(capa, datos, fotos || []), f.geometry.type === 'Point' ? f.geometry.coordinates : null);
+      return true;
+    }
     const titulo = (datos[p.titulo] ?? p.titulo_defecto ?? capa.titulo) + (datos[p.titulo] != null ? p.sufijo_titulo || '' : '');
     let h = `<div class="globo-titulo">${x(titulo)}</div><table class="globo-tabla">`;
     for (const [campo, etiqueta] of Object.entries(p.campos || {})) {
@@ -352,6 +359,28 @@
     if (p.texto && datos[p.texto]) h += `<p class="globo-texto">${x(datos[p.texto])}</p>`;
     new maplibregl.Popup({ maxWidth: '260px' }).setLngLat(e.lngLat).setHTML(h).addTo(estado.mapa);
     return true;
+  }
+
+  // Ficha de un elemento de una capa, con sus fotos (rutas relativas a capa.fotos_base).
+  function fichaDeCapa(capa, datos, fotos) {
+    const p = capa.popup, x = SOS.escapar, base = datosUrl() + (capa.fotos_base || '');
+    const titulo = datos[p.titulo] ?? p.titulo_defecto ?? capa.titulo;
+    let h = `<article class="ficha"><button class="ficha-volver" type="button" data-cerrar-ficha>← Volver a la lista</button>
+      <p class="ficha-capa">${x(capa.titulo)}</p><h2 class="ficha-titulo">${x(titulo)}</h2><ul class="ficha-datos">`;
+    for (const [campo, etiqueta] of Object.entries(p.campos || {})) {
+      if (datos[campo] != null && datos[campo] !== '') h += `<li><span>${x(etiqueta)}</span> ${x(datos[campo])}</li>`;
+    }
+    h += '</ul>';
+    if (p.texto && datos[p.texto]) h += `<p class="ficha-texto">${x(datos[p.texto])}</p>`;
+    if (fotos.length) {
+      h += '<div class="fotos">';
+      for (const f of fotos) {
+        h += `<figure><a href="${x(base + f.archivo)}" target="_blank" rel="noopener"><img loading="lazy" src="${x(base + (f.mini || f.archivo))}" alt="${x(f.pie || 'Foto del reporte')}"></a>
+          <figcaption>${f.hora && !(f.pie || '').startsWith(f.hora) ? `<b>${x(f.hora)}</b> ` : ''}${x(f.pie || '')}</figcaption></figure>`;
+      }
+      h += '</div>';
+    }
+    return h + `<p class="ficha-pie">${x(capa.fuente || '')}</p></article>`;
   }
 
   const panel = () => document.getElementById('capas-panel');

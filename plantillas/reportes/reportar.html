@@ -44,7 +44,7 @@
     <div class="silueta-caja">
       <svg class="silueta" viewBox="0 0 130 300" aria-hidden="true">
         <rect x="0" :y="alturaAgua" width="130" :height="300 - alturaAgua" fill="#e11b22" opacity="0.16"/>
-        <line x1="0" x2="130" :y1="alturaAgua" :y2="alturaAgua" stroke="#e11b22" stroke-width="2.5" x-show="profundidad !== 'sin_dato'"/>
+        <line x1="0" x2="130" :y1="alturaAgua" :y2="alturaAgua" stroke="#e11b22" stroke-width="2.5" x-show="profundidad && profundidad !== 'sin_dato'"/>
         <g fill="none" stroke="#1d1d1b" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="65" cy="34" r="17"/>
           <path d="M65 51v104"/><path d="M65 76L36 128"/><path d="M65 76l29 52"/>

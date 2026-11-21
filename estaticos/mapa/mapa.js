@@ -14,6 +14,7 @@
     zoom: cfg.zoom,
     minZoom: 7,
     maxZoom: 19,
+    maxPitch: 75,
     maxBounds: [[-93.2, -2.4], [-88.0, 1.6]],
     attributionControl: { compact: true },
     fadeDuration: 0,              // menos trabajo en teléfonos lentos
@@ -150,8 +151,57 @@
   const hoja = document.getElementById('hoja');
   const detalle = document.getElementById('detalle');
   const cerca = document.getElementById('cerca');
-  const abrirHoja = (si) => hoja.classList.toggle('abierta', si);
-  document.getElementById('hoja-asa').addEventListener('click', () => abrirHoja(!hoja.classList.contains('abierta')));
+  // La hoja tiene tres alturas: asomada, media y abierta. Se arrastra o se toca el asa.
+  const ASOMADA = 138;
+  let alturaHoja = ASOMADA;
+  const alturas = () => {
+    const total = hoja.offsetHeight;
+    return [ASOMADA, Math.round(total * 0.56), total];
+  };
+  function ponerHoja(px, animar = true) {
+    alturaHoja = px;
+    hoja.classList.toggle('arrastrando', !animar);
+    hoja.style.setProperty('--hoja-visible', px + 'px');
+    hoja.classList.toggle('abierta', px > ASOMADA + 10);
+  }
+  // true abre a media altura (o deja como está si ya está más arriba); false la asoma.
+  const abrirHoja = (si) => ponerHoja(si ? Math.max(alturaHoja, alturas()[1]) : ASOMADA);
+  SOS.abrirHoja = abrirHoja;
+
+  let arrastre = null;
+  function alTomar(e) {
+    if (!SOS.esMovil() || e.target.closest('a, .reportar')) return;
+    arrastre = { y: e.clientY, inicio: alturaHoja, movido: false };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+  function alArrastrar(e) {
+    if (!arrastre) return;
+    const d = arrastre.y - e.clientY;
+    if (Math.abs(d) > 6) arrastre.movido = true;
+    const [min, , max] = alturas();
+    ponerHoja(Math.min(max, Math.max(min, arrastre.inicio + d)), false);
+  }
+  function alSoltar(e) {
+    if (!arrastre) return;
+    const { movido, inicio } = arrastre;
+    arrastre = null;
+    const pasos = alturas();
+    if (!movido) { // un toque en el asa: sube un paso, y desde arriba vuelve a asomarse
+      if (e.target.closest('#hoja-asa')) ponerHoja(inicio >= pasos[1] - 10 ? ASOMADA : pasos[1]);
+      else ponerHoja(inicio);
+      return;
+    }
+    // Se queda en la altura más cercana, con algo de impulso hacia donde iba el dedo.
+    const meta = alturaHoja + (alturaHoja - inicio) * 0.25;
+    ponerHoja(pasos.reduce((a, b) => (Math.abs(b - meta) < Math.abs(a - meta) ? b : a)));
+  }
+  for (const el of [document.getElementById('hoja-asa'), hoja.querySelector('.hoja-accion')]) {
+    el.addEventListener('pointerdown', alTomar);
+    el.addEventListener('pointermove', alArrastrar);
+    el.addEventListener('pointerup', alSoltar);
+    el.addEventListener('pointercancel', alSoltar);
+  }
+  window.addEventListener('resize', () => ponerHoja(Math.min(alturaHoja, alturas()[2])));
 
   function abrirFicha(id) {
     htmx.ajax('GET', cfg.ficha + id + '/', { target: '#detalle', swap: 'innerHTML' });
@@ -161,6 +211,14 @@
     cerca.hidden = false;
     history.replaceState(null, '', location.pathname);
   }
+  // Las capas de /mapas con fotos o texto largo (reportes de campo) se leen aquí, no en un globo.
+  SOS.mostrarDetalle = function (html, lngLat) {
+    detalle.innerHTML = html;
+    cerca.hidden = true;
+    abrirHoja(true);
+    hoja.querySelector('.hoja-cuerpo').scrollTop = 0;
+    if (lngLat) centrarEn(lngLat);
+  };
   document.body.addEventListener('htmx:afterSwap', (e) => {
     if (e.target !== detalle) return;
     const ficha = detalle.querySelector('[data-ficha]');
@@ -180,7 +238,7 @@
 
   // En el teléfono la hoja tapa la parte baja: el punto se centra en lo que queda visible.
   function centrarEn(lngLat, zoom) {
-    const abajo = SOS.esMovil() ? Math.round(mapa.getContainer().clientHeight * 0.5) : 0;
+    const abajo = SOS.esMovil() ? Math.min(alturaHoja, Math.round(mapa.getContainer().clientHeight * 0.6)) : 0;
     mapa.easeTo({ center: lngLat, zoom: Math.max(mapa.getZoom(), zoom || 16), padding: { bottom: abajo }, duration: 500 });
   }
 
@@ -228,8 +286,63 @@
     }, () => {}, { enableHighAccuracy: true, timeout: 8000 });
   });
 
+  // ── Vista 3D ──────────────────────────────────────────────────────────────
+  // Relieve del terreno y edificios con altura. Se enciende a pedido: pesa más y
+  // baja teselas de elevación de un tercero (Terrain Tiles en AWS, formato terrarium).
+  const RELIEVE = { exageracion: 1.6, inclinacion: 62 };
+  let en3d = false;
+  function alternar3d() {
+    en3d = !en3d;
+    document.getElementById('relieve').setAttribute('aria-pressed', String(en3d));
+    if (en3d) {
+      if (!mapa.getSource('elevacion')) {
+        mapa.addSource('elevacion', {
+          type: 'raster-dem', encoding: 'terrarium', tileSize: 256, maxzoom: 14,
+          tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+          attribution: 'Relieve: Terrain Tiles (Mapzen, AWS)',
+        });
+      }
+      mapa.setTerrain({ source: 'elevacion', exaggeration: RELIEVE.exageracion });
+      // Sombreado para que el relieve se lea. Usa su propia fuente, como pide MapLibre.
+      if (!mapa.getSource('elevacion-sombras')) {
+        mapa.addSource('elevacion-sombras', {
+          type: 'raster-dem', encoding: 'terrarium', tileSize: 256, maxzoom: 14,
+          tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+        });
+      }
+      if (!mapa.getLayer('sombras-3d')) {
+        mapa.addLayer({
+          id: 'sombras-3d', type: 'hillshade', source: 'elevacion-sombras',
+          paint: { 'hillshade-exaggeration': 0.45, 'hillshade-shadow-color': '#5b6166', 'hillshade-highlight-color': '#ffffff', 'hillshade-accent-color': '#8a9095' },
+        }, 'ancla-raster');
+      }
+      if (!mapa.getLayer('edificios-3d')) {
+        mapa.addLayer({
+          id: 'edificios-3d', type: 'fill-extrusion', source: 'base', 'source-layer': 'buildings', minzoom: 15,
+          paint: {
+            'fill-extrusion-color': '#d6d5d1', 'fill-extrusion-opacity': 0.9,
+            'fill-extrusion-height': ['coalesce', ['get', 'height'], 4],
+            'fill-extrusion-base': ['coalesce', ['get', 'min_height'], 0],
+          },
+        }, 'ancla-raster');
+      }
+      mapa.dragRotate.enable();
+      mapa.touchZoomRotate.enableRotation();
+      mapa.easeTo({ pitch: RELIEVE.inclinacion, bearing: mapa.getBearing() || -18, duration: 900 });
+    } else {
+      mapa.easeTo({ pitch: 0, bearing: 0, duration: 600 });
+      mapa.setTerrain(null);
+      for (const id of ['edificios-3d', 'sombras-3d']) if (mapa.getLayer(id)) mapa.removeLayer(id);
+      mapa.dragRotate.disable();
+      mapa.touchZoomRotate.disableRotation();
+    }
+  }
+  document.getElementById('relieve').addEventListener('click', alternar3d);
+
   // ── Arranque ──────────────────────────────────────────────────────────────
   mapa.on('load', async () => {
+    // En el teléfono la atribución arranca plegada (se abre con su botón «i»).
+    if (SOS.esMovil()) document.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show');
     await cargarIconos();
     ponerCapasDeReportes();
     await traerReportes(true);

@@ -4,7 +4,7 @@
   'use strict';
   const SOS = window.SOS, cfg = SOS.cfg;
   const CON_AGUA = ['agua_via', 'quebrada', 'vivienda']; // tipos en los que se pregunta la profundidad
-  const ALTURA = { sin_dato: 300, tobillo: 272, rodilla: 222, cintura: 158, puerta_auto: 190 };
+  const ALTURA = { '': 300, sin_dato: 300, tobillo: 272, rodilla: 222, cintura: 158, puerta_auto: 190 };
   const LADO_MAXIMO = 1600;
 
   // Lee la ubicación de los metadatos de un JPEG (EXIF), antes de reducir la foto.
@@ -61,7 +61,7 @@
   }
 
   window.reporte = () => ({
-    paso: 1, tipo: '', profundidad: 'sin_dato', gravedad: 'cuidado', gravedadTocada: false, nota: '',
+    paso: 1, tipo: '', profundidad: '', gravedad: 'cuidado', gravedadTocada: false, nota: '',
     foto: null, lat: null, lon: null, precision: null, origen: '',
     vistoEn: new Date().toISOString(), enviando: false, error: '',
     tituloFinal: '', textoFinal: '', enlaceFinal: '/mapa/', mini: null,
