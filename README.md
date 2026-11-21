@@ -10,7 +10,7 @@ Un mapa único donde la gente reporta **lugares de riesgo o peligro con fecha**,
 
 ## Qué hace hoy (fase 1)
 
-- **Mapa** a pantalla completa en el teléfono y con panel lateral en el escritorio. Base gris propia de 5 MB que funciona sin señal.
+- **Mapa** a pantalla completa en el teléfono y con panel lateral en el escritorio. Abre en satélite con la capa de riesgo encima; sin señal usa una base gris propia de 5 MB.
 - **Reportar** sin cuenta: foto, qué pasa, hasta dónde llega el agua y dónde es.
 - **Los reportes vencen solos.** Cada tipo tiene su plazo (de 6 a 72 horas). El pin se destiñe con la edad y desaparece al vencer.
 - **«Sigue ahí»** renueva el plazo. **Dos «ya bajó»** de teléfonos distintos cierran el reporte.

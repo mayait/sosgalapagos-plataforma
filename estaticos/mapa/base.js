@@ -51,14 +51,33 @@
   };
 
   // Mapas base alternativos (teselas de terceros): se cargan solo si se eligen.
+  // Sobre la foto de satélite los rótulos van en blanco con borde oscuro; se guardan los
+  // colores originales para volver a la base gris.
+  const originales = {};
+  function rotulosClaros(mapa, claros) {
+    for (const capa of mapa.getStyle().layers) {
+      if (capa.type !== 'symbol' || capa.source !== 'base') continue;
+      if (!originales[capa.id]) {
+        originales[capa.id] = ['text-color', 'text-halo-color', 'text-halo-width'].map((p) => mapa.getPaintProperty(capa.id, p));
+      }
+      const [color, halo, ancho] = claros ? ['#ffffff', 'rgba(0,0,0,0.75)', 1.4] : originales[capa.id];
+      mapa.setPaintProperty(capa.id, 'text-color', color);
+      mapa.setPaintProperty(capa.id, 'text-halo-color', halo);
+      mapa.setPaintProperty(capa.id, 'text-halo-width', ancho);
+    }
+  }
+
   SOS.ponerBase = function (mapa, def) {
     if (mapa.getLayer('base-raster')) mapa.removeLayer('base-raster');
     if (mapa.getSource('base-raster')) mapa.removeSource('base-raster');
+    rotulosClaros(mapa, Boolean(def) && def.id === 'satelite');
     if (!def) return;
     const urls = def.url.includes('{s}') ? ['a', 'b', 'c'].map((s) => def.url.replace('{s}', s)) : [def.url];
     mapa.addSource('base-raster', {
       type: 'raster', tiles: urls, tileSize: 256, maxzoom: def.maxNativeZoom || def.maxZoom || 19, attribution: def.atribucion,
     });
-    mapa.addLayer({ id: 'base-raster', type: 'raster', source: 'base-raster' }, 'ancla-raster');
+    // La imagen va debajo de los rótulos de la base (calles y lugares), que se siguen leyendo.
+    const primerRotulo = mapa.getStyle().layers.find((l) => l.type === 'symbol' && l.source === 'base');
+    mapa.addLayer({ id: 'base-raster', type: 'raster', source: 'base-raster', paint: { 'raster-fade-duration': 0 } }, primerRotulo ? primerRotulo.id : 'ancla-raster');
   };
 })();

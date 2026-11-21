@@ -4,6 +4,8 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 
 ## 2026-11-21 · Fase 1
 
+- **La vista preferida es satélite con la capa de riesgo encima (indicación de Julián, con captura).** Se había aprobado la base gris, pero al verla en uso Julián mostró la que le gusta: foto de satélite, susceptibilidad en azules y quebradas. *Qué se hace:* el mapa abre en satélite (`MAPA_BASE_INICIAL`), con los nombres de calles en blanco encima de la foto. La base gris propia queda como opción y como respaldo sin conexión, porque el satélite son teselas de un tercero (Esri) que no se guardan en el teléfono. El mapa recuerda la base que cada persona elige.
+
 - **Un globo con texto largo se sale de la pantalla del teléfono.** Al tocar un área afectada salía un globo más alto que el mapa, tapado por la leyenda. *Qué se hace:* ningún elemento de capa abre un globo; todos se leen en la hoja (teléfono) o en el panel (escritorio).
 - **Un punto quedaba debajo de un área.** Las capas se apilaban en el orden del manifiesto y los reportes con fotos, que van primero, quedaban abajo. *Qué se hace:* abajo imágenes y polígonos, luego líneas y arriba puntos; dentro de cada tipo manda el manifiesto.
 - **Revalidar no bastó: la primera carga tras un cambio seguía con el JavaScript viejo.** *Qué se hace:* los archivos propios llevan su versión en la URL (`?v=<fecha de modificación>`, etiqueta `{% propio %}`). Sin compilación los nombres no cambian, así que la versión es lo único que obliga al navegador a pedirlos de nuevo.

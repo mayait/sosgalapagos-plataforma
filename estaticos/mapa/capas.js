@@ -13,7 +13,8 @@
   const ZOOM_ROTULOS = 15; // los rótulos de barrios y calles solo se ven de cerca
 
   const estado = { mapa: null, manifiesto: null, descargas: {}, todo: null, capas: [], orden: [], encendidas: new Set(), iniciales: [], puestas: {}, base: 'gris', limites: null, teselas: {} };
-  const GUARDADO = 'sos-capas-3'; // lo que la persona dejó encendido se recuerda en su teléfono
+  const GUARDADO = 'sos-capas-3';
+  const BASE_GUARDADA = 'sos-base'; // lo que la persona dejó encendido se recuerda en su teléfono
   const datosUrl = () => `${SOS.cfg.capasUrl}datos/${SOS.cfg.capasVariante}/`;
   const recordar = () => { try { localStorage.setItem(GUARDADO, JSON.stringify([...estado.encendidas])); } catch (e) { /* sin espacio */ } };
   const texto = (v) => ['to-string', ['get', v]];
@@ -332,6 +333,7 @@
     if (b.dataset.base) {
       estado.base = b.dataset.base;
       SOS.ponerBase(estado.mapa, (m.mapas_base || []).find((x) => x.id === estado.base));
+      try { localStorage.setItem(BASE_GUARDADA, estado.base); } catch (err) { /* sin espacio */ }
       pintar();
     }
   }
@@ -397,6 +399,12 @@
         return;
       }
       estado.manifiesto = m;
+      // Mapa base al abrir: el que la persona eligió la última vez o, si no, el de los ajustes
+      // (satélite). Sin conexión se queda la base gris, que está guardada en el teléfono.
+      let base = SOS.cfg.baseInicial || 'gris';
+      try { base = localStorage.getItem(BASE_GUARDADA) || base; } catch (err) { /* sin acceso */ }
+      const def = (m.mapas_base || []).find((x) => x.id === base);
+      if (def && navigator.onLine !== false) { estado.base = base; SOS.ponerBase(mapa, def); }
       estado.capas = m.grupos.flatMap((g) => g.capas);
       const altura = { raster: 0, teselas: 0, poligono: 1, linea: 2, punto: 3 };
       estado.orden = estado.capas.map((c, i) => [c, i]).sort((a, b) => (altura[a[0].tipo] - altura[b[0].tipo]) || (a[1] - b[1])).map(([c]) => c);

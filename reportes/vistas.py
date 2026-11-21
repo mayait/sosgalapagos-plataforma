@@ -44,6 +44,7 @@ def _configuracion():
     return {
         "centro": settings.MAPA_CENTRO,
         "zoom": settings.MAPA_ZOOM,
+        "baseInicial": settings.MAPA_BASE_INICIAL,
         "capasUrl": settings.CAPAS_URL,
         "capasVariante": settings.CAPAS_VARIANTE,
         "capasSiempreGrupos": settings.CAPAS_SIEMPRE_GRUPOS,

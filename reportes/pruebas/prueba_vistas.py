@@ -113,3 +113,7 @@ def prueba_el_mapa_lee_las_capas_de_lo_que_publica_mapas(client):
     assert configuracion["capasVariante"] == "completo"
     # El riesgo modelado y las quebradas arrancan encendidos también en el teléfono.
     assert {"lluvia", "hidrografia"} <= set(configuracion["capasSiempreGrupos"])
+
+
+def prueba_el_mapa_abre_en_satelite(client):
+    assert client.get("/mapa/").context["configuracion"]["baseInicial"] == "satelite"
