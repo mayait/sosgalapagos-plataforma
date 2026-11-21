@@ -35,5 +35,5 @@
     <button class="boton" hx-post="{% url 'reportes:confirmar' r.id_publico %}" hx-vals='{"tipo":"ya_bajo"}' hx-target="#detalle">{% if r.tipo.clase == "riesgo" %}Ya bajó<small>Ya se puede pasar</small>{% else %}Ya no está<small>Ya terminó o cerró</small>{% endif %}</button>
   </div>
   {% endif %}
-  <p class="ficha-pie">Reporte {{ r.id_publico }}. Lo hizo la comunidad; no es un dato oficial.{% if r.tipo.clase == "riesgo" %} Si hay peligro de vida, llama al 911.{% endif %}</p>
+  <p class="ficha-pie">Reporte {{ r.id_publico }}. {% if r.fuente == "coordinador" %}Lo publicó la coordinación de SOS Galápagos{% elif r.fuente == "institucion" %}Lo publicó una institución{% else %}Lo hizo la comunidad{% endif %}; no es un dato oficial.{% if r.tipo.clase == "riesgo" %} Si hay peligro de vida, llama al 911.{% endif %}</p>
 </article>

@@ -74,7 +74,11 @@
     if (!def) return;
     const urls = def.url.includes('{s}') ? ['a', 'b', 'c'].map((s) => def.url.replace('{s}', s)) : [def.url];
     mapa.addSource('base-raster', {
-      type: 'raster', tiles: urls, tileSize: 256, maxzoom: def.maxNativeZoom || def.maxZoom || 19, attribution: def.atribucion,
+      // El satélite no tiene imagen de detalle en todas las islas (en San Cristóbal, más allá del
+      // zoom 16 devuelve una tesela gris que dice «Map data not yet available»). Se pide hasta el 16
+      // y de ahí en adelante se amplía esa misma imagen: algo borrosa, pero nunca vacía.
+      type: 'raster', tiles: urls, tileSize: 256, attribution: def.atribucion,
+      maxzoom: Math.min(def.maxNativeZoom || def.maxZoom || 19, def.id === 'satelite' ? 16 : 19),
     });
     // La imagen va debajo de los rótulos de la base (calles y lugares), que se siguen leyendo.
     const primerRotulo = mapa.getStyle().layers.find((l) => l.type === 'symbol' && l.source === 'base');
