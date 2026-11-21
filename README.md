@@ -3,7 +3,7 @@
 Un mapa único donde la gente reporta **lugares de riesgo o peligro con fecha**, y donde los reportes **se retiran solos** a medida que pasa la emergencia. Sirve a vecinos que buscan por dónde moverse y a equipos de alerta que planifican.
 
 - **Responsable:** Julián Maya, Universidad San Francisco de Quito (USFQ) · jamaya@usfq.edu.ec. Coordinación: USFQ Galápagos.
-- **Estado:** fase 1 de 4. Se publica en `https://sosgalapagos.org/riesgos/`; cómo, en [`despliegue/servidor.md`](despliegue/servidor.md).
+- **Estado:** fase 1 de 4. **Publicado en https://sosgalapagos.org/riesgos/** desde el 21-nov-2026; cómo, en [`despliegue/servidor.md`](despliegue/servidor.md).
 - **Repositorios hermanos:** [`sosgalapagos-datos`](https://github.com/mayait/sosgalapagos-datos) (capas de riesgo y clima) y [`sosgalapagos`](https://github.com/mayait/sosgalapagos) (la plataforma actual, que este proyecto reemplazará).
 
 > ⚠️ **Información ciudadana preliminar, no oficial.** Los reportes los hace la comunidad. Emergencias: 911.
