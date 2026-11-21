@@ -18,7 +18,8 @@ SECRET_KEY = entorno("CLAVE_SECRETA", "solo-para-desarrollo-local" if DEBUG else
 if not SECRET_KEY:
     raise RuntimeError("Falta la variable CLAVE_SECRETA")
 
-ALLOWED_HOSTS = entorno("ANFITRIONES", "localhost,127.0.0.1").split(",")
+# En desarrollo se acepta cualquier nombre, para abrir el mapa desde un teléfono de la misma red.
+ALLOWED_HOSTS = ["*"] if DEBUG else entorno("ANFITRIONES", "localhost,127.0.0.1").split(",")
 CSRF_TRUSTED_ORIGINS = [o for o in entorno("ORIGENES_CONFIABLES", "").split(",") if o]
 
 INSTALLED_APPS = [
