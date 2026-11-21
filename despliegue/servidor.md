@@ -57,7 +57,8 @@ El archivo del repo queda igual que el que está cargado, así que el próximo r
 ```bash
 curl -sI https://sosgalapagos.org/riesgos/ | head -1
 curl -s  https://sosgalapagos.org/riesgos/api/reportes/vivos.geojson | head -c 200
-curl -sI https://sosgalapagos.org/mapas/ | head -1      # sigue igual
+curl -sI https://sosgalapagos.org/mapas/capas.json | head -1   # los datos siguen igual
+curl -sI https://sosgalapagos.org/mapas/ | head -1      # 302 a /riesgos/
 curl -sI https://sosgalapagos.org/clima/ | head -1      # sigue igual
 cd /opt/sosgalapagos-plataforma/despliegue/produccion && docker compose ps
 ```
