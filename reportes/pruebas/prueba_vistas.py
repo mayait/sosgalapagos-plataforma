@@ -119,21 +119,10 @@ def prueba_el_mapa_abre_en_satelite(client):
     assert client.get("/riesgos/").context["configuracion"]["baseInicial"] == "satelite"
 
 
-def prueba_los_informes_publicados_se_enlazan_y_lo_mal_formado_se_descarta(client, settings, tmp_path):
-    (tmp_path / "indice.json").write_text(json.dumps({"informes": [
-        {"archivo": "mapa-riesgo.pdf", "portada": "mapa-riesgo.jpg", "titulo": "Mapa de riesgo de Puerto Ayora", "fecha": "2026-11-21", "paginas": 4, "tamano": "2 MB"},
-        {"archivo": "../secreto.pdf", "titulo": "Ruta que se sale de la carpeta", "fecha": "2026-11-21"},
-        {"archivo": "sin-fecha.pdf", "titulo": "Sin fecha"},
-    ]}))
-    settings.INFORMES_DIR = tmp_path
-    pagina = client.get("/riesgos/informes/").content.decode()
-    assert "Mapa de riesgo de Puerto Ayora" in pagina and "/descargas/mapa-riesgo.pdf" in pagina
-    assert "secreto" not in pagina and "Sin fecha" not in pagina
-
-
-def prueba_sin_indice_de_informes_no_se_muestra_la_seccion(client, settings, tmp_path):
-    settings.INFORMES_DIR = tmp_path / "no-existe"
-    assert client.get("/riesgos/informes/").content.strip() == b""
+def prueba_el_mapa_no_lista_los_informes_en_pdf(client):
+    # Los informes y mapas en PDF van solo en la portada del sitio.
+    assert "informes" not in client.get("/riesgos/").content.decode().replace("/riesgos/informe/", "")
+    assert client.get("/riesgos/informes/").status_code == 404
 
 
 def prueba_el_relieve_del_3d_se_sirve_y_el_mar_da_404(client, settings, tmp_path):

@@ -11,7 +11,7 @@ Cloudflare ─► Caddy del sitio ─┬─ /mapas/  /clima/  /          lo de s
                               postgis · trabajador · reloj      proyecto «sosgalapagos-plataforma»
 ```
 
-La plataforma lee, en solo lectura, tres cosas que ya publican otros: la lluvia de `/clima` (`/srv/sosgalapagos-clima`), el índice de informes en PDF de la portada (`/srv/sosgalapagos-descargas`) y las capas de `/mapas` (por la web).
+La plataforma lee, en solo lectura, dos cosas que ya publican otros: la lluvia de `/clima` (`/srv/sosgalapagos-clima`) y las capas de `/mapas` (por la web).
 
 Todo lo de la plataforma vive bajo `/riesgos/`: páginas, `/riesgos/api/`, `/riesgos/admin/`, estáticos y fotos. El sitio actual ya usa `/api` y `/admin`, así que no se comparten.
 

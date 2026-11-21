@@ -6,6 +6,28 @@
 
 Una precisión que cambia todo el plan: **lo que se da de baja es el visor, no los datos.** `/riesgos/` lee de `/mapas/` el manifiesto, las capas, las descargas, las teselas y las fotos. Esas direcciones tienen que seguir existiendo.
 
+## Estado y recomendación (21-nov-2026, tarde)
+
+**Recomendación: quedarse solo con `/riesgos/`.** Mantener dos visores ya costó trabajo doble el mismo día: tres manifiestos distintos, un marcador nuevo (`corazon`) que cada visor dibuja a su manera, y mejoras que el equipo de datos hace en un visor que va a desaparecer. Cada día que conviven, la diferencia crece.
+
+Lo que no conviene es hacerlo de golpe hoy. Hay una advertencia del INAMHI vigente hasta el 24-nov, y el visor de `/mapas` tiene herramientas que usan los equipos técnicos y que `/riesgos/` aún no tiene.
+
+| Criterio | Estado |
+|---|---|
+| 1. Paridad de herramientas | **0 de 5.** Faltan buscador, punto de análisis, mis puntos, descarga de imagen y exposición por isla |
+| 2. Probado en teléfonos reales | **Pendiente.** Solo simulación en escritorio |
+| 3. Siete días estables | **Día 1.** En producción desde el 21-nov, 14:17 |
+| 4. Acuerdo con el equipo de datos | **Sin hablar.** Siguen mejorando su visor (hoy: versión para teléfono, enlaces a lugares, corazones) |
+| 5. Fuera de la fase aguda | **No.** Advertencia n.º 89 del INAMHI vigente hasta el 24-nov |
+
+Avances desde la mañana que acercan la baja: las descargas de capas ya están en `/riesgos/descargas/` y en la portada; los enlaces a lugares son los mismos; `/riesgos/` dibuja las 60 capas y se actualiza solo con cada publicación.
+
+**Camino corto que propongo:**
+
+1. **Hoy:** avisar al equipo de datos de que el visor único será `/riesgos/` y que dejen de invertir en el suyo (criterio 4). Es lo que más trabajo ahorra.
+2. **Esta semana:** construir en `/riesgos/` el buscador, el punto de análisis y la descarga de imagen. Julián decide si «Mis puntos» y la tabla de exposición se hacen o se abandonan.
+3. **Cuando pase la advertencia y con una prueba en teléfono real:** redirección temporal de `/mapas/` a `/riesgos/` (paso 3 de este plan). Fecha más temprana razonable: la semana del 30-nov.
+
 ## 1. Qué hay bajo `/mapas` y qué pasa con cada cosa
 
 | Dirección | Qué es | Quién la usa | Qué pasa |
