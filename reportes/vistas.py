@@ -13,6 +13,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.cache import cache_control
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.static import serve
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from zonas.models import zona_de
@@ -46,6 +47,7 @@ def _configuracion():
         "centro": settings.MAPA_CENTRO,
         "zoom": settings.MAPA_ZOOM,
         "baseInicial": settings.MAPA_BASE_INICIAL,
+        "relieveUrl": settings.RELIEVE_URL,
         "capasUrl": settings.CAPAS_URL,
         "capasVariante": settings.CAPAS_VARIANTE,
         "capasSiempreGrupos": settings.CAPAS_SIEMPRE_GRUPOS,
@@ -295,3 +297,12 @@ def copia_de_mapas(request, ruta):
                 local = sin_version  # lo generado en la Mac y aún no publicado (p. ej. teselas/relieve3d)
     tipo = "application/geo+json" if ruta.endswith(".geojson") else mimetypes.guess_type(ruta)[0] or "application/octet-stream"
     return FileResponse(local.open("rb"), content_type=tipo)
+
+
+@require_GET
+def relieve(request, ruta):
+    """Teselas de cota para la vista 3D. Las teselas de solo mar no existen: responden 404."""
+    respuesta = serve(request, ruta, document_root=settings.RELIEVE_DIR)
+    # No cambian hasta que se regeneran: el navegador y Cloudflare pueden guardarlas un día.
+    respuesta["Cache-Control"] = "public, max-age=86400"
+    return respuesta

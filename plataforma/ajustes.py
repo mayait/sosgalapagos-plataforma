@@ -136,6 +136,13 @@ CAPAS_APAGADAS_AL_ABRIR = ["puntos_criticos"]
 CLIMA_ESTADO = entorno("CLIMA_ESTADO", "https://sosgalapagos.org/clima/datos/estado.json")
 CLIMA_MAX_EDAD_MIN = 20  # con datos más viejos no se muestra nivel
 
+# Relieve propio para la vista 3D: teselas de cota que genera sosgalapagos-datos
+# (37_teselas_relieve3d.py; 47 MB, no van a git). Las sirve la plataforma desde una carpeta
+# aparte, para no depender de que /mapas las publique. Si la carpeta no existe, el mapa
+# prueba en /mapas y, al final, usa un relieve de terceros.
+RELIEVE_DIR = Path(entorno("RELIEVE_DIR", RAIZ / ".copia-mapas" / "teselas" / "relieve3d"))
+RELIEVE_URL = "/riesgos/relieve3d/"
+
 # Informes y mapas en PDF de la portada: carpeta con indice.json (ver reportes/informes.py).
 INFORMES_DIR = Path(entorno("INFORMES_DIR", "/srv/descargas"))
 INFORMES_URL = entorno("INFORMES_URL", "/descargas/")

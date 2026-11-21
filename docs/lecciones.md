@@ -4,6 +4,8 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 
 ## 2026-11-21 · Puesta en producción
 
+- **El relieve de respaldo del 3D tiene agujas falsas.** En producción, con el relieve de terceros, salía un pico inexistente junto a Puerto Ayora. *Qué se hace:* el relieve propio se sube a una carpeta de la plataforma (`/srv/sosgalapagos-relieve3d`) y se sirve en `/riesgos/relieve3d/`. No se puso en la carpeta de `/mapas` porque su publicación borra lo que no reconoce y es de otro equipo.
+
 - **El primer despliegue marcó fallo con todo arriba.** El guion comprueba el servicio desde dentro del contenedor como `localhost`, y `localhost` no estaba entre los nombres que Django acepta en producción: respondía 400. *Qué se hace:* `localhost` va en `ANFITRIONES`. Lo que no vi en la Mac: allí probé desde fuera del contenedor, con el nombre que sí estaba permitido.
 
 - **Lo nuevo del sitio son los informes y mapas en PDF de la portada.** Los publica el repo de datos en `/descargas/` desde las 13:06. Su índice no se sirve por la web: la portada lo lee del disco. *Qué se hace:* el mapa monta esa carpeta en solo lectura y muestra la misma lista bajo «Cerca de aquí». Si el índice no existe (como en la Mac), la sección no aparece. Aquí solo se enlaza lo ya publicado; qué se publica lo decide Julián en el repo de datos.

@@ -353,18 +353,20 @@
   let en3d = false, cota = null;
   async function fuenteDeCota() {
     if (cota) return cota;
-    const base = `${cfg.capasUrl}teselas/relieve3d/`;
-    try {
-      const t = await fetch(SOS.capas.conV(base + 'teselas.json')).then((r) => (r.ok ? r.json() : null));
-      if (t && t.cota && t.cota.codificacion === 'terrarium') {
-        const [[sur, oeste], [norte, este]] = t.limites;
-        return (cota = {
-          type: 'raster-dem', encoding: 'terrarium', tileSize: 256,
-          tiles: [SOS.capas.conV(location.origin + base + t.cota.url)], minzoom: t.cota.zoom_min, maxzoom: t.cota.zoom_max,
-          bounds: [oeste, sur, este, norte], attribution: t.atribucion,
-        });
-      }
-    } catch (e) { /* sin teselas propias: se usa el respaldo */ }
+    // Primero el relieve que sirve la propia plataforma; si no está, el que publique /mapas.
+    for (const base of [cfg.relieveUrl, `${cfg.capasUrl}teselas/relieve3d/`]) {
+      try {
+        const t = await fetch(SOS.capas.conV(base + 'teselas.json')).then((r) => (r.ok ? r.json() : null));
+        if (t && t.cota && t.cota.codificacion === 'terrarium') {
+          const [[sur, oeste], [norte, este]] = t.limites;
+          return (cota = {
+            type: 'raster-dem', encoding: 'terrarium', tileSize: 256,
+            tiles: [SOS.capas.conV(location.origin + base + t.cota.url)], minzoom: t.cota.zoom_min, maxzoom: t.cota.zoom_max,
+            bounds: [oeste, sur, este, norte], attribution: t.atribucion,
+          });
+        }
+      } catch (e) { /* se prueba la siguiente fuente */ }
+    }
     return (cota = {
       type: 'raster-dem', encoding: 'terrarium', tileSize: 256, maxzoom: 14,
       tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],

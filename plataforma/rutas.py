@@ -11,13 +11,14 @@ from django.views.generic import RedirectView
 from django.views.static import serve
 
 from api.rutas import api
-from reportes.vistas import copia_de_mapas
+from reportes.vistas import copia_de_mapas, relieve
 
 urlpatterns = [
     path("riesgos/api/", api.urls),
     path("riesgos/admin/", admin.site.urls),
     # Fotos de los reportes. Son pocas y pequeñas: las sirve Django, sin tocar los volúmenes de Caddy.
     re_path(r"^riesgos/medios/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
+    re_path(r"^riesgos/relieve3d/(?P<ruta>[\w./-]+)$", relieve),
     path("riesgos/", include("reportes.rutas")),
 ]
 
