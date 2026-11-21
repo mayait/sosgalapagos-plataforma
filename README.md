@@ -3,19 +3,22 @@
 Un mapa único donde la gente reporta **lugares de riesgo o peligro con fecha**, y donde los reportes **se retiran solos** a medida que pasa la emergencia. Sirve a vecinos que buscan por dónde moverse y a equipos de alerta que planifican.
 
 - **Responsable:** Julián Maya, Universidad San Francisco de Quito (USFQ) · jamaya@usfq.edu.ec. Coordinación: USFQ Galápagos.
-- **Estado:** fase 1 de 4, en desarrollo. **Todavía no está publicado.**
+- **Estado:** fase 1 de 4. Se publica en `https://sosgalapagos.org/mapa/`; cómo, en [`despliegue/servidor.md`](despliegue/servidor.md).
 - **Repositorios hermanos:** [`sosgalapagos-datos`](https://github.com/mayait/sosgalapagos-datos) (capas de riesgo y clima) y [`sosgalapagos`](https://github.com/mayait/sosgalapagos) (la plataforma actual, que este proyecto reemplazará).
 
 > ⚠️ **Información ciudadana preliminar, no oficial.** Los reportes los hace la comunidad. Emergencias: 911.
 
 ## Qué hace hoy (fase 1)
 
-- **Mapa** a pantalla completa en el teléfono y con panel lateral en el escritorio. Base gris propia de 5 MB que funciona sin señal.
+- **Mapa** a pantalla completa en el teléfono y con panel lateral en el escritorio. Abre en satélite con la capa de riesgo encima; sin señal usa una base gris propia de 5 MB.
 - **Reportar** sin cuenta: foto, qué pasa, hasta dónde llega el agua y dónde es.
 - **Los reportes vencen solos.** Cada tipo tiene su plazo (de 6 a 72 horas). El pin se destiñe con la edad y desaparece al vencer.
 - **«Sigue ahí»** renueva el plazo. **Dos «ya bajó»** de teléfonos distintos cierran el reporte.
 - **Duplicados:** un reporte del mismo tipo a menos de 50 m de uno vivo cuenta como confirmación.
-- **Capas de riesgo** del repo de datos, en un solo panel y cargadas solo al encenderlas.
+- **Capas de riesgo:** las mismas de `/mapas`, en un solo panel. El riesgo modelado y las quebradas arrancan encendidos. Cada una se enciende, se apaga y se descarga en Shapefile y GeoJSON, y se baja solo al encenderla.
+- **Capas siempre al día:** si otro equipo publica un modelo nuevo en `/mapas`, el mapa abierto lo recoge en un par de minutos y avisa.
+- **Reportes de campo con fotos:** la capa de reportes ciudadanos que publica `/mapas` se abre con su texto y sus fotos.
+- **Vista 3D** a pedido: relieve propio (DTM de 1 m de la SGIAR en Santa Cruz y Copernicus en el resto) y edificios con altura.
 - **Lluvia:** franja con el nivel preliminar de la zona, tomado de `/clima`.
 - **Instalable** como app. Sin señal guarda los reportes nuevos y los envía al volver la conexión.
 
@@ -23,7 +26,7 @@ Lo que falta está en [`docs/plan-tecnico.md`](docs/plan-tecnico.md): API Open31
 
 ## Arranque local
 
-En la Mac se usa `container` (Apple). Hace falta tener clonado al lado [`sosgalapagos-datos`](https://github.com/mayait/sosgalapagos-datos), de donde salen las capas.
+En la Mac se usa `container` (Apple). Las capas se traen de lo que publica `sosgalapagos.org/mapas/` y se guarda una copia en `.copia-mapas/`.
 
 ```bash
 # 1. Imágenes (una vez)
@@ -45,7 +48,8 @@ despliegue/local.sh servidor
 | Orden | Qué hace |
 |---|---|
 | `despliegue/local.sh pruebas` | Corre las pruebas |
-| `despliegue/local.sh createsuperuser` | Crea la cuenta para entrar a `/admin/` |
+| `despliegue/local.sh revisar_capas` | Avisa si `/mapas` publica algo que el mapa todavía no sabe dibujar |
+| `despliegue/local.sh createsuperuser` | Crea la cuenta para entrar a `/mapa/admin/` |
 | `despliegue/local.sh sembrar_demo --cantidad 200` | Añade 200 reportes al azar, para probar el rendimiento en un teléfono |
 | `despliegue/local.sh db_worker` | Trabajador de tareas en segundo plano |
 | `despliegue/local.sh reloj` | Encola las tareas periódicas cada minuto |

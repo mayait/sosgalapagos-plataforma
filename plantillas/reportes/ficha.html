@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load static reportes_extras %}
+{% block titulo %}{{ r.tipo.nombre }}{% endblock %}
+{% block contenido %}
+<main class="pagina">
+  <div id="detalle">{% include "parciales/ficha.html" %}</div>
+  <p><a class="enlace" href="{% url 'reportes:mapa' %}?r={{ r.id_publico }}">Ver en el mapa</a></p>
+  {% include "parciales/firma.html" %}
+</main>
+{% endblock %}
+{% block guiones %}
+<script src="{% static 'terceros/htmx.min.js' %}"></script>
+<script src="{% propio 'mapa/comun.js' %}"></script>
+<script>document.addEventListener('click', e => { if (e.target.closest('[data-cerrar-ficha]')) location.href = '{% url "reportes:mapa" %}'; });</script>
+{% endblock %}

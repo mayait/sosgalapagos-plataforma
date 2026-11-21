@@ -2,7 +2,69 @@
 
 Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arriba. Cada entrada dice qué pasó, por qué importa y qué se hace distinto.
 
+## 2026-11-21 · Puesta en producción
+
+- **El sitio actual ya usa `/api` y `/admin`.** El plan ponía la API nueva en `/api/`. *Qué se hace:* todo lo de la plataforma vive bajo `/mapa/` (API, administración, estáticos y fotos). Una sola ruta nueva en Caddy y ningún choque.
+- **El despliegue del sitio borra los contenedores que no conoce** (`docker compose up --remove-orphans`). Si la plataforma compartiera su proyecto de Compose, el siguiente despliegue del sitio la borraría. *Qué se hace:* proyecto de Compose aparte (`sosgalapagos-plataforma`), unido a la red del sitio.
+- **Reiniciar Caddy corta todo el sitio.** Y como el `Caddyfile` se monta como archivo suelto, un `git pull` no llega al contenedor. *Qué se hace:* se copia el archivo al contenedor, se valida y se recarga en caliente (`caddy reload`), sin reiniciar.
+- **Las fotos las sirve Django, no Caddy.** Añadir un volumen a Caddy obligaba a recrearlo. Son pocas y pequeñas.
+- **Probar la imagen en modo producción antes de subirla.** Se levantó en la Mac con `DEPURAR` apagado y gunicorn: las 12 rutas responden y el mapa base se sirve por trozos.
+
 ## 2026-11-21 · Fase 1
+
+- **Al tocar un reporte con fotos se abría otra cosa (lo reportó Julián: «no veo las fotos»).** Tres causas juntas:
+  - Encima del reporte había un punto de control del modelo, en el mismo lugar, y el toque abría ese punto, que no tiene fotos. *Qué se hace:* el toque busca en un cuadrito alrededor del dedo y, si ahí hay un reporte de campo, gana el reporte. Además los reportes de campo se dibujan encima de los demás puntos.
+  - Las fotos iban al final de la ficha, bajo el título, los datos y el texto. *Qué se hace:* van primero, la primera en grande.
+  - Al tocar una foto se abría el archivo en otra pestaña. *Qué se hace:* visor propio a pantalla completa, con pie de foto, contador, flechas y deslizamiento.
+- **El botón Reportar ocupaba el mejor sitio de la hoja (indicación de Julián: «en segundo nivel»).** Era una barra roja de lado a lado sobre el contenido. *Qué se hace:* es un botón pequeño junto al asa. La hoja asomada baja de 138 a 96 px y deja ver más mapa.
+- **Probar «se abre la ficha» no es probar «se abre la ficha correcta».** Mi prueba anterior comprobaba que aparecía una ficha, no de qué capa era. *Qué se hace:* la revisión comprueba el nombre de la capa y que el número de fotos mostradas sea el del reporte.
+
+- **`/mapas` cambió y el mapa no sabía dibujar parte de lo nuevo (lo pidió revisar Julián).** Entre las 09:15 y las 11:13 el manifiesto pasó de 56 a 59 capas y estrenó formas de estilo. Lo que faltaba:
+  - **Rangos numéricos** (`clasificar.rangos`, en «Población por manzana»): encender esa capa lanzaba un error.
+  - **`fill: false`** (límite urbano): se dibujaba con relleno.
+  - **Trazo discontinuo según el dato** (`estilo_si`, áreas por validar): salían con línea continua.
+  - **Áreas dentro de una capa de líneas** (el agua empozada del flujo observado): sin relleno.
+  - **Reportes de campo:** `/mapas` ahora marca con borde punteado la ubicación aproximada, usa un triángulo para el aviso sin foto y pinta los refugios en verde. Se adoptó el mismo significado, conservando el cuadrado.
+  - **Borde oscuro** en los puntos que caen en susceptibilidad alta o media.
+  - **Enlaces a un lugar** (`#ptoayora`, `#la-cascada`, `#lat,lon,zoom`): ahora también funcionan en `/mapa/`.
+  *Qué se hace:* todo eso está corregido, y hay una orden que lo vigila: `manage.py revisar_capas` baja el manifiesto publicado y avisa de cualquier tipo de capa o clave de estilo que el mapa no conozca.
+- **Revisar «que las capas se ven» no es encender tres.** Los fallos estaban en capas apagadas por defecto. *Qué se hace:* la revisión enciende las 59 capas una por una y recoge los errores del mapa.
+
+- **Otro equipo actualiza los modelos mientras el mapa está en uso (aviso de Julián).** El 21-nov se publicaron varias versiones de `/mapas` en una mañana: reportes de campo por lotes, la susceptibilidad ajustada con lo observado y una capa nueva del flujo observado. El mapa pedía las capas sin versión, y el navegador, Cloudflare (10 min) y el service worker podían seguir mostrando un modelo viejo. *Qué se hace:*
+  - Cada publicación de `/mapas` deja su versión en `version.txt`. El mapa la pega a todas las direcciones de capas, teselas y descargas (`?v=…`).
+  - Con el mapa abierto, cada 2 minutos pregunta si hay publicación nueva. Si la hay, vuelve a dibujar lo encendido con los datos nuevos y avisa: «Capas y modelos actualizados».
+  - Una capa nueva que venga encendida aparece sola, aunque la persona ya tuviera su elección guardada.
+  - El panel Capas dice a qué hora se actualizaron las capas.
+  - En la Mac, la copia local se guarda por versión; lo generado y aún no publicado (las teselas del 3D) sirve de respaldo.
+- **No dar por fijo lo que publica otro equipo.** *Qué se hace:* antes de tocar algo que dependa de `/mapas`, se hace `git pull` en `sosgalapagos-datos` y se mira `version.txt` del sitio.
+
+- **Los reportes de campo se confundían con los pines nuevos.** Los dos eran círculos rojos. *Qué se hace (lo pidió Julián):* las capas con `marcador: reporte` del manifiesto se dibujan como cuadrados redondeados con un iconito (cámara si trae fotos, casa si es un refugio, «!» si es un aviso sin foto), del color de su gravedad. Los pines de los reportes nuevos siguen siendo redondos. Regla para lo que venga: **redondo = reporte de la plataforma; cuadrado = reporte de campo de `/mapas`.**
+
+- **La vista preferida es satélite con la capa de riesgo encima (indicación de Julián, con captura).** Se había aprobado la base gris, pero al verla en uso Julián mostró la que le gusta: foto de satélite, susceptibilidad en azules y quebradas. *Qué se hace:* el mapa abre en satélite (`MAPA_BASE_INICIAL`), con los nombres de calles en blanco encima de la foto. La base gris propia queda como opción y como respaldo sin conexión, porque el satélite son teselas de un tercero (Esri) que no se guardan en el teléfono. El mapa recuerda la base que cada persona elige.
+
+- **Un globo con texto largo se sale de la pantalla del teléfono.** Al tocar un área afectada salía un globo más alto que el mapa, tapado por la leyenda. *Qué se hace:* ningún elemento de capa abre un globo; todos se leen en la hoja (teléfono) o en el panel (escritorio).
+- **Un punto quedaba debajo de un área.** Las capas se apilaban en el orden del manifiesto y los reportes con fotos, que van primero, quedaban abajo. *Qué se hace:* abajo imágenes y polígonos, luego líneas y arriba puntos; dentro de cada tipo manda el manifiesto.
+- **Revalidar no bastó: la primera carga tras un cambio seguía con el JavaScript viejo.** *Qué se hace:* los archivos propios llevan su versión en la URL (`?v=<fecha de modificación>`, etiqueta `{% propio %}`). Sin compilación los nombres no cambian, así que la versión es lo único que obliga al navegador a pedirlos de nuevo.
+
+- **En el teléfono no se podía bajar en una ficha con fotos (lo reportó Julián).** La hoja medía siempre el 88 % de la pantalla y se movía con `transform`. A media altura, la mitad de abajo quedaba fuera de la pantalla: el contenido estaba ahí, pero el área que se desplazaba era más alta que lo visible. *Qué se hace:* la hoja mide exactamente lo que se ve (`height`, no `transform`). *Por qué no lo vi:* revisé que la ficha se abriera, no que se pudiera llegar al final. Toda revisión de la hoja incluye ahora desplazarse hasta el último elemento.
+
+- **El riesgo modelado y las quebradas arrancan encendidos (indicación de Julián).** La primera versión abría con pocas capas para no tapar los reportes, y en el teléfono solo con los barrios. *Qué se hace:* arrancan encendidas las capas que `/mapas` marca como visibles en su manifiesto, sin lista propia. En el teléfono se respetan las que `/mapas` apaga por pesadas, salvo los grupos de riesgo de inundación y de quebradas, que salen siempre (`CAPAS_SIEMPRE_GRUPOS`).
+- **Los puntos de salud y refugios se confunden con los pines.** Son círculos rojos con «+» muy parecidos a un reporte confirmado. *Qué se hace:* es la única capa visible de `/mapas` que aquí arranca apagada (`CAPAS_APAGADAS_AL_ABRIR`). Queda por decidir si se les cambia la forma para poder encenderlos por defecto.
+- **La susceptibilidad pesa 2,3 MB comprimida.** Ahora se baja también en el teléfono. *Qué se hace:* se deja así por indicación; si la prueba en un teléfono de gama baja va lenta, la salida es servirla en teselas vectoriales.
+
+- **El mar debe distinguirse de la tierra (indicación de Julián).** Con la base toda en gris, la costa casi no se leía. *Qué se hace:* la tierra sigue gris y el mar va en azul claro (`estaticos/mapa/base.js`).
+- **El navegador también guarda JavaScript viejo por su cuenta.** Tras cambiar el color del mar, la página siguió usando el `base.js` anterior aunque el service worker ya iba primero a la red: la respuesta salía de la memoria del navegador. *Qué se hace:* el service worker pide el código propio con `cache: 'no-cache'`, que obliga a revalidar con el servidor.
+
+- **El logotipo de la USFQ va una sola vez, abajo y muy sutil (indicación de Julián).** La primera versión lo ponía también en la cabecera del panel. *Qué se hace:* solo en la firma del pie, a 18 px de alto y tenue.
+- **La vista 3D usa relieve propio.** Las teselas de cota del DTM de 1 m que publicaba `/mapas` solo existían en el zoom 16, y MapLibre necesita varios niveles. *Qué se hace:* el repo de datos genera una pirámide de cota de todo el archipiélago (`37_teselas_relieve3d.py`: DTM de la SGIAR en Santa Cruz y Copernicus en el resto; 47 MB). El mapa la busca en `/mapas/teselas/relieve3d/`; si aún no está publicada, usa Terrain Tiles (AWS) como respaldo. El relieve se pide solo al tocar el botón 3D.
+- **Una sola fuente de cota por mapa.** MapLibre no mezcla dos fuentes de elevación, y una fuente que solo cubra Santa Cruz deja un muro en el borde. *Qué se hace:* la pirámide cubre todas las islas con el relieve ya fusionado.
+- **El 3D sin sombreado no se nota.** Santa Cruz tiene pendientes suaves y el terreno se veía plano. *Qué se hace:* al activar el 3D se añade una capa de sombreado.
+- **Las fotos de una capa llegan como texto.** MapLibre entrega las propiedades con listas (las `fotos` de los reportes de campo) como cadena JSON. *Qué se hace:* se convierten antes de usarlas (`estaticos/mapa/capas.js`).
+- **Un globo con fotos no sirve en el teléfono.** *Qué se hace:* los elementos de una capa que traen fotos o un párrafo se abren en la hoja inferior, igual que un reporte.
+- **Revisión de teléfono sin teléfono.** La ventana del navegador no siempre acepta un ancho de teléfono. *Qué se hace:* se carga el mapa en marcos de 390 y 360 px del mismo origen y se miden las cajas con un guion: así salieron la franja de lluvia desbordada, la atribución tapada y el asa de 22 px. No reemplaza la prueba en un teléfono real.
+
+- **Las capas deben seguir siendo activables, desactivables y descargables, como en `/mapas` (indicación de Julián).** La primera versión del panel leía un manifiesto viejo (`mapas-galapagos/datos/capas.json`, 24 capas, del 1-nov) y no ofrecía descargas. `/mapas` publica otro, más completo (56 capas) y con su índice de descargas. *Qué se hace:* el panel lee `capas.json` y `descargas.json` de `/mapas`, muestra los enlaces de Shapefile y GeoJSON de cada capa, y trae «Apagar todas las capas» y «Volver a las capas iniciales». No hay lista de capas propia: lo que se publica en `/mapas` aparece aquí.
+- **Hay tres manifiestos de capas distintos.** El de `mapas-galapagos/datos/` (entregable cerrado), el de la plataforma vieja (`/capas/galapagos-2026/`) y el de `/mapas`. El vigente es el de `/mapas`. *Qué se hace:* se usa solo ese.
 
 - **Un service worker que sirve primero lo guardado esconde los cambios.** Al corregir el CSS, el navegador siguió mostrando el archivo viejo. *Qué se hace:* el código propio (`estaticos/mapa/`) va primero a la red; solo las librerías, el mapa base, la marca y las capas se sirven primero desde lo guardado. Al cambiar esa lista se sube `VERSION` en `plantillas/reportes/sw.js`.
 - **En CSS, `display: flex` le gana al atributo `hidden`.** El panel Capas aparecía abierto aunque tenía `hidden`. *Qué se hace:* regla global `[hidden] { display: none !important; }`.

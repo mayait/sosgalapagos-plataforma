@@ -6,3 +6,6 @@ medios/
 estaticos_reunidos/
 *.db
 .pytest_cache/
+.copia-mapas/
+despliegue/produccion/.env
+despliegue/produccion/version.txt

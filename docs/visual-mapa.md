@@ -18,6 +18,15 @@ Capturas en [`capturas/`](capturas/):
 | `10-nuevo-movil-mapa.jpg` | **Mapa nuevo** en el teléfono (fase 1, en local) |
 | `11-nuevo-escritorio-mapa.png` | **Mapa nuevo** en el escritorio, con la lista de lo que hay cerca |
 | `12-nuevo-escritorio-capas-y-ficha.png` | **Mapa nuevo** con el panel Capas y la ficha de un reporte |
+| `14-nuevo-movil-fotos-3d-formulario.jpg` | **Mapa nuevo** en teléfono: reporte de campo con fotos, vista 3D y formulario a 360 px |
+| `24-nuevo-movil-fotos-primero-y-visor.jpg` | **Mapa nuevo** en teléfono: Reportar pequeño, ficha que empieza por las fotos y visor a pantalla completa |
+| `23-nuevo-al-dia-con-mapas.jpg` | **Mapa nuevo** al día con `/mapas` del 21-nov 11:13: flujo observado con flechas, áreas por validar y borde punteado en ubicaciones aproximadas |
+| `21-nuevo-marcadores-reportes-de-campo.png` | **Mapa nuevo:** reportes de campo como cuadrados con iconito, distintos de los pines redondos |
+| `20-nuevo-satelite-con-riesgo.jpg` | **Mapa nuevo:** vista de apertura, satélite con la capa de riesgo |
+| `17-nuevo-mar-azul.jpg`, `18-nuevo-3d-mar-azul.jpg` | **Mapa nuevo:** tierra gris y mar azul claro, en plano y en 3D |
+| `16-nuevo-3d-relieve-propio.jpg` | **Mapa nuevo:** vista 3D con el relieve propio (DTM de la SGIAR y Copernicus) |
+| `15-nuevo-escritorio-3d-y-fotos.jpg` | **Mapa nuevo:** vista 3D de Santa Cruz y fotos de un reporte de campo |
+| `13-nuevo-capas-con-descargas.jpg` | **Mapa nuevo:** panel Capas con las descargas de cada capa, como en `/mapas` |
 
 ### Vista inicial y disposición
 
@@ -97,7 +106,7 @@ Capturas en [`capturas/`](capturas/):
 | Cambio | Motivo |
 |---|---|
 | **Teléfono a pantalla completa**, con hoja inferior deslizable | Lo pide el encargo. Hoy es una franja del 35 % |
-| **Base gris claro por defecto** | Lo pide el encargo. Hoy la base es Calles a color. Con la base gris los pines y las zonas de riesgo resaltan más |
+| **Abre en satélite con la capa de riesgo encima** | Es la vista preferida de Julián (21-nov). La base gris propia, con el mar en azul, queda como opción y como respaldo sin conexión |
 | **Base propia en PMTiles** en lugar de teselas de terceros | Funciona con conexión lenta y se puede guardar en el teléfono |
 | **Los pines se destiñen con la edad** | Un reporte viejo no debe pesar igual que uno reciente |
 | **Pin con icono del tipo de riesgo** | Hoy el pin solo dice el estado. El nuevo dice además qué es (agua en la vía, cable caído…) |
@@ -105,6 +114,7 @@ Capturas en [`capturas/`](capturas/):
 | **Franja de lluvia y fichas de tiempo** (ahora, 24 h, todo el evento) | Son nuevas; no existen hoy |
 | **Botón grande Reportar** | Es la acción principal del producto nuevo |
 | Sin botón de subir GeoJSON al inicio | Se usa poco en la portada. Sigue disponible en `/mapas` |
+| **Descargas por capa y botones «Apagar todas» y «Volver a las iniciales»** | Son los principios de `/mapas`, que se mantienen: toda capa se enciende, se apaga y se descarga. El panel lee el manifiesto y el índice de descargas de `/mapas` |
 | Fondo blanco en todo, sin modo oscuro | Lo pide el encargo. La barra superior negra de hoy desaparece |
 
 ### Colores de estado propuestos

@@ -1,0 +1,69 @@
+# SOS Galápagos · mapa de riesgos (plataforma de reportes) en producción.
+#
+# Es un proyecto de Compose APARTE del sitio (nombre distinto), a propósito:
+#   - el despliegue del sitio usa «--remove-orphans» y borraría estos contenedores si
+#     compartieran proyecto;
+#   - levantar o actualizar esto no reinicia nada del sitio.
+# Se conecta a la red del sitio para que su Caddy alcance a «plataforma:8000».
+#
+# Uso (en el servidor, con el repo en /opt/sosgalapagos-plataforma):
+#   despliegue/produccion/desplegar.sh
+name: sosgalapagos-plataforma
+
+x-plataforma: &plataforma
+  build:
+    context: ../..
+    dockerfile: despliegue/Dockerfile
+  restart: unless-stopped
+  env_file: .env
+  environment:
+    - BD_ANFITRION=postgis
+    - BD_NOMBRE=${POSTGRES_DB:-plataforma}
+    - BD_USUARIO=${POSTGRES_USER:-plataforma}
+    - BD_CLAVE=${POSTGRES_PASSWORD}
+    # Lluvia: el JSON que escribe el recolector de /clima cada 5 minutos. Solo lectura.
+    - CLIMA_ESTADO=/srv/clima/datos/estado.json
+    - MEDIOS_DIR=/medios
+  volumes:
+    - medios:/medios
+    - /srv/sosgalapagos-clima:/srv/clima:ro
+  depends_on:
+    postgis:
+      condition: service_healthy
+
+services:
+  postgis:
+    build: ../postgis
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - bd:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  plataforma:
+    <<: *plataforma
+    command: sh -c "python manage.py migrate --noinput && gunicorn plataforma.wsgi --bind 0.0.0.0:8000 --workers 3 --timeout 60"
+    expose: ['8000']
+    networks: [default, sitio]
+
+  trabajador:
+    <<: *plataforma
+    command: python manage.py db_worker
+
+  reloj:
+    <<: *plataforma
+    command: python manage.py reloj
+
+volumes:
+  bd:
+  medios:
+
+networks:
+  # La red del Compose del sitio (proyecto «sosgalapagos»): ahí está su Caddy.
+  sitio:
+    external: true
+    name: sosgalapagos_default

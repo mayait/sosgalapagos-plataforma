@@ -211,7 +211,7 @@ Lo que ya no aplica: el precio de los mensajes de Meta y la exención para organ
 ## 8. Mapa y teléfono
 
 - **Base:** `galapagos.pmtiles` (5 MB) con el estilo claro de Protomaps ajustado a gris. Calles, satélite y topográfico siguen siendo las teselas externas de hoy y solo se cargan si se eligen.
-- **Capas:** un solo manifiesto, generado en el repo de datos. Cada capa se baja al encenderla y va debajo de los pines.
+- **Capas:** las mismas de `/mapas`. El panel lee su `capas.json` y su `descargas.json`, así que toda capa se puede encender, apagar y descargar en Shapefile y GeoJSON. Cada capa se baja al encenderla y va debajo de los pines.
 - **Pines:** una fuente GeoJSON con clusters. Color por estado, icono por tipo y tamaño por gravedad.
 - **Desteñido por edad:** la opacidad depende de qué fracción del plazo ya pasó. El teléfono la recalcula cada minuto, sin pedir datos.
 - **Fichas de tiempo:** «ahora» muestra los vivos; «24 h» y «todo el evento» añaden los cerrados en gris.

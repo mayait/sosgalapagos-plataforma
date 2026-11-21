@@ -30,6 +30,11 @@ Mapa base (estaticos/base/galapagos.pmtiles): © colaboradores de OpenStreetMap,
 bajo la Open Database License (ODbL). Extracto hecho con la herramienta de
 Protomaps a partir de su compilación del 21-nov-2026.
 
+Vista 3D: el relieve sale de las teselas que publica /mapas (DTM de 1 m de la
+SGIAR, Vricon/Maxar, en Santa Cruz; Copernicus GLO-30, ESA, en el resto). Si no
+están publicadas, se usa Terrain Tiles (Mapzen, alojado en AWS Open Data) como
+respaldo. Ninguno se incluye en el repositorio.
+
 Los logotipos de la USFQ (estaticos/marca/*.svg) son marcas de la Universidad
 San Francisco de Quito. No se distribuyen bajo la licencia Apache ni CC BY.
 

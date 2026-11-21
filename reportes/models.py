@@ -1,0 +1,152 @@
+"""Modelos de los reportes de riesgo.
+
+Un reporte es un lugar de peligro visto en una fecha. Vive un plazo que depende
+de su tipo y se retira solo. Nunca se borra: al cerrarse pasa al archivo del evento.
+Las reglas (plazos, duplicados, confirmaciones) están en reportes/reglas.py.
+"""
+import secrets
+
+from django.contrib.gis.db import models
+from django.utils import timezone
+
+ALFABETO_ID = "23456789abcdefghjkmnpqrstuvwxyz"  # sin 0, 1, i, l, o: se dictan sin confusión
+
+
+def nuevo_id_publico():
+    return "".join(secrets.choice(ALFABETO_ID) for _ in range(8))
+
+
+class TipoRiesgo(models.Model):
+    codigo = models.SlugField("código", max_length=30, unique=True)
+    nombre = models.CharField(max_length=60)
+    icono = models.CharField(max_length=30, help_text="Nombre del icono en estaticos/mapa/iconos.svg")
+    plazo_horas = models.PositiveIntegerField("plazo de vida (horas)")
+    orden = models.PositiveSmallIntegerField(default=0)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "tipo de riesgo"
+        verbose_name_plural = "tipos de riesgo"
+        ordering = ["orden", "nombre"]
+
+    def __str__(self):
+        return self.nombre
+
+
+class Gravedad(models.TextChoices):
+    CUIDADO = "cuidado", "Pasar con cuidado"
+    NO_PASAR = "no_pasar", "No pasar"
+    PELIGRO_VIDA = "peligro_vida", "Peligro de vida"
+
+
+class Profundidad(models.TextChoices):
+    TOBILLO = "tobillo", "Al tobillo"
+    RODILLA = "rodilla", "A la rodilla"
+    CINTURA = "cintura", "A la cintura"
+    PUERTA_AUTO = "puerta_auto", "A la puerta de un auto"
+    SIN_DATO = "sin_dato", "Sin dato"
+
+
+class Estado(models.TextChoices):
+    POR_VERIFICAR = "por_verificar", "Por verificar"
+    CONFIRMADO = "confirmado", "Confirmado"
+    BAJANDO = "bajando", "Bajando"
+    CERRADO = "cerrado", "Cerrado"
+
+
+class Fuente(models.TextChoices):
+    VECINO = "vecino", "Vecino"
+    COORDINADOR = "coordinador", "Coordinador"
+    INSTITUCION = "institucion", "Institución"
+    WHATSAPP = "whatsapp", "WhatsApp"
+
+
+class MotivoCierre(models.TextChoices):
+    VENCIO = "vencio", "Venció el plazo"
+    YA_BAJO = "ya_bajo", "Dos avisos de que ya bajó"
+    COORDINADOR = "coordinador", "Lo cerró coordinación"
+    FUSIONADO = "fusionado", "Se fusionó con otro reporte"
+
+
+class OrigenAgua(models.TextChoices):
+    # Lo pide el issue 80 del repo de datos para validar los modelos.
+    CANADA = "canada", "Cañada o quebrada que se desborda"
+    CALLE = "calle", "Calle que se encharca"
+    ALCANTARILLADO = "alcantarillado", "Agua que sale del alcantarillado"
+
+
+class ReporteQuerySet(models.QuerySet):
+    def vivos(self, ahora=None):
+        """Los que se ven en el mapa: no cerrados y con el plazo sin vencer.
+
+        El filtro por vence_en hace que un reporte vencido desaparezca aunque la
+        tarea que lo marca como cerrado no haya corrido.
+        """
+        ahora = ahora or timezone.now()
+        return self.exclude(estado=Estado.CERRADO).filter(vence_en__gt=ahora)
+
+
+class Reporte(models.Model):
+    id_publico = models.CharField(max_length=8, unique=True, default=nuevo_id_publico, editable=False)
+    tipo = models.ForeignKey(TipoRiesgo, on_delete=models.PROTECT, related_name="reportes")
+    gravedad = models.CharField(max_length=15, choices=Gravedad, default=Gravedad.CUIDADO)
+    profundidad = models.CharField(max_length=15, choices=Profundidad, default=Profundidad.SIN_DATO)
+    punto = models.PointField(srid=4326)
+    tramo = models.LineStringField(srid=4326, null=True, blank=True, help_text="Tramo de vía. Solo coordinación.")
+    precision_m = models.PositiveIntegerField("precisión del GPS (m)", null=True, blank=True)
+
+    visto_en = models.DateTimeField(default=timezone.now, db_index=True)
+    vence_en = models.DateTimeField(db_index=True, editable=False)
+    estado = models.CharField(max_length=15, choices=Estado, default=Estado.POR_VERIFICAR, db_index=True)
+    fuente = models.CharField(max_length=12, choices=Fuente, default=Fuente.VECINO)
+
+    foto = models.ImageField(upload_to="reportes/%Y/%m/", null=True, blank=True)
+    nota = models.CharField(max_length=280, blank=True)
+    # La foto y la nota de un vecino no se publican hasta que coordinación las ve:
+    # así un nombre, una cédula o la cara de un menor no llegan al mapa sin revisión.
+    contenido_visible = models.BooleanField("foto y nota públicas", default=False)
+    zona = models.ForeignKey("zonas.Zona", null=True, blank=True, on_delete=models.SET_NULL, related_name="reportes")
+
+    cerrado_en = models.DateTimeField(null=True, blank=True)
+    motivo_cierre = models.CharField(max_length=12, choices=MotivoCierre, blank=True)
+    origen_agua = models.CharField(max_length=15, choices=OrigenAgua, blank=True)
+    fusionado_en = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="fusionados")
+    creado_por_llave = models.ForeignKey("api.LlaveApi", null=True, blank=True, on_delete=models.SET_NULL)
+    huella = models.CharField(max_length=64, blank=True, editable=False, help_text="Huella anónima del dispositivo que lo creó")
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    objects = ReporteQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["-visto_en"]
+        indexes = [models.Index(fields=["estado", "vence_en"])]
+
+    def __str__(self):
+        return f"{self.tipo} · {self.id_publico}"
+
+    def save(self, *args, **kwargs):
+        if self.vence_en is None:
+            from .reglas import calcular_vence
+
+            self.vence_en = calcular_vence(self.visto_en, self.tipo.plazo_horas)
+        super().save(*args, **kwargs)
+
+
+class TipoConfirmacion(models.TextChoices):
+    SIGUE_AHI = "sigue_ahi", "Sigue ahí"
+    YA_BAJO = "ya_bajo", "Ya bajó"
+
+
+class Confirmacion(models.Model):
+    reporte = models.ForeignKey(Reporte, on_delete=models.CASCADE, related_name="confirmaciones")
+    tipo = models.CharField(max_length=10, choices=TipoConfirmacion)
+    fecha = models.DateTimeField(default=timezone.now)
+    huella = models.CharField(max_length=64, help_text="Huella anónima del dispositivo")
+
+    class Meta:
+        verbose_name = "confirmación"
+        verbose_name_plural = "confirmaciones"
+        ordering = ["-fecha"]
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} · {self.reporte.id_publico}"
