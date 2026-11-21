@@ -4,6 +4,9 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 
 ## 2026-11-21 · Fase 1
 
+- **El mar debe distinguirse de la tierra (indicación de Julián).** Con la base toda en gris, la costa casi no se leía. *Qué se hace:* la tierra sigue gris y el mar va en azul claro (`estaticos/mapa/base.js`).
+- **El navegador también guarda JavaScript viejo por su cuenta.** Tras cambiar el color del mar, la página siguió usando el `base.js` anterior aunque el service worker ya iba primero a la red: la respuesta salía de la memoria del navegador. *Qué se hace:* el service worker pide el código propio con `cache: 'no-cache'`, que obliga a revalidar con el servidor.
+
 - **El logotipo de la USFQ va una sola vez, abajo y muy sutil (indicación de Julián).** La primera versión lo ponía también en la cabecera del panel. *Qué se hace:* solo en la firma del pie, a 18 px de alto y tenue.
 - **La vista 3D usa relieve propio.** Las teselas de cota del DTM de 1 m que publicaba `/mapas` solo existían en el zoom 16, y MapLibre necesita varios niveles. *Qué se hace:* el repo de datos genera una pirámide de cota de todo el archipiélago (`37_teselas_relieve3d.py`: DTM de la SGIAR en Santa Cruz y Copernicus en el resto; 47 MB). El mapa la busca en `/mapas/teselas/relieve3d/`; si aún no está publicada, usa Terrain Tiles (AWS) como respaldo. El relieve se pide solo al tocar el botón 3D.
 - **Una sola fuente de cota por mapa.** MapLibre no mezcla dos fuentes de elevación, y una fuente que solo cubra Santa Cruz deja un muro en el borde. *Qué se hace:* la pirámide cubre todas las islas con el relieve ya fusionado.

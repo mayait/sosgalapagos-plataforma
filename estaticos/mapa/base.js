@@ -6,11 +6,12 @@
   const protocolo = new pmtiles.Protocol();
   maplibregl.addProtocol('pmtiles', protocolo.tile);
 
-  // Gris claro: parte del sabor «light» de Protomaps y le quita el color.
+  // Tierra en gris claro y mar en azul: parte del sabor «light» de Protomaps y le quita el color a la tierra.
   function sabor() {
     const s = Object.assign({}, basemaps.namedFlavor('light'));
     const grises = {
-      background: '#dfe3e4', earth: '#f3f3f1', water: '#cfd8dc',
+      // El mar va en azul claro para que la costa se lea de un vistazo; la tierra sigue gris.
+      background: '#b3d1e2', earth: '#f3f3f1', water: '#b3d1e2',
       park_a: '#e9ece6', park_b: '#e6eae2', wood_a: '#e7eae3', wood_b: '#e4e8df', scrub_a: '#eaece6', scrub_b: '#e8eae3',
       glacier: '#f3f3f1', sand: '#efeeea', beach: '#efeeea', hospital: '#efeded', industrial: '#ecebe9', school: '#efeeeb',
       zoo: '#e9ece6', military: '#ecebe9', aerodrome: '#e9e9e7', runway: '#dcdcda', pedestrian: '#ecebe8', pier: '#e4e4e2',
@@ -20,7 +21,7 @@
       link_casing: '#d2d2d0', major_casing_early: '#d2d2d0', major_casing_late: '#d2d2d0',
       highway_casing_early: '#c8c8c6', highway_casing_late: '#c8c8c6',
       roads_label_minor: '#7a7a78', roads_label_major: '#5c5c5a', city_label: '#3f3f3d', subplace_label: '#6a6a68',
-      ocean_label: '#8fa0a6', state_label: '#9a9a98', country_label: '#8a8a88', address_label: '#9a9a98',
+      ocean_label: '#5f879c', state_label: '#9a9a98', country_label: '#8a8a88', address_label: '#9a9a98',
     };
     for (const k of Object.keys(grises)) if (k in s) s[k] = grises[k];
     return s;

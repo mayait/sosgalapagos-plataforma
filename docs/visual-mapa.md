@@ -19,6 +19,7 @@ Capturas en [`capturas/`](capturas/):
 | `11-nuevo-escritorio-mapa.png` | **Mapa nuevo** en el escritorio, con la lista de lo que hay cerca |
 | `12-nuevo-escritorio-capas-y-ficha.png` | **Mapa nuevo** con el panel Capas y la ficha de un reporte |
 | `14-nuevo-movil-fotos-3d-formulario.jpg` | **Mapa nuevo** en teléfono: reporte de campo con fotos, vista 3D y formulario a 360 px |
+| `17-nuevo-mar-azul.jpg`, `18-nuevo-3d-mar-azul.jpg` | **Mapa nuevo:** tierra gris y mar azul claro, en plano y en 3D |
 | `16-nuevo-3d-relieve-propio.jpg` | **Mapa nuevo:** vista 3D con el relieve propio (DTM de la SGIAR y Copernicus) |
 | `15-nuevo-escritorio-3d-y-fotos.jpg` | **Mapa nuevo:** vista 3D de Santa Cruz y fotos de un reporte de campo |
 | `13-nuevo-capas-con-descargas.jpg` | **Mapa nuevo:** panel Capas con las descargas de cada capa, como en `/mapas` |
@@ -101,7 +102,7 @@ Capturas en [`capturas/`](capturas/):
 | Cambio | Motivo |
 |---|---|
 | **Teléfono a pantalla completa**, con hoja inferior deslizable | Lo pide el encargo. Hoy es una franja del 35 % |
-| **Base gris claro por defecto** | Lo pide el encargo. Hoy la base es Calles a color. Con la base gris los pines y las zonas de riesgo resaltan más |
+| **Base gris claro por defecto, con el mar en azul** | Lo pide el encargo. Hoy la base es Calles a color. Con la tierra gris los pines y las zonas de riesgo resaltan más; el mar va en azul claro para que la costa se lea |
 | **Base propia en PMTiles** en lugar de teselas de terceros | Funciona con conexión lenta y se puede guardar en el teléfono |
 | **Los pines se destiñen con la edad** | Un reporte viejo no debe pesar igual que uno reciente |
 | **Pin con icono del tipo de riesgo** | Hoy el pin solo dice el estado. El nuevo dice además qué es (agua en la vía, cable caído…) |

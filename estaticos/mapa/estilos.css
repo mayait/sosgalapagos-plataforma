@@ -56,7 +56,7 @@ a { color: inherit; }
 
 /* ── Mapa ────────────────────────────────────────────────────────────────── */
 .pantalla { position: fixed; inset: var(--aviso-alto) 0 0 0; }
-#mapa { position: absolute; inset: 0; background: #eef0f0; }
+#mapa { position: absolute; inset: 0; background: #b3d1e2; }
 .maplibregl-ctrl-attrib { font-size: 10px; }
 
 .flotante {

@@ -1,7 +1,7 @@
 /* Service worker del mapa. Guarda la interfaz, el mapa base y las capas ya vistas,
    para que la app instalada abra sin señal. Los reportes van siempre a la red:
    el mapa guarda la última respuesta por su cuenta y muestra de qué hora es. */
-const VERSION = 'sos-v4';
+const VERSION = 'sos-v5';
 const E = '{{ estaticos }}';
 const INTERFAZ = [
   '/mapa/', '/mapa/reportar/',
@@ -46,8 +46,10 @@ self.addEventListener('fetch', (e) => {
     return;
   }
   // Páginas y fragmentos: primero la red; sin señal, lo último guardado.
+  // «no-cache» obliga a preguntar al servidor si el archivo cambió (responde «sin cambios» si no):
+  // sin esto el navegador puede servir un JavaScript viejo de su propia memoria.
   e.respondWith(
-    fetch(pedido).then((r) => {
+    fetch(pedido, url.pathname.startsWith(E) ? { cache: 'no-cache' } : undefined).then((r) => {
       const guardar = pedido.mode === 'navigate' || url.pathname.startsWith(E);
       if (r.ok && guardar) { const copia = r.clone(); caches.open(VERSION).then((c) => c.put(url.pathname, copia)); }
       return r;
