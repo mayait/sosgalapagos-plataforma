@@ -33,6 +33,25 @@
   const inicioDelDia = (clave) => Date.parse(`${clave}T00:00:00-06:00`);
   const mm = (v) => (v >= 100 ? Math.round(v).toLocaleString('es') : (Math.round(v * 10) / 10).toLocaleString('es'));
 
+  // Zonas grandes para filtrar. Los límites son aproximados (preliminares): la parte alta de
+  // Santa Cruz empieza al norte de Puerto Ayora (Bellavista, Santa Rosa, El Cascajo) y la de
+  // San Cristóbal al este de Puerto Baquerizo Moreno (El Progreso, La Soledad, Cerro Verde).
+  const ZONAS = [
+    { id: 'sc', nombre: 'Santa Cruz (Puerto Ayora)', isla: 'Santa Cruz' },
+    { id: 'sc-alta', nombre: 'Santa Cruz, parte alta', isla: 'Santa Cruz' },
+    { id: 'sx', nombre: 'San Cristóbal (Puerto Baquerizo)', isla: 'San Cristóbal' },
+    { id: 'sx-alta', nombre: 'San Cristóbal, parte alta', isla: 'San Cristóbal' },
+    { id: 'is', nombre: 'Isabela', isla: 'Isabela' },
+    { id: 'otras', nombre: 'Otras islas', isla: '' },
+  ];
+  const SC_ALTA_LAT = -0.718, SX_ALTA_LON = -89.585;
+  function zonaGrande(lon, lat) {
+    const isla = islaDe(lon, lat);
+    if (isla === 'Santa Cruz') return lat > SC_ALTA_LAT ? 'sc-alta' : 'sc';
+    if (isla === 'San Cristóbal') return lon > SX_ALTA_LON ? 'sx-alta' : 'sx';
+    return isla === 'Isabela' ? 'is' : 'otras';
+  }
+  const nombreZona = (id) => (ZONAS.find((z) => z.id === id) || {}).nombre || '';
   function islaDe(lon, lat) {
     if (lon < -90.7) return 'Isabela';
     if (lon > -89.9) return 'San Cristóbal';
@@ -47,7 +66,7 @@
       const p = f.properties, [lon, lat] = f.geometry.coordinates;
       const estados = { por_verificar: 'por verificar', confirmado: 'confirmado', bajando: 'bajando', cerrado: 'cerrado' };
       return {
-        t: p.visto * 1000, clase: p.clase, titulo: p.titulo || p.tipo_nombre, lugar: p.zona || '', zona: p.zona || '', isla: p.isla || islaDe(lon, lat),
+        t: p.visto * 1000, clase: p.clase, titulo: p.titulo || p.tipo_nombre, lugar: p.zona || '', zona: zonaGrande(lon, lat), isla: islaDe(lon, lat),
         detalle: estados[p.estado] || '', texto: '', foto: '', nFotos: 0, lon, lat, enlace: `${cfg.mapa}?r=${encodeURIComponent(p.id)}`,
       };
     });
@@ -72,7 +91,7 @@
         const fotos = Array.isArray(p.fotos) ? p.fotos : [];
         lista.push({
           t: Date.parse(`${fecha}T${p.hora.padStart(5, '0')}:00-06:00`), clase: capa.marcador === 'corazon' ? 'buena' : 'campo', titulo: p.titulo || capa.titulo,
-          lugar: p.lugar || '', zona: p.barrio || '', isla: islaDe(lon, lat),
+          lugar: p.lugar || p.barrio || '', zona: zonaGrande(lon, lat), isla: islaDe(lon, lat),
           detalle: p.gravedad_txt ? 'gravedad ' + p.gravedad_txt.toLowerCase() : [p.estado_txt, p.autor].filter(Boolean).join(' · '),
           texto: p.descripcion || '', foto: fotos.length ? datos + (capa.fotos_base || '') + (fotos[0].mini || fotos[0].archivo) : '',
           nFotos: fotos.length, lon, lat, enlace: `${cfg.mapa}#${lat.toFixed(5)},${lon.toFixed(5)},17.5`,
@@ -96,7 +115,7 @@
   function filtrados() {
     const f = estado.filtros;
     return estado.reportes.filter((r) => r.t >= f.desde && r.t < f.hasta
-      && (!f.isla || r.isla === f.isla) && (!f.zona || r.zona === f.zona) && (!f.clase || r.clase === f.clase))
+      && (!f.zona || r.zona === f.zona) && (!f.clase || r.clase === f.clase))
       .sort((a, b) => b.t - a.t);
   }
   function opciones(select, valores, todas, elegido) {
@@ -107,9 +126,8 @@
   }
   function pintarFiltros() {
     const f = estado.filtros;
-    const enIsla = estado.reportes.filter((r) => !f.isla || r.isla === f.isla);
-    opciones($('f-isla'), [...new Set(estado.reportes.map((r) => r.isla).concat(estado.estaciones.map((e) => e.isla)).filter(Boolean))].sort(), 'Todas las islas', f.isla);
-    opciones($('f-zona'), [...new Set(enIsla.map((r) => r.zona).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es')), 'Todas las zonas', f.zona);
+    const conReportes = new Set(estado.reportes.map((r) => r.zona));
+    opciones($('f-zona'), ZONAS.filter((z) => z.id !== 'otras' || conReportes.has('otras')).map((z) => [z.id, z.nombre]), 'Todas las zonas', f.zona);
     opciones($('f-clase'), Object.entries(CLASES), 'Todo', f.clase);
     $('f-desde').value = claveDia(f.desde);
     $('f-hasta').value = claveDia(f.hasta - 1);
@@ -231,6 +249,7 @@
     return `<a class="hito clase-${r.clase}" href="${x(r.enlace)}">
       ${r.foto ? `<img src="${x(r.foto)}" alt="" loading="lazy">` : ''}
       <span class="hito-texto"><span class="hito-clase">${horaDe(r.t)} · ${x(CLASES[r.clase] || '')}${r.nFotos > 1 ? ` · ${r.nFotos} fotos` : ''}</span>
+      ${estado.filtros.zona ? '' : `<span class="hito-zona">${x(nombreZona(r.zona))}</span>`}
       <b>${x(r.titulo)}</b>${sub ? `<span class="hito-sub">${x(sub)}</span>` : ''}${r.texto ? `<span class="hito-desc">${x(r.texto)}</span>` : ''}</span></a>`;
   }
   // Hito de lluvia: un dato de contexto, no un reporte. Va en la hora en que más llovió.
@@ -264,7 +283,7 @@
       h += '</ol></section>';
     }
     cerrar();
-    if (hayFiltro && !dias.some((d) => d.reportes.length)) h = '<p class="vacio"><b>Sin reportes</b> con estos filtros. Prueba con todas las islas o con más días.</p>' + h;
+    if (hayFiltro && !dias.some((d) => d.reportes.length)) h = '<p class="vacio"><b>Sin reportes</b> con estos filtros. Prueba con todas las zonas o con más días.</p>' + h;
     return h;
   }
 
@@ -277,7 +296,7 @@
     $('cifra-dias-sub').textContent = `de ${dias.length} días${conReportes.length ? ' · el último, ' + diaCorto(conReportes[conReportes.length - 1].t) : ''}`;
     navegador(dias);
     saltos(dias);
-    $('linea').innerHTML = linea(dias, Boolean(f.isla || f.zona || f.clase));
+    $('linea').innerHTML = linea(dias, Boolean(f.zona || f.clase));
     marcarVisto();
   }
 
@@ -306,13 +325,15 @@
     await actualizar(true);
     $('informe').removeAttribute('aria-busy');
 
-    $('f-isla').onchange = (e) => {
-      f.isla = e.target.value; f.zona = '';
-      const propia = ESTACION_POR_ISLA[f.isla] || (estado.estaciones.find((s) => s.isla === f.isla) || {}).id;
-      if (propia && estado.estaciones.some((s) => s.id === propia)) f.estacion = propia;
+    $('f-zona').onchange = (e) => {
+      f.zona = e.target.value;
+      // Los hitos de lluvia salen de la estación de la isla de esa zona.
+      f.isla = (ZONAS.find((z) => z.id === f.zona) || {}).isla || '';
+      const propia = ESTACION_POR_ISLA[f.isla || 'Santa Cruz'] || (estado.estaciones.find((st) => st.isla === f.isla) || {}).id;
+      // Si esa isla no tiene estación con lluvia por hora, no se anota lluvia de otra isla.
+      f.estacion = propia && estado.estaciones.some((st) => st.id === propia) ? propia : '';
       actualizar(true);
     };
-    $('f-zona').onchange = (e) => { f.zona = e.target.value; actualizar(false); };
     $('f-clase').onchange = (e) => { f.clase = e.target.value; actualizar(false); };
     const fechas = () => {
       const d = inicioDelDia($('f-desde').value), h = inicioDelDia($('f-hasta').value) + DIA;
