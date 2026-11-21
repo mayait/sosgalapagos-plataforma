@@ -287,29 +287,42 @@
   });
 
   // ── Vista 3D ──────────────────────────────────────────────────────────────
-  // Relieve del terreno y edificios con altura. Se enciende a pedido: pesa más y
-  // baja teselas de elevación de un tercero (Terrain Tiles en AWS, formato terrarium).
+  // Relieve del terreno y edificios con altura. Se enciende a pedido, porque pesa más.
+  // La cota sale de las teselas propias que publica /mapas (DTM de 1 m de la SGIAR en
+  // Santa Cruz y Copernicus en el resto; sosgalapagos-datos, 37_teselas_relieve3d.py).
+  // Si todavía no están publicadas, se usa Terrain Tiles (AWS), de unos 30 m.
   const RELIEVE = { exageracion: 1.6, inclinacion: 62 };
-  let en3d = false;
-  function alternar3d() {
+  let en3d = false, cota = null;
+  async function fuenteDeCota() {
+    if (cota) return cota;
+    const base = `${cfg.capasUrl}teselas/relieve3d/`;
+    try {
+      const t = await fetch(base + 'teselas.json').then((r) => (r.ok ? r.json() : null));
+      if (t && t.cota && t.cota.codificacion === 'terrarium') {
+        const [[sur, oeste], [norte, este]] = t.limites;
+        return (cota = {
+          type: 'raster-dem', encoding: 'terrarium', tileSize: 256,
+          tiles: [location.origin + base + t.cota.url], minzoom: t.cota.zoom_min, maxzoom: t.cota.zoom_max,
+          bounds: [oeste, sur, este, norte], attribution: t.atribucion,
+        });
+      }
+    } catch (e) { /* sin teselas propias: se usa el respaldo */ }
+    return (cota = {
+      type: 'raster-dem', encoding: 'terrarium', tileSize: 256, maxzoom: 14,
+      tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+      attribution: 'Relieve: Terrain Tiles (Mapzen, AWS)',
+    });
+  }
+  async function alternar3d() {
     en3d = !en3d;
     document.getElementById('relieve').setAttribute('aria-pressed', String(en3d));
     if (en3d) {
-      if (!mapa.getSource('elevacion')) {
-        mapa.addSource('elevacion', {
-          type: 'raster-dem', encoding: 'terrarium', tileSize: 256, maxzoom: 14,
-          tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
-          attribution: 'Relieve: Terrain Tiles (Mapzen, AWS)',
-        });
-      }
+      const fuente = await fuenteDeCota();
+      if (!en3d) return; // se apagó mientras cargaba
+      if (!mapa.getSource('elevacion')) mapa.addSource('elevacion', fuente);
       mapa.setTerrain({ source: 'elevacion', exaggeration: RELIEVE.exageracion });
       // Sombreado para que el relieve se lea. Usa su propia fuente, como pide MapLibre.
-      if (!mapa.getSource('elevacion-sombras')) {
-        mapa.addSource('elevacion-sombras', {
-          type: 'raster-dem', encoding: 'terrarium', tileSize: 256, maxzoom: 14,
-          tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
-        });
-      }
+      if (!mapa.getSource('elevacion-sombras')) mapa.addSource('elevacion-sombras', Object.assign({}, fuente, { attribution: '' }));
       if (!mapa.getLayer('sombras-3d')) {
         mapa.addLayer({
           id: 'sombras-3d', type: 'hillshade', source: 'elevacion-sombras',
