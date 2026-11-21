@@ -4,6 +4,12 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 
 ## 2026-11-21 · Fase 1
 
+- **Un globo con texto largo se sale de la pantalla del teléfono.** Al tocar un área afectada salía un globo más alto que el mapa, tapado por la leyenda. *Qué se hace:* ningún elemento de capa abre un globo; todos se leen en la hoja (teléfono) o en el panel (escritorio).
+- **Un punto quedaba debajo de un área.** Las capas se apilaban en el orden del manifiesto y los reportes con fotos, que van primero, quedaban abajo. *Qué se hace:* abajo imágenes y polígonos, luego líneas y arriba puntos; dentro de cada tipo manda el manifiesto.
+- **Revalidar no bastó: la primera carga tras un cambio seguía con el JavaScript viejo.** *Qué se hace:* los archivos propios llevan su versión en la URL (`?v=<fecha de modificación>`, etiqueta `{% propio %}`). Sin compilación los nombres no cambian, así que la versión es lo único que obliga al navegador a pedirlos de nuevo.
+
+- **En el teléfono no se podía bajar en una ficha con fotos (lo reportó Julián).** La hoja medía siempre el 88 % de la pantalla y se movía con `transform`. A media altura, la mitad de abajo quedaba fuera de la pantalla: el contenido estaba ahí, pero el área que se desplazaba era más alta que lo visible. *Qué se hace:* la hoja mide exactamente lo que se ve (`height`, no `transform`). *Por qué no lo vi:* revisé que la ficha se abriera, no que se pudiera llegar al final. Toda revisión de la hoja incluye ahora desplazarse hasta el último elemento.
+
 - **El riesgo modelado y las quebradas arrancan encendidos (indicación de Julián).** La primera versión abría con pocas capas para no tapar los reportes, y en el teléfono solo con los barrios. *Qué se hace:* arrancan encendidas las capas que `/mapas` marca como visibles en su manifiesto, sin lista propia. En el teléfono se respetan las que `/mapas` apaga por pesadas, salvo los grupos de riesgo de inundación y de quebradas, que salen siempre (`CAPAS_SIEMPRE_GRUPOS`).
 - **Los puntos de salud y refugios se confunden con los pines.** Son círculos rojos con «+» muy parecidos a un reporte confirmado. *Qué se hace:* es la única capa visible de `/mapas` que aquí arranca apagada (`CAPAS_APAGADAS_AL_ABRIR`). Queda por decidir si se les cambia la forma para poder encenderlos por defecto.
 - **La susceptibilidad pesa 2,3 MB comprimida.** Ahora se baja también en el teléfono. *Qué se hace:* se deja así por indicación; si la prueba en un teléfono de gama baja va lenta, la salida es servirla en teselas vectoriales.

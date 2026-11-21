@@ -194,18 +194,20 @@ a { color: inherit; }
   background: var(--blanco); border-radius: 16px 16px 0 0;
   box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.16);
   display: flex; flex-direction: column;
-  /* Tres alturas: asomada, media y abierta. La fija mapa.js en --hoja-visible. */
+  /* Tres alturas: asomada, media y abierta. La fija mapa.js en --hoja-visible.
+     La hoja mide exactamente lo que se ve. Antes medía siempre el 88 % y se desplazaba
+     hacia abajo: la parte oculta quedaba fuera de la pantalla y no se podía llegar al
+     final de una ficha con fotos. */
   --hoja-visible: 138px;
-  height: 88%; transform: translateY(calc(100% - var(--hoja-visible)));
-  transition: transform 0.22s ease;
-  will-change: transform;
+  height: var(--hoja-visible); max-height: 88%;
+  transition: height 0.22s ease;
 }
 .hoja.arrastrando { transition: none; }
 .hoja-asa { flex: none; border: 0; background: none; padding: 12px 0 10px; width: 100%; touch-action: none; cursor: grab; }
 .hoja-asa::before { content: ""; display: block; width: 38px; height: 4px; margin: 0 auto; border-radius: 4px; background: #d4d4d4; }
 .hoja-accion { flex: none; display: flex; align-items: center; gap: 12px; padding: 2px 14px 12px; touch-action: none; }
 .hoja-accion .reportar { flex: 1; }
-.hoja-cuerpo { flex: 1; overflow-y: auto; padding: 0 14px calc(20px + env(safe-area-inset-bottom)); overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.hoja-cuerpo { flex: 1; min-height: 0; overflow-y: auto; touch-action: pan-y; padding: 0 14px calc(20px + env(safe-area-inset-bottom)); overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .con-hoja .leyenda, .con-hoja .ubicarme { bottom: 152px; }
 .con-hoja .relieve { bottom: 204px; }
 .con-hoja .sin-reportes { bottom: 206px; }
@@ -332,7 +334,7 @@ a { color: inherit; }
   .con-hoja .maplibregl-ctrl-bottom-left { bottom: 0; }
   .hoja {
     left: auto; top: 0; width: var(--panel-ancho); height: auto;
-    transform: none !important; border-radius: 0; box-shadow: none; border-left: 1px solid var(--linea);
+    height: auto; max-height: none; border-radius: 0; box-shadow: none; border-left: 1px solid var(--linea);
   }
   .hoja-asa { display: none; }
   .cabecera-panel { display: block; padding: 20px 20px 4px; }

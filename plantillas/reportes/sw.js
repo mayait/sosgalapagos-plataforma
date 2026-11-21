@@ -1,11 +1,11 @@
-/* Service worker del mapa. Guarda la interfaz, el mapa base y las capas ya vistas,
+{% load reportes_extras %}/* Service worker del mapa. Guarda la interfaz, el mapa base y las capas ya vistas,
    para que la app instalada abra sin señal. Los reportes van siempre a la red:
    el mapa guarda la última respuesta por su cuenta y muestra de qué hora es. */
-const VERSION = 'sos-v5';
+const VERSION = 'sos-v6';
 const E = '{{ estaticos }}';
 const INTERFAZ = [
   '/mapa/', '/mapa/reportar/',
-  E + 'mapa/estilos.css', E + 'mapa/comun.js', E + 'mapa/base.js', E + 'mapa/capas.js', E + 'mapa/mapa.js', E + 'mapa/reportar.js',
+  "{% propio 'mapa/estilos.css' %}", "{% propio 'mapa/comun.js' %}", "{% propio 'mapa/base.js' %}", "{% propio 'mapa/capas.js' %}", "{% propio 'mapa/mapa.js' %}", "{% propio 'mapa/reportar.js' %}",
   E + 'terceros/maplibre-gl.js', E + 'terceros/maplibre-gl.css', E + 'terceros/pmtiles.js', E + 'terceros/basemaps.js',
   E + 'terceros/htmx.min.js', E + 'terceros/alpine.min.js',
   E + 'marca/ZalandoSansExpanded.ttf', E + 'marca/usfq-galapagos-color.svg',
@@ -53,7 +53,7 @@ self.addEventListener('fetch', (e) => {
       const guardar = pedido.mode === 'navigate' || url.pathname.startsWith(E);
       if (r.ok && guardar) { const copia = r.clone(); caches.open(VERSION).then((c) => c.put(url.pathname, copia)); }
       return r;
-    }).catch(() => caches.match(url.pathname).then((r) => r || new Response('', { status: 503 }))),
+    }).catch(() => caches.match(pedido).then((r) => r || caches.match(url.pathname, { ignoreSearch: true })).then((r) => r || new Response('', { status: 503 }))),
   );
 });
 

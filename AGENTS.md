@@ -27,9 +27,9 @@ Plataforma de reportes de riesgo de SOS Galápagos: un mapa único donde la gent
 - **Commits:** `tipo(ámbito): descripción`, sin líneas `Co-Authored-By`. Los agentes de Julián usan `Julian Maya <1101119+mayait@users.noreply.github.com>`.
 - **Reglas de vida del reporte:** toda la lógica está en `reportes/reglas.py`, con pruebas en `reportes/pruebas/`. Las vistas y la API solo llaman. Un cambio de regla lleva su prueba.
 - **Umbrales:** en `plataforma/ajustes.py`, marcados como preliminares.
-- **Sin paso de compilación.** El JavaScript va tal cual en `estaticos/mapa/`. Las librerías de terceros están en `estaticos/terceros/` con versión fija; no se cargan desde un CDN.
+- **Sin paso de compilación.** El JavaScript va tal cual en `estaticos/mapa/`. En las plantillas se enlaza con `{% propio 'mapa/…' %}`, que le pone la versión a la URL; con `{% static %}` el navegador puede quedarse con una copia vieja. Las librerías de terceros están en `estaticos/terceros/` con versión fija; no se cargan desde un CDN.
 - **Marca:** sistema USFQ «WE WANT MORE». Solo rojo `#E11B22`, negro y blanco; fondo blanco y sin modo oscuro. El ámbar y el gris de los pines son señales del mapa, no de marca. La firma «MORE HUMANS, MORE DRAGONS.» va discreta, al pie. El logotipo de la USFQ aparece una sola vez, abajo, pequeño y tenue; no va en la cabecera.
-- **Teléfono primero:** cada cambio de interfaz se revisa a 360 y 390 px de ancho. Los botones miden al menos 44 px y nada debe provocar desplazamiento horizontal.
+- **Teléfono primero:** cada cambio de interfaz se revisa a 360 y 390 px de ancho, y en la hoja inferior se comprueba que se puede bajar hasta el último elemento. Los botones miden al menos 44 px y nada debe provocar desplazamiento horizontal.
 - **Horas:** en la base, UTC. En pantalla, hora de Galápagos (UTC−6).
 - **En la Mac no hay Docker:** se usa `container` (Apple). Ver `despliegue/local.sh`.
 - **Lecciones:** los errores y las decisiones se anotan en [`docs/lecciones.md`](docs/lecciones.md).

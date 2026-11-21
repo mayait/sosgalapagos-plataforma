@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static reportes_extras %}
 {% block titulo %}Reportar{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'terceros/maplibre-gl.css' %}">{% endblock %}
 
@@ -105,8 +105,8 @@
 <script src="{% static 'terceros/maplibre-gl.js' %}"></script>
 <script src="{% static 'terceros/pmtiles.js' %}"></script>
 <script src="{% static 'terceros/basemaps.js' %}"></script>
-<script src="{% static 'mapa/comun.js' %}"></script>
-<script src="{% static 'mapa/base.js' %}"></script>
-<script src="{% static 'mapa/reportar.js' %}"></script>
+<script src="{% propio 'mapa/comun.js' %}"></script>
+<script src="{% propio 'mapa/base.js' %}"></script>
+<script src="{% propio 'mapa/reportar.js' %}"></script>
 <script defer src="{% static 'terceros/alpine.min.js' %}"></script>
 {% endblock %}

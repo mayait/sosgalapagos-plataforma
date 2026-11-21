@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static reportes_extras %}
 {% block clase_cuerpo %}con-hoja{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'terceros/maplibre-gl.css' %}">{% endblock %}
 
@@ -56,8 +56,8 @@
 <script src="{% static 'terceros/pmtiles.js' %}"></script>
 <script src="{% static 'terceros/basemaps.js' %}"></script>
 <script src="{% static 'terceros/htmx.min.js' %}"></script>
-<script src="{% static 'mapa/comun.js' %}"></script>
-<script src="{% static 'mapa/base.js' %}"></script>
-<script src="{% static 'mapa/capas.js' %}"></script>
-<script src="{% static 'mapa/mapa.js' %}"></script>
+<script src="{% propio 'mapa/comun.js' %}"></script>
+<script src="{% propio 'mapa/base.js' %}"></script>
+<script src="{% propio 'mapa/capas.js' %}"></script>
+<script src="{% propio 'mapa/mapa.js' %}"></script>
 {% endblock %}

@@ -155,8 +155,8 @@
   const ASOMADA = 138;
   let alturaHoja = ASOMADA;
   const alturas = () => {
-    const total = hoja.offsetHeight;
-    return [ASOMADA, Math.round(total * 0.56), total];
+    const total = Math.round(hoja.parentElement.clientHeight * 0.88);
+    return [ASOMADA, Math.round(total * 0.62), total];
   };
   function ponerHoja(px, animar = true) {
     alturaHoja = px;

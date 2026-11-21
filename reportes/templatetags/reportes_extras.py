@@ -1,7 +1,23 @@
 """Filtros de plantilla: edades y distancias dichas como las diría una persona."""
+import os
+
 from django import template
+from django.contrib.staticfiles import finders
+from django.templatetags.static import static
 
 register = template.Library()
+
+
+@register.simple_tag
+def propio(ruta):
+    """URL de un archivo propio (estaticos/mapa/…) con su versión: ?v=<fecha de modificación>.
+
+    Sin paso de compilación los nombres no cambian, y el navegador puede seguir usando
+    un JavaScript viejo. Con la versión en la URL, un archivo que cambia se vuelve a pedir.
+    """
+    archivo = finders.find(ruta)
+    version = int(os.path.getmtime(archivo)) if archivo else 0
+    return f"{static(ruta)}?v={version}"
 
 
 def _duracion(segundos):

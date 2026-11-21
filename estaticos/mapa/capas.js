@@ -12,7 +12,7 @@
   const SOS = window.SOS;
   const ZOOM_ROTULOS = 15; // los rótulos de barrios y calles solo se ven de cerca
 
-  const estado = { mapa: null, manifiesto: null, descargas: {}, todo: null, capas: [], encendidas: new Set(), iniciales: [], puestas: {}, base: 'gris', limites: null, teselas: {} };
+  const estado = { mapa: null, manifiesto: null, descargas: {}, todo: null, capas: [], orden: [], encendidas: new Set(), iniciales: [], puestas: {}, base: 'gris', limites: null, teselas: {} };
   const GUARDADO = 'sos-capas-3'; // lo que la persona dejó encendido se recuerda en su teléfono
   const datosUrl = () => `${SOS.cfg.capasUrl}datos/${SOS.cfg.capasVariante}/`;
   const recordar = () => { try { localStorage.setItem(GUARDADO, JSON.stringify([...estado.encendidas])); } catch (e) { /* sin espacio */ } };
@@ -184,10 +184,12 @@
     return [{ id, type: 'raster', source: id, paint: { 'raster-opacity': capa.opacidad ?? 0.85, 'raster-fade-duration': 0 } }];
   }
 
-  // Conserva el apilado del manifiesto: una capa va debajo de la siguiente que ya esté puesta.
+  // Apilado: abajo las imágenes y los polígonos, luego las líneas y arriba los puntos, para que
+  // un punto (un reporte con fotos) nunca quede tapado por un área. Dentro de cada tipo manda
+  // el orden del manifiesto. Una capa va debajo de la siguiente que ya esté puesta.
   function siguientePuesta(id) {
-    const i = estado.capas.findIndex((c) => c.id === id);
-    for (const c of estado.capas.slice(i + 1)) {
+    const i = estado.orden.findIndex((c) => c.id === id);
+    for (const c of estado.orden.slice(i + 1)) {
       const puestas = estado.puestas[c.id];
       if (puestas && puestas.length) return puestas[0];
     }
@@ -224,7 +226,7 @@
 
   // Deja encendidas exactamente las capas de la lista, en el orden del manifiesto.
   async function dejarEncendidas(ids) {
-    for (const capa of estado.capas) {
+    for (const capa of estado.orden) {
       const debe = ids.includes(capa.id), esta = estado.encendidas.has(capa.id);
       if (esta && !debe) { estado.encendidas.delete(capa.id); apagar(capa); }
       if (!esta && debe) { estado.encendidas.add(capa.id); await encender(capa); }
@@ -334,7 +336,7 @@
     }
   }
 
-  // Globo con los datos del elemento al tocar una capa.
+  // Al tocar un elemento de una capa, sus datos se abren en la hoja o el panel.
   function globo(e) {
     const ids = Object.values(estado.puestas).flat().filter((id) => estado.mapa.getLayer(id) && !id.endsWith('-halo') && !id.endsWith('-rotulo'));
     if (!ids.length) return false;
@@ -342,29 +344,19 @@
     if (!f) return false;
     const capa = estado.capas.find((c) => f.layer.source === 'capa-' + c.id);
     if (!capa || !capa.popup) return false;
-    const p = capa.popup, x = SOS.escapar, datos = f.properties;
-    // Reportes de campo: con fotos o un párrafo, se leen mejor en la hoja que en un globo.
+    const p = capa.popup, datos = f.properties;
     let fotos = p.fotos ? datos[p.fotos] : null;
     if (typeof fotos === 'string') { try { fotos = JSON.parse(fotos); } catch (err) { fotos = null; } }
-    if ((Array.isArray(fotos) && fotos.length) || (p.texto && datos[p.texto])) {
-      SOS.mostrarDetalle(fichaDeCapa(capa, datos, fotos || []), f.geometry.type === 'Point' ? f.geometry.coordinates : null);
-      return true;
-    }
-    const titulo = (datos[p.titulo] ?? p.titulo_defecto ?? capa.titulo) + (datos[p.titulo] != null ? p.sufijo_titulo || '' : '');
-    let h = `<div class="globo-titulo">${x(titulo)}</div><table class="globo-tabla">`;
-    for (const [campo, etiqueta] of Object.entries(p.campos || {})) {
-      if (datos[campo] != null && datos[campo] !== '') h += `<tr><td>${x(etiqueta)}</td><td>${x(datos[campo])}</td></tr>`;
-    }
-    h += '</table>';
-    if (p.texto && datos[p.texto]) h += `<p class="globo-texto">${x(datos[p.texto])}</p>`;
-    new maplibregl.Popup({ maxWidth: '260px' }).setLngLat(e.lngLat).setHTML(h).addTo(estado.mapa);
+    // Todo se lee en la hoja (teléfono) o en el panel (escritorio), nunca en un globo:
+    // un globo con texto largo se sale de la pantalla del teléfono.
+    SOS.mostrarDetalle(fichaDeCapa(capa, datos, Array.isArray(fotos) ? fotos : []), f.geometry.type === 'Point' ? f.geometry.coordinates : null);
     return true;
   }
 
   // Ficha de un elemento de una capa, con sus fotos (rutas relativas a capa.fotos_base).
   function fichaDeCapa(capa, datos, fotos) {
     const p = capa.popup, x = SOS.escapar, base = datosUrl() + (capa.fotos_base || '');
-    const titulo = datos[p.titulo] ?? p.titulo_defecto ?? capa.titulo;
+    const titulo = (datos[p.titulo] ?? p.titulo_defecto ?? capa.titulo) + (datos[p.titulo] != null ? p.sufijo_titulo || '' : '');
     let h = `<article class="ficha"><button class="ficha-volver" type="button" data-cerrar-ficha>← Volver a la lista</button>
       <p class="ficha-capa">${x(capa.titulo)}</p><h2 class="ficha-titulo">${x(titulo)}</h2><ul class="ficha-datos">`;
     for (const [campo, etiqueta] of Object.entries(p.campos || {})) {
@@ -406,6 +398,8 @@
       }
       estado.manifiesto = m;
       estado.capas = m.grupos.flatMap((g) => g.capas);
+      const altura = { raster: 0, teselas: 0, poligono: 1, linea: 2, punto: 3 };
+      estado.orden = estado.capas.map((c, i) => [c, i]).sort((a, b) => (altura[a[0].tipo] - altura[b[0].tipo]) || (a[1] - b[1])).map(([c]) => c);
       // Arrancan encendidas las capas que el manifiesto de /mapas marca como visibles.
       // En el teléfono se respetan las que /mapas apaga por pesadas, salvo el riesgo
       // modelado y las quebradas, que salen siempre.
@@ -417,7 +411,7 @@
       let elegidas = null;
       try { elegidas = JSON.parse(localStorage.getItem(GUARDADO)); } catch (e) { /* nada guardado */ }
       const arranque = Array.isArray(elegidas) ? elegidas : estado.iniciales;
-      for (const capa of estado.capas) {
+      for (const capa of estado.orden) {
         if (arranque.includes(capa.id)) { estado.encendidas.add(capa.id); await encender(capa); }
       }
       let anterior = Math.floor(mapa.getZoom());

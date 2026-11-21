@@ -1,4 +1,4 @@
-{% load static %}<!doctype html>
+{% load static reportes_extras %}<!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
@@ -11,7 +11,7 @@
   <link rel="icon" href="{% static 'marca/usfq-isotipo-color.svg' %}">
   <link rel="apple-touch-icon" href="{% static 'app/icono-192.png' %}">
   {% block estilos %}{% endblock %}
-  <link rel="stylesheet" href="{% static 'mapa/estilos.css' %}">
+  <link rel="stylesheet" href="{% propio 'mapa/estilos.css' %}">
 </head>
 <body class="{% block clase_cuerpo %}{% endblock %}">
   <div class="aviso" role="note">

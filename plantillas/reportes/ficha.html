@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static reportes_extras %}
 {% block titulo %}{{ r.tipo.nombre }}{% endblock %}
 {% block contenido %}
 <main class="pagina">
@@ -10,6 +10,6 @@
 {% endblock %}
 {% block guiones %}
 <script src="{% static 'terceros/htmx.min.js' %}"></script>
-<script src="{% static 'mapa/comun.js' %}"></script>
+<script src="{% propio 'mapa/comun.js' %}"></script>
 <script>document.addEventListener('click', e => { if (e.target.closest('[data-cerrar-ficha]')) location.href = '{% url "reportes:mapa" %}'; });</script>
 {% endblock %}
