@@ -1,0 +1,18 @@
+{% if informes %}
+<h2 class="seccion-titulo informes-titulo">Informes y mapas para descargar</h2>
+<ul class="lista informes">
+  {% for i in informes %}
+  <li>
+    <a class="informe" href="{{ url }}{{ i.archivo }}" target="_blank" rel="noopener">
+      {% if i.portada %}<img src="{{ url }}{{ i.portada }}" alt="" loading="lazy">{% else %}<span class="informe-sin-portada">PDF</span>{% endif %}
+      <span class="fila-texto">
+        <span class="fila-titulo">{{ i.titulo }}</span>
+        {% if i.resumen %}<span class="informe-resumen">{{ i.resumen }}</span>{% endif %}
+        <span class="fila-sub">{{ i.fecha }}{% if i.paginas %} · {{ i.paginas }} pág.{% endif %} · {{ i.formato|default:"PDF" }}{% if i.tamano %} · {{ i.tamano }}{% endif %}</span>
+      </span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+<p class="ficha-pie">Análisis propios de SOS Galápagos. Los modelos son estimaciones, no datos oficiales.</p>
+{% endif %}

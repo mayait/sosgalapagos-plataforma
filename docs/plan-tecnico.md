@@ -34,7 +34,7 @@ Lo demás se confirma:
 Cloudflare ─► Caddy (el que ya existe)
                 ├─ /mapas/  /clima/  /estudios/  /usfq/     sin cambios
                 ├─ /        /e/…   /backend/                ResponseGrid, hasta la fase 4
-                └─ /mapa/   /api/                           plataforma nueva (Django)
+                └─ /riesgos/   /api/                           plataforma nueva (Django)
                                   │
                     ┌─────────────┼──────────────┐
                     ▼             ▼              ▼
@@ -153,21 +153,21 @@ Todas viven en `reportes/reglas.py` como funciones puras, con pruebas.
 
 ## 6. Rutas
 
-Hasta la fase 4 todo lo nuevo vive bajo `/mapa/` y `/api/`, para no chocar con ResponseGrid.
+Hasta la fase 4 todo lo nuevo vive bajo `/riesgos/` y `/api/`, para no chocar con ResponseGrid.
 
 | Ruta | Qué es | Fase |
 |---|---|---|
-| `/mapa/` | Mapa (será `/` en la fase 4) | 1 |
-| `/mapa/reportar/` | Formulario de tres pasos | 1 |
-| `/mapa/r/<id>/` | Ficha del reporte, con «sigue ahí» y «ya bajó» | 1 |
-| `/mapa/cerca/` | Fragmento HTMX de la hoja inferior | 1 |
+| `/riesgos/` | Mapa (será `/` en la fase 4) | 1 |
+| `/riesgos/reportar/` | Formulario de tres pasos | 1 |
+| `/riesgos/r/<id>/` | Ficha del reporte, con «sigue ahí» y «ya bajó» | 1 |
+| `/riesgos/cerca/` | Fragmento HTMX de la hoja inferior | 1 |
 | `/api/reportes/vivos.geojson` | Reportes vivos | 1 |
 | `/api/v2/services.json` | Open311: tipos | 2 |
 | `/api/v2/requests.json` | Open311: crear y consultar | 2 |
 | `/api/v2/requests/<id>.json` | Open311: un reporte | 2 |
 | `/api/docs` | Documentación OpenAPI | 2 |
 | `/api/interno/mensajes` | Entrada del bot de WhatsApp, con llave | 2 |
-| `/mapa/e/<token>/` | Enlace de un solo uso con el punto ya puesto | 2 |
+| `/riesgos/e/<token>/` | Enlace de un solo uso con el punto ya puesto | 2 |
 | `/coordinacion/…` | Cola, fusión, tramos, lista y exportación (con cuenta) | 2 |
 | `/admin/` | Administración de Django | 1 |
 | `/api/archivo.geojson`, `/api/archivo.csv` | Archivo del evento | 3 |
@@ -175,7 +175,7 @@ Hasta la fase 4 todo lo nuevo vive bajo `/mapa/` y `/api/`, para no chocar con R
 
 - **Lectura pública** con límite por dirección IP. **Escritura por API** solo con llave de institución.
 - **El formulario web no pide llave.** Lleva límite por dispositivo y por IP.
-- **Por comprobar antes de desplegar:** que la web actual no use ya la ruta `/api/`. Si la usa, la API nueva arranca en `/mapa/api/`.
+- **Por comprobar antes de desplegar:** que la web actual no use ya la ruta `/api/`. Si la usa, la API nueva arranca en `/riesgos/api/`.
 
 ## 7. WhatsApp
 
@@ -226,7 +226,7 @@ Lo que ya no aplica: el precio de los mensajes de Meta y la exención para organ
 **Nada de esto se ejecuta sin aprobación explícita.** El primer despliegue solo añade; no reemplaza ninguna ruta.
 
 - **Servicios nuevos** en el compose existente: `postgis`, `plataforma`, `plataforma-trabajador` y `plataforma-reloj`. Volúmenes nuevos para la base y las fotos.
-- **Caddy:** dos bloques nuevos, `/mapa/*` y `/api/*`, antes del bloque final que manda todo a la web actual. `/mapas`, `/clima`, `/estudios` y los sitios privados no se tocan.
+- **Caddy:** dos bloques nuevos, `/riesgos/*` y `/api/*`, antes del bloque final que manda todo a la web actual. `/mapas`, `/clima`, `/estudios` y los sitios privados no se tocan.
 - **Dónde vive la configuración:** el Caddy y el compose de todo el servidor están hoy en `mayait/sosgalapagos`, en `deploy/sosgalapagos/`. Hasta la fase 4 los cambios van allí, con pull request. En la fase 4 esa carpeta se copia al repo nuevo y la vieja pasa a `Archivo/`.
 - **Clima:** el contenedor monta `/srv/sosgalapagos-clima` en solo lectura. No hace falta ninguna petición por red.
 - **Respaldo:** la base nueva se suma al `backup.sh` diario. Las fotos se respaldan aparte.

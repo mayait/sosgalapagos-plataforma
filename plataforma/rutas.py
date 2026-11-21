@@ -1,6 +1,6 @@
 """Rutas de la plataforma.
 
-Todo vive bajo /mapa/ (páginas, API, administración, estáticos y fotos). Así en el
+Todo vive bajo /riesgos/ (páginas, API, administración, estáticos y fotos). Así en el
 servidor basta una sola ruta nueva en Caddy y nada choca con el sitio actual, que ya
 usa /api y /admin.
 """
@@ -14,16 +14,16 @@ from api.rutas import api
 from reportes.vistas import copia_de_mapas
 
 urlpatterns = [
-    path("mapa/api/", api.urls),
-    path("mapa/admin/", admin.site.urls),
+    path("riesgos/api/", api.urls),
+    path("riesgos/admin/", admin.site.urls),
     # Fotos de los reportes. Son pocas y pequeñas: las sirve Django, sin tocar los volúmenes de Caddy.
-    re_path(r"^mapa/medios/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
-    path("mapa/", include("reportes.rutas")),
+    re_path(r"^riesgos/medios/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
+    path("riesgos/", include("reportes.rutas")),
 ]
 
 if settings.DEBUG:
     # Solo en la Mac: la portada lleva al mapa, y /mapas es una copia de lo publicado.
     urlpatterns += [
-        path("", RedirectView.as_view(url="/mapa/")),
+        path("", RedirectView.as_view(url="/riesgos/")),
         re_path(r"^mapas/(?P<ruta>.*)$", copia_de_mapas),
     ]

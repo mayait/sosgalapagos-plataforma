@@ -1,10 +1,10 @@
 {% load reportes_extras %}/* Service worker del mapa. Guarda la interfaz, el mapa base y las capas ya vistas,
    para que la app instalada abra sin señal. Los reportes van siempre a la red:
    el mapa guarda la última respuesta por su cuenta y muestra de qué hora es. */
-const VERSION = 'sos-v8';
+const VERSION = 'sos-v9';
 const E = '{{ estaticos }}';
 const INTERFAZ = [
-  '/mapa/', '/mapa/reportar/',
+  '/riesgos/', '/riesgos/reportar/',
   "{% propio 'mapa/estilos.css' %}", "{% propio 'mapa/comun.js' %}", "{% propio 'mapa/base.js' %}", "{% propio 'mapa/capas.js' %}", "{% propio 'mapa/mapa.js' %}", "{% propio 'mapa/reportar.js' %}",
   E + 'terceros/maplibre-gl.js', E + 'terceros/maplibre-gl.css', E + 'terceros/pmtiles.js', E + 'terceros/basemaps.js',
   E + 'terceros/htmx.min.js', E + 'terceros/alpine.min.js',
@@ -25,7 +25,7 @@ self.addEventListener('fetch', (e) => {
   const pedido = e.request;
   const url = new URL(pedido.url);
   if (pedido.method !== 'GET' || url.origin !== location.origin) return;
-  if (url.pathname.startsWith('/mapa/api/') || url.pathname.startsWith('/mapa/admin/') || url.pathname.startsWith('/mapa/medios/')) return; // siempre a la red
+  if (url.pathname.startsWith('/riesgos/api/') || url.pathname.startsWith('/riesgos/admin/') || url.pathname.startsWith('/riesgos/medios/')) return; // siempre a la red
 
   // El mapa base se pide por trozos (Range). Se guarda el archivo entero una vez y de ahí se corta.
   if (url.pathname.endsWith('.pmtiles')) { e.respondWith(trozo(pedido)); return; }

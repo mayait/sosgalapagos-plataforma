@@ -63,7 +63,11 @@
     <a class="reportar compacto" href="{% url 'reportes:reportar' %}" id="reportar"><svg><use href="#i-mas"/></svg>Reportar</a>
     <div class="hoja-cuerpo">
       <div id="detalle"></div>
-      <div id="cerca" hx-get="{% url 'reportes:cerca' %}" hx-trigger="load" hx-swap="innerHTML"></div>
+      <div id="lista">
+        <div id="cerca" hx-get="{% url 'reportes:cerca' %}" hx-trigger="load" hx-swap="innerHTML"></div>
+        <div id="informes" hx-get="{% url 'reportes:informes' %}" hx-trigger="load" hx-swap="innerHTML"></div>
+        {% include "parciales/firma.html" %}
+      </div>
     </div>
   </aside>
 </main>

@@ -72,7 +72,7 @@
       if (v == null || v === '') continue;
       if (v instanceof Blob) cuerpo.append(k, v, 'foto.jpg'); else cuerpo.append(k, v);
     }
-    return fetch(SOS.cfg.reportar || '/mapa/reportar/', {
+    return fetch(SOS.cfg.reportar || '/riesgos/reportar/', {
       method: 'POST', body: cuerpo, headers: { 'X-CSRFToken': SOS.galleta('csrftoken') },
     });
   };
@@ -80,7 +80,7 @@
   window.addEventListener('online', () => SOS.cola.enviarPendientes());
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/mapa/sw.js', { scope: '/mapa/' }).catch(() => {});
+      navigator.serviceWorker.register('/riesgos/sw.js', { scope: '/riesgos/' }).catch(() => {});
       SOS.cola.enviarPendientes();
     });
   }
