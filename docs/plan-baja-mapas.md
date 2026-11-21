@@ -2,7 +2,7 @@
 
 *Revisado el 21-nov-2026 sobre `/mapas` (versión `ef10236`, 60 capas) y `/riesgos/` en producción.*
 
-**Conclusión: todavía no es buen momento.** Hoy `/riesgos/` ya muestra todas las capas de `/mapas` y permite descargarlas, pero al visor de `/mapas` le quedan cinco herramientas que `/riesgos/` no tiene, hay una inundación en curso y el equipo de datos publica en `/mapas` varias veces al día. La baja se puede hacer en cuanto se cumplan los cinco criterios de la [sección 3](#3-cuándo-es-buen-momento).
+**Conclusión: todavía no es buen momento.** Hoy `/riesgos/` ya muestra todas las capas de `/mapas` y permite descargarlas, pero al visor de `/mapas` le quedan tres herramientas por llevar a `/riesgos/` (buscador, punto de análisis y descarga de imagen), hay una inundación en curso y el equipo de datos publica en `/mapas` varias veces al día. La baja se puede hacer en cuanto se cumplan los cinco criterios de la [sección 3](#3-cuándo-es-buen-momento).
 
 Una precisión que cambia todo el plan: **lo que se da de baja es el visor, no los datos.** `/riesgos/` lee de `/mapas/` el manifiesto, las capas, las descargas, las teselas y las fotos. Esas direcciones tienen que seguir existiendo.
 
@@ -14,7 +14,7 @@ Lo que no conviene es hacerlo de golpe hoy. Hay una advertencia del INAMHI vigen
 
 | Criterio | Estado |
 |---|---|
-| 1. Paridad de herramientas | **0 de 5.** Faltan buscador, punto de análisis, mis puntos, descarga de imagen y exposición por isla |
+| 1. Paridad de herramientas | **0 de 3.** Faltan buscador, punto de análisis y descarga de imagen. «Mis puntos» y la exposición por isla no se hacen en `/riesgos/` (decisión de Julián, 21-nov) |
 | 2. Probado en teléfonos reales | **Pendiente.** Solo simulación en escritorio |
 | 3. Siete días estables | **Día 1.** En producción desde el 21-nov, 14:17 |
 | 4. Acuerdo con el equipo de datos | **Sin hablar.** Siguen mejorando su visor (hoy: versión para teléfono, enlaces a lugares, corazones) |
@@ -25,7 +25,7 @@ Avances desde la mañana que acercan la baja: las descargas de capas ya están e
 **Camino corto que propongo:**
 
 1. **Hoy:** avisar al equipo de datos de que el visor único será `/riesgos/` y que dejen de invertir en el suyo (criterio 4). Es lo que más trabajo ahorra.
-2. **Esta semana:** construir en `/riesgos/` el buscador, el punto de análisis y la descarga de imagen. Julián decide si «Mis puntos» y la tabla de exposición se hacen o se abandonan.
+2. **Esta semana:** construir en `/riesgos/` el buscador, el punto de análisis y la descarga de imagen. «Mis puntos» y la tabla de exposición por isla no se llevan a `/riesgos/` (decisión de Julián, 21-nov).
 3. **Cuando pase la advertencia y con una prueba en teléfono real:** redirección temporal de `/mapas/` a `/riesgos/` (paso 3 de este plan). Fecha más temprana razonable: la semana del 30-nov.
 
 ## 1. Qué hay bajo `/mapas` y qué pasa con cada cosa
@@ -56,21 +56,21 @@ El repo de datos sigue publicando igual (`servidores/publicar.sh mapas`). No hay
 | Saltar a una isla o al archipiélago | Sí | — |
 | **Buscador** de calle, barrio, lugar o coordenadas | No | **Sí** |
 | **Punto de análisis** (A, B, C): riesgo, cota y cuenca en un punto, con resumen para copiar | No | **Sí** |
-| **Mis puntos**: guardados en el navegador y exportables a GeoJSON | No | **Sí** |
+| Mis puntos: guardados en el navegador y exportables a GeoJSON | No | No se hace (decisión de Julián) |
 | **Descargar imagen** del mapa con su leyenda y **modo captura** | No | **Sí** |
-| **Exposición estimada por isla** (tabla) | No | **Sí** |
+| Exposición estimada por isla (tabla) | No | No se hace (decisión de Julián) |
 | Leyenda flotante de las capas encendidas | Solo dentro del panel Capas | Parcial |
 | Cota del terreno bajo el cursor | No (hay vista 3D) | Parcial |
 
 Lo que `/riesgos/` tiene y `/mapas` no: reportar, vencimiento de los avisos, informe con línea del tiempo y lluvia, vista 3D, pista al pasar el ratón, actualización en vivo de las capas y uso sin señal.
 
-Las cinco funciones en negrita son las que usan los equipos técnicos. Sin ellas, dar de baja el visor les quita herramientas de trabajo.
+Las tres funciones en negrita son las que usan los equipos técnicos y hay que llevar a `/riesgos/`. «Mis puntos» y la tabla de exposición se quedan fuera por decisión de Julián: quien tenga puntos guardados en `/mapas` debe exportarlos antes de la baja.
 
 ## 3. Cuándo es buen momento
 
 Se cumplen los cinco:
 
-1. **Paridad:** `/riesgos/` tiene buscador, punto de análisis, mis puntos, descarga de imagen y la tabla de exposición. O Julián decide por escrito cuáles se abandonan.
+1. **Paridad:** `/riesgos/` tiene buscador, punto de análisis y descarga de imagen. «Mis puntos» y la tabla de exposición por isla no se llevan a `/riesgos/` (decisión de Julián, 21-nov-2026).
 2. **Probado en teléfonos reales**, incluido un Android de gama baja, con las capas de riesgo encendidas. Hoy todas las pruebas son en un navegador de escritorio.
 3. **Estabilidad:** siete días seguidos de `/riesgos/` en producción sin incidentes que obliguen a volver atrás.
 4. **Acuerdo con el equipo de datos:** saben que su visor desaparece, que sus publicaciones siguen igual y que los cambios de visualización se piden en `sosgalapagos-plataforma`.
@@ -84,7 +84,7 @@ Cada paso se puede deshacer y ninguno borra nada.
 
 **Paso 0 · Convivencia (ya en marcha).** Los dos visores funcionan. La portada enlaza `/riesgos/` y la página de descargas.
 
-**Paso 1 · Paridad.** Se construyen en `/riesgos/` las cinco funciones que faltan, en este orden: buscador, punto de análisis, descarga de imagen, mis puntos y exposición por isla. El manifiesto ya trae la configuración del buscador (`buscar`).
+**Paso 1 · Paridad.** Se construyen en `/riesgos/` las tres funciones que faltan, en este orden: buscador, punto de análisis y descarga de imagen. Antes de la baja, la tabla de exposición por isla debe quedar en algún sitio (un informe en PDF de la portada, por ejemplo) o darse por retirada. El manifiesto ya trae la configuración del buscador (`buscar`).
 
 **Paso 2 · Aviso (7 días).** El visor de `/mapas` muestra una franja: «Este visor se muda a sosgalapagos.org/riesgos», con un botón para ir. Es un cambio en `geodatos/web/index.html`, del repo de datos.
 
