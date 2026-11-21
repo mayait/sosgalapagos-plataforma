@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load static reportes_extras %}
+{% block titulo %}Descargar capas{% endblock %}
+{% block contenido %}
+<main class="pagina ancha">
+  <nav class="migas"><a href="{% url 'reportes:mapa' %}">← Mapa de riesgos</a><a href="{% url 'reportes:informe' %}">Informe</a></nav>
+  <h1 class="form-titulo">Descargar capas</h1>
+  <p class="form-ayuda">Todas las capas del mapa, en Shapefile y GeoJSON. Coordenadas WGS 84 (EPSG:4326) y atributos en UTF-8. Cada archivo trae su fuente y su licencia. <b>Los modelos son estimaciones propias, no datos oficiales.</b></p>
+  <div id="descargas" aria-busy="true"><p class="vacio">Cargando la lista de capas…</p></div>
+  <details class="ayuda-descargas">
+    <summary>Cómo abrir los archivos</summary>
+    <p><b>Shapefile (.zip):</b> descomprime y abre el <code>.shp</code> en QGIS o ArcGIS. Cada zip trae un <code>LEEME.txt</code> con la fuente, la licencia y los campos.</p>
+    <p><b>GeoJSON:</b> se abre directo en QGIS, en geojson.io o con cualquier librería web.</p>
+  </details>
+  {% include "parciales/firma.html" %}
+</main>
+{% endblock %}
+{% block guiones %}
+{{ configuracion|json_script:"configuracion" }}
+<script src="{% propio 'mapa/comun.js' %}"></script>
+<script src="{% propio 'mapa/descargas.js' %}"></script>
+{% endblock %}

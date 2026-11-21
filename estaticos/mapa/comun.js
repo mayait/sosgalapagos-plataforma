@@ -18,6 +18,17 @@
     e.detail.headers['X-CSRFToken'] = SOS.galleta('csrftoken');
   });
 
+  // Versión de lo que publica /mapas (version.txt: «<commit> <fecha>»). Se pega a las
+  // direcciones de capas y descargas para no mostrar archivos viejos. { v, fecha } o { v: '' }.
+  SOS.versionDeMapas = async () => {
+    try {
+      const t = await fetch(SOS.cfg.capasUrl + 'version.txt', { cache: 'no-cache' }).then((r) => (r.ok ? r.text() : ''));
+      const [commit, fecha] = t.trim().split(/\s+/);
+      if (commit && fecha && !Number.isNaN(Date.parse(fecha))) return { v: `?v=${encodeURIComponent(commit)}-${Date.parse(fecha) / 1000}`, fecha };
+    } catch (e) { /* sin versión */ }
+    return { v: '', fecha: '' };
+  };
+
   // ── Cola de reportes sin señal (IndexedDB) ────────────────────────────────
   const BD = 'sos-cola';
   function abrir() {

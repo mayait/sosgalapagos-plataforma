@@ -66,6 +66,10 @@
     <div class="hoja-cuerpo">
       <div id="detalle"></div>
       <div id="lista">
+        <nav class="atajos" aria-label="Más">
+          <a href="{% url 'reportes:informe' %}">Informe: línea del tiempo y lluvia</a>
+          <a href="{% url 'reportes:descargas' %}">Descargar capas</a>
+        </nav>
         <div id="cerca" hx-get="{% url 'reportes:cerca' %}" hx-trigger="load" hx-swap="innerHTML"></div>
         <div id="informes" hx-get="{% url 'reportes:informes' %}" hx-trigger="load" hx-swap="innerHTML"></div>
         {% include "parciales/firma.html" %}

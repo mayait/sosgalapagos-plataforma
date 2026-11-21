@@ -35,9 +35,32 @@ def _propiedades(r):
         "estado": r.estado,
         "fuente": r.fuente,
         "zona": r.zona.nombre if r.zona else "",
+        "isla": r.zona.isla if r.zona else "",
         # Segundos desde 1970: el mapa calcula la edad sin volver a pedir datos.
         "visto": int(r.visto_en.timestamp()),
         "vence": int(r.vence_en.timestamp()),
+    }
+
+
+@api.get("/lluvia.json", summary="Lluvia por hora de una estación", tags=["informe"])
+def lluvia(request, desde: datetime, hasta: datetime, estacion: str = ""):
+    """Lluvia medida por hora, tal como la publica /clima. Datos preliminares, no oficiales.
+
+    Devuelve también la lista de estaciones con serie de lluvia. Como máximo, 62 días.
+    """
+    from reportes import clima
+
+    desde = desde if desde.tzinfo else desde.replace(tzinfo=dt_timezone.utc)
+    hasta = hasta if hasta.tzinfo else hasta.replace(tzinfo=dt_timezone.utc)
+    hasta = min(hasta, desde + timedelta(days=62))
+    estaciones = clima.estaciones_con_lluvia()
+    inicio, mm = clima.lluvia_por_hora(estacion, desde, hasta) if estacion else (None, [])
+    return {
+        "estaciones": estaciones,
+        "estacion": estacion,
+        "inicio": inicio.isoformat().replace("+00:00", "Z") if inicio else None,
+        "mm": mm,
+        "nota": "Lluvia medida, preliminar y no oficial. Las horas sin transmisión van sin dato: los totales son mínimos.",
     }
 
 

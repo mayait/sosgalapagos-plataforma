@@ -58,6 +58,9 @@ def _configuracion():
         "lluvia": reverse("reportes:lluvia"),
         "ficha": "/riesgos/r/",
         "reportar": reverse("reportes:reportar"),
+        "mapa": reverse("reportes:mapa"),
+        "todos": "/riesgos/api/reportes/vivos.geojson?periodo=evento",
+        "lluviaHoraria": "/riesgos/api/lluvia.json",
     }
 
 
@@ -229,6 +232,18 @@ def lluvia(request):
 def informes(request):
     """Informes y mapas en PDF ya publicados en la portada del sitio."""
     return render(request, "parciales/informes.html", {"informes": informes_publicados.leer(), "url": settings.INFORMES_URL})
+
+
+@require_GET
+def informe(request):
+    """Línea del tiempo: todos los reportes y cuánto ha llovido, con filtros."""
+    return render(request, "reportes/informe.html", {"configuracion": _configuracion()})
+
+
+@require_GET
+def descargas(request):
+    """Todas las capas del mapa para descargar, en Shapefile y GeoJSON."""
+    return render(request, "reportes/descargas.html", {"configuracion": _configuracion()})
 
 
 @cache_control(max_age=3600)

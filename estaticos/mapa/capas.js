@@ -89,7 +89,15 @@
     foto: (color, tinta) => `<path d="M4.5 9.2h3l1.5-2.2h6l1.5 2.2h3v8.6h-15z" fill="${tinta}" stroke="none"/><circle cx="12" cy="13.3" r="2.7" fill="${color}" stroke="none"/>`,
     aviso: (color, tinta) => `<path d="M12 5.6l7 12.2H5z" fill="${tinta}" stroke="${tinta}" stroke-width="1.2" stroke-linejoin="round"/><rect x="11.2" y="9.8" width="1.6" height="4.2" fill="${color}" stroke="none"/><circle cx="12" cy="15.8" r="1" fill="${color}" stroke="none"/>`,
     refugio: (color, tinta) => `<path d="M4.5 12L12 6l7.5 6" stroke="${tinta}"/><path d="M7 10.5V18h10v-7.5" stroke="${tinta}"/>`,
+    corazon: (color, tinta) => `<path d="M12 19s-7-4.3-7-9.6A4 4 0 0 1 12 7.2a4 4 0 0 1 7 2.2C19 14.7 12 19 12 19z" fill="${tinta}" stroke="none"/>`,
   };
+  // Capas que /mapas dibuja con un marcador propio. Aquí todas van en cuadrado redondeado:
+  //   reporte  = reportes ciudadanos, con cámara, triángulo o casa y el color de su gravedad
+  //   corazon  = buenas noticias y ayuda, con un corazón y el color de la capa (rosa)
+  const CON_MARCADOR = ['reporte', 'corazon'];
+  const conMarcador = (capa) => CON_MARCADOR.includes(capa.marcador);
+  const esAproximada = (capa) => ['case', ['in', ['coalesce', ['get', 'precision'], ''],
+    ['literal', capa.marcador === 'corazon' ? ['aproximada', 'por_confirmar', 'barrio'] : ['aproximada', 'por_confirmar']]], '-aprox', ''];
   function clasesDe(capa) {
     const c = capa.clasificar || {};
     const lista = Object.entries(c.valores || {}).map(([valor, v]) => [valor, v.fillColor || '#888888']);
@@ -98,8 +106,13 @@
   }
   function prepararMarcadores(capa) {
     const tareas = [];
-    const variantes = clasesDe(capa).flatMap(([valor, color]) => ['foto', 'aviso'].map((g) => [valor, color, g]));
-    variantes.push(['refugio', VERDE_REFUGIO, 'refugio']);
+    let variantes;
+    if (capa.marcador === 'corazon') {
+      variantes = [['unico', (capa.estilo && capa.estilo.fillColor) || '#db2777', 'corazon']];
+    } else {
+      variantes = clasesDe(capa).flatMap(([valor, color]) => ['foto', 'aviso'].map((g) => [valor, color, g]));
+      variantes.push(['refugio', VERDE_REFUGIO, 'refugio']);
+    }
     for (const [valor, color, glifo] of variantes) {
       for (const aprox of [false, true]) {
         const nombre = `marc-${capa.id}-${valor}-${glifo}${aprox ? '-aprox' : ''}`;
@@ -120,13 +133,20 @@
     return Promise.all(tareas);
   }
   function capaDeMarcadores(capa, fuente) {
+    const tamano = ['interpolate', ['linear'], ['zoom'], 12, 0.7, 16, 1];
+    if (capa.marcador === 'corazon') {
+      return {
+        id: fuente + '-marcador', type: 'symbol',
+        layout: { 'icon-image': ['concat', `marc-${capa.id}-unico-corazon`, esAproximada(capa)], 'icon-size': tamano, 'icon-allow-overlap': true, 'icon-ignore-placement': true },
+      };
+    }
     const c = capa.clasificar;
     const valores = c ? Object.keys(c.valores || {}) : [];
     const esRefugio = ['==', ['get', 'tipo'], 'refugio'];
     const clase = ['case', esRefugio, 'refugio', valores.length ? ['match', texto(c.propiedad), valores, texto(c.propiedad), 'otro'] : 'otro'];
     const conFotos = ['all', ['has', 'fotos'], ['>', ['length', ['get', 'fotos']], 0]];
     const glifo = ['case', esRefugio, 'refugio', conFotos, 'foto', 'aviso'];
-    const aprox = ['case', ['in', ['coalesce', ['get', 'precision'], ''], ['literal', ['aproximada', 'por_confirmar']]], '-aprox', ''];
+    const aprox = esAproximada(capa);
     return {
       id: fuente + '-marcador', type: 'symbol',
       layout: { 'icon-image': ['concat', `marc-${capa.id}-`, clase, '-', glifo, aprox], 'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.7, 16, 1], 'icon-allow-overlap': true, 'icon-ignore-placement': true },
@@ -212,7 +232,7 @@
       } else agregar(solidas);
     }
 
-    if (capa.tipo === 'punto' && capa.marcador === 'reporte') {
+    if (capa.tipo === 'punto' && conMarcador(capa)) {
       agregar(capaDeMarcadores(capa, fuente));
     } else if (capa.tipo === 'punto' && !capa.solo_rotulo) {
       agregar({
@@ -301,7 +321,7 @@
     if (capa.tipo === 'teselas' && !estado.teselas[capa.teselas]) {
       estado.teselas[capa.teselas] = await fetch(conV(`${SOS.cfg.capasUrl}teselas/${capa.teselas}/teselas.json`)).then((r) => r.json()).catch(() => null);
     }
-    if (capa.marcador === 'reporte') await prepararMarcadores(capa);
+    if (conMarcador(capa)) await prepararMarcadores(capa);
     const antes = siguientePuesta(capa.id);
     const ids = [];
     for (const def of construir(capa)) {
@@ -356,6 +376,13 @@
     if (capa.solo_rotulo) return [];
     if (capa.leyenda) return capa.leyenda.map(([color, t]) => ({ forma: 'cuadro', color, texto: t }));
     const c = capa.clasificar, e = capa.estilo || {};
+    if (capa.marcador === 'corazon') {
+      const color = e.fillColor || '#db2777';
+      return [
+        { forma: 'marcador', color, glifo: 'corazon', texto: 'Corazón: buena noticia o ayuda' },
+        { forma: 'marcador', color, aprox: true, texto: 'Borde punteado: ubicación aproximada o del barrio' },
+      ];
+    }
     if (!c) return [];
     if (capa.marcador === 'reporte') {
       return Object.values(c.valores || {}).concat(c.otro ? [c.otro] : [])
@@ -469,7 +496,7 @@
     const tocados = estado.mapa.queryRenderedFeatures(caja, { layers: ids }).filter((x) => { const c = capaDe(x); return c && c.popup; });
     if (!tocados.length) return false;
     const enElPunto = estado.mapa.queryRenderedFeatures(e.point, { layers: ids });
-    const f = tocados.find((x) => capaDe(x).marcador === 'reporte')
+    const f = tocados.find((x) => conMarcador(capaDe(x)))
       || tocados.find((x) => x.geometry.type === 'Point')
       || enElPunto.find((x) => { const c = capaDe(x); return c && c.popup; })
       || tocados[0];
@@ -588,7 +615,7 @@
     estado.manifiesto = m;
     estado.capas = m.grupos.flatMap((g) => g.capas);
     // Abajo imágenes y áreas, luego líneas, luego puntos y, encima de todo, los reportes de campo.
-    const altura = (c) => (c.marcador === 'reporte' ? 4 : { raster: 0, teselas: 0, poligono: 1, linea: 2, punto: 3 }[c.tipo]);
+    const altura = (c) => (conMarcador(c) ? 4 : { raster: 0, teselas: 0, poligono: 1, linea: 2, punto: 3 }[c.tipo]);
     estado.orden = estado.capas.map((c, i) => [c, i]).sort((a, b) => (altura(a[0]) - altura(b[0])) || (a[1] - b[1])).map(([c]) => c);
     const movil = SOS.esMovil(), siempre = SOS.cfg.capasSiempreGrupos || [], apagadas = SOS.cfg.capasApagadasAlAbrir || [];
     estado.iniciales = m.grupos.flatMap((g) => g.capas

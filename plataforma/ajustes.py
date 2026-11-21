@@ -135,6 +135,8 @@ CAPAS_APAGADAS_AL_ABRIR = ["puntos_criticos"]
 # Lluvia: el JSON que publica /clima. Ruta de archivo en el servidor o URL en la Mac.
 CLIMA_ESTADO = entorno("CLIMA_ESTADO", "https://sosgalapagos.org/clima/datos/estado.json")
 CLIMA_MAX_EDAD_MIN = 20  # con datos más viejos no se muestra nivel
+# Lluvia por hora de cada estación (para el informe): el otro JSON que publica /clima.
+CLIMA_HORARIO = entorno("CLIMA_HORARIO", "https://sosgalapagos.org/clima/datos/horario.json")
 
 # Relieve propio para la vista 3D: teselas de cota que genera sosgalapagos-datos
 # (37_teselas_relieve3d.py; 47 MB, no van a git). Las sirve la plataforma desde una carpeta

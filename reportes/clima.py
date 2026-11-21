@@ -11,8 +11,8 @@ from django.conf import settings
 from django.core.cache import cache
 
 
-def _leer():
-    origen = settings.CLIMA_ESTADO
+def _leer(origen=None):
+    origen = origen or settings.CLIMA_ESTADO
     if origen.startswith("http"):
         pedido = Request(origen, headers={"User-Agent": "sosgalapagos-plataforma (desarrollo local)"})
         with urlopen(pedido, timeout=8) as respuesta:
@@ -61,3 +61,48 @@ def nivel(zona_id):
         "lluvia_24h": lluvia.get("R24h"),
         "hace_min": round(edad_min),
     }
+
+
+def horario():
+    """Lluvia por hora de cada estación, tal como la publica /clima. Se guarda 5 minutos en memoria."""
+    datos = cache.get("clima_horario")
+    if datos is None:
+        try:
+            datos = _leer(settings.CLIMA_HORARIO)
+        except Exception:
+            datos = {}
+        cache.set("clima_horario", datos, 300)
+    return datos
+
+
+def estaciones_con_lluvia():
+    """Estaciones que tienen serie horaria de lluvia: [{id, nombre, isla}], ordenadas por isla y nombre."""
+    series = (horario().get("series") or {})
+    nombres = {f"{e.get('fuente')}/{e.get('estacion')}": e for e in estado().get("estaciones", [])}
+    lista = []
+    for clave, serie in series.items():
+        if "lluvia_mm" not in serie:
+            continue
+        e = nombres.get(clave, {})
+        lista.append({"id": clave, "nombre": e.get("nombre") or clave.split("/")[-1], "isla": e.get("isla") or ""})
+    return sorted(lista, key=lambda x: (x["isla"], x["nombre"]))
+
+
+def lluvia_por_hora(estacion, desde, hasta):
+    """Lluvia (mm) por hora de una estación entre dos instantes UTC. None = sin dato en esa hora.
+
+    Devuelve (inicio de la primera hora, lista). No se suman ni se promedian estaciones:
+    se muestra la serie de una, como la publica /clima.
+    """
+    datos = horario()
+    serie = ((datos.get("series") or {}).get(estacion) or {}).get("lluvia_mm")
+    if not serie or not datos.get("inicio"):
+        return None, []
+    inicio = datetime.fromisoformat(datos["inicio"].replace("Z", "+00:00"))
+    i = max(0, int((desde - inicio).total_seconds() // 3600))
+    j = min(len(serie), int((hasta - inicio).total_seconds() // 3600) + 1)
+    if i >= j:
+        return None, []
+    from datetime import timedelta
+
+    return inicio + timedelta(hours=i), serie[i:j]

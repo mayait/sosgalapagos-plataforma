@@ -62,13 +62,19 @@
 
   window.reporte = () => ({
     paso: 1, tipo: '', clase: 'riesgo', profundidad: '', gravedad: 'cuidado', gravedadTocada: false, nota: '',
-    foto: null, lat: null, lon: null, precision: null, origen: '',
+    foto: null, vistaFoto: '', lat: null, lon: null, precision: null, origen: '',
     vistoEn: new Date().toISOString(), enviando: false, error: '',
     tituloFinal: '', textoFinal: '', enlaceFinal: '/riesgos/', mini: null,
 
     init() {
       this.$watch('paso', (p) => { if (p === 4) this.$nextTick(() => this.abrirMiniMapa()); });
-      this.$watch('gravedad', () => {});
+      // Si se llegó desde el mapa (pulsación larga en un punto), ese punto manda sobre el GPS.
+      const q = new URLSearchParams(location.search);
+      const lat = Number(q.get('lat')), lon = Number(q.get('lon'));
+      if (q.has('lat') && q.has('lon') && Math.abs(lat) <= 2 && lon < -88 && lon > -93) {
+        this.lat = lat; this.lon = lon; this.origen = 'mapa';
+        return;
+      }
       this.pedirGps();
     },
     get alturaAgua() { return ALTURA[this.profundidad]; },
@@ -80,7 +86,7 @@
       }[this.clase];
     },
     get textoUbicacion() {
-      const de = { gps: 'Usamos la ubicación de tu teléfono.', foto: 'Usamos la ubicación guardada en la foto.', mano: 'Punto puesto a mano.' }[this.origen]
+      const de = { gps: 'Usamos la ubicación de tu teléfono.', foto: 'Usamos la ubicación guardada en la foto.', mano: 'Punto puesto a mano.', mapa: 'Es el punto que marcaste en el mapa.' }[this.origen]
         || 'No tenemos tu ubicación.';
       return de + ' Mueve el mapa hasta que el pin quede en el lugar.';
     },
@@ -88,7 +94,7 @@
     pedirGps() {
       if (!navigator.geolocation) return;
       navigator.geolocation.getCurrentPosition((p) => {
-        if (this.origen === 'foto' || this.origen === 'mano') return; // la foto o la mano mandan
+        if (['foto', 'mano', 'mapa'].includes(this.origen)) return; // la foto, la mano o el punto del mapa mandan
         this.lat = p.coords.latitude; this.lon = p.coords.longitude;
         this.precision = p.coords.accuracy; this.origen = 'gps';
         if (this.mini) this.mini.jumpTo({ center: [this.lon, this.lat] });
@@ -99,11 +105,16 @@
       const archivo = e.target.files[0];
       if (!archivo) return;
       const lugar = await ubicacionDeFoto(archivo);
-      if (lugar) { this.lat = lugar.lat; this.lon = lugar.lon; this.origen = 'foto'; this.precision = null; }
+      // La foto da el lugar, salvo que la persona ya haya marcado el punto en el mapa: una foto
+      // de la galería puede ser de otro sitio.
+      if (lugar && this.origen !== 'mapa') { this.lat = lugar.lat; this.lon = lugar.lon; this.origen = 'foto'; this.precision = null; }
       this.foto = await reducir(archivo);
+      if (this.vistaFoto) URL.revokeObjectURL(this.vistaFoto);
+      this.vistaFoto = URL.createObjectURL(this.foto);
+      e.target.value = ''; // permite volver a elegir la misma foto
       this.paso = 2;
     },
-    sinFoto() { this.foto = null; this.paso = 2; },
+    sinFoto() { this.foto = null; this.vistaFoto = ''; this.paso = 2; },
 
     elegirTipo(codigo, clase) {
       this.tipo = codigo;
