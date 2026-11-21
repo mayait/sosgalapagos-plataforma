@@ -228,3 +228,11 @@ def prueba_el_mapa_trae_buscador_y_enlaces_del_pie(client):
     assert "github.com/mayait/sosgalapagos-plataforma" in pie
     # El visor de /mapas ya no se enlaza: de /mapas/ solo se leen los datos.
     assert 'href="/mapas/"' not in html
+
+
+@pytest.mark.django_db
+def prueba_el_informe_se_llama_linea_del_tiempo(client):
+    html = client.get("/riesgos/informe/").content.decode()
+    assert "<h1 class=\"form-titulo\">Línea del tiempo</h1>" in html
+    assert 'id="g-nav"' in html and 'id="saltos"' in html  # navegador para moverse rápido en el tiempo
+    assert "no es información oficial" in html

@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% load static reportes_extras %}
-{% block titulo %}Informe{% endblock %}
+{% block titulo %}Línea del tiempo{% endblock %}
 {% block contenido %}
 <main class="pagina ancha" id="informe" aria-busy="true">
   <nav class="migas"><a href="{% url 'reportes:mapa' %}">← Mapa de riesgos</a><a href="{% url 'reportes:descargas' %}">Descargar capas</a></nav>
-  <h1 class="form-titulo">Informe</h1>
-  <p class="form-ayuda">Todos los reportes en orden y cuánto ha llovido. Son reportes de la comunidad y mediciones preliminares: <b>no es información oficial</b>.</p>
+  <h1 class="form-titulo">Línea del tiempo</h1>
+  <p class="form-ayuda">Qué se reportó y cuánto llovió, hora por hora, desde el inicio de la emergencia. Son reportes de la comunidad y mediciones preliminares: <b>no es información oficial</b>.</p>
 
   <form class="filtros" onsubmit="return false" aria-label="Filtros">
     <label>Isla<select id="f-isla"></select></label>
@@ -14,12 +14,6 @@
     <label>Desde<input type="date" id="f-desde"></label>
     <label>Hasta<input type="date" id="f-hasta"></label>
     <label>Estación de lluvia<select id="f-estacion"></select></label>
-    <div class="atajos-fecha" role="group" aria-label="Periodo">
-      <button type="button" data-dias="1" aria-pressed="false">Hoy</button>
-      <button type="button" data-dias="3" aria-pressed="true">3 días</button>
-      <button type="button" data-dias="7" aria-pressed="false">7 días</button>
-      <button type="button" data-dias="0" aria-pressed="false">Todo el evento</button>
-    </div>
   </form>
 
   <div class="cifras">
@@ -27,18 +21,22 @@
     <div class="cifra"><span>Reportes</span><b id="cifra-reportes">…</b><small id="cifra-reportes-sub"></small></div>
   </div>
 
-  <section class="graficos" id="graficos" aria-label="Lluvia y reportes en el tiempo">
+  {# Navegador: todo el periodo de un vistazo. Se queda arriba al bajar y lleva a cualquier día con un toque. #}
+  <section class="navegador" id="navegador" aria-label="Ir a un día">
     <div class="pista-grafico" id="pista-grafico" hidden></div>
-    <h2 class="grafico-titulo" id="titulo-lluvia">Lluvia por hora (mm)</h2>
-    <svg id="g-lluvia" role="img" aria-labelledby="titulo-lluvia"></svg>
-    <h2 class="grafico-titulo" id="titulo-reportes">Reportes por hora</h2>
-    <svg id="g-reportes" role="img" aria-labelledby="titulo-reportes"></svg>
-    <p class="ficha-pie" id="nota-lluvia"></p>
-    <p class="ficha-pie">Horas de Galápagos. Una raya gris punteada marca las horas sin dato de lluvia. El detalle de la lluvia y el pronóstico están en <a href="/clima/">/clima</a>.</p>
+    <div class="nav-leyenda">
+      <span><i style="background:#2f6fb3"></i><span id="ley-lluvia">Lluvia por día</span></span>
+      <span><i style="background:#c8151b"></i><span id="ley-reportes">Reportes por día</span></span>
+      <span class="nav-ayuda">Toca un día para ir a él</span>
+    </div>
+    <svg id="g-nav" role="img" aria-label="Lluvia y reportes por día. Toca un día para ir a él."></svg>
+    <div class="saltos" id="saltos" role="group" aria-label="Ir rápido a"></div>
   </section>
 
-  <h2 class="seccion-titulo linea-titulo">Línea del tiempo</h2>
+  <div class="vertical-cabecera" aria-hidden="true"><span>Lluvia, mm por hora</span><span>Hora</span><span>Reportes</span></div>
   <div id="linea"></div>
+  <p class="ficha-pie" id="nota-lluvia"></p>
+  <p class="ficha-pie">Horas de Galápagos. Los días sin reportes y con menos de 5 mm de lluvia se juntan en una sola fila; las horas con menos de 1 mm y sin reportes van en el resumen del día. El detalle de la lluvia y el pronóstico están en <a href="/clima/">/clima</a>.</p>
   {% include "parciales/firma.html" %}
 </main>
 {% endblock %}
