@@ -12,7 +12,7 @@
 
   {% if mensaje %}<p class="ficha-mensaje" role="status">{{ mensaje }}</p>{% endif %}
 
-  {% if r.foto and r.contenido_visible %}<img class="ficha-foto" src="{{ r.foto.url }}" alt="Foto del reporte" loading="lazy">{% endif %}
+  {% if r.foto and r.contenido_visible %}<button type="button" class="foto-grande" data-foto="{{ r.foto.url }}" data-pie="{{ r.tipo.nombre }} · {{ r.visto_en|date:'j M, H:i' }}"><img class="ficha-foto" src="{{ r.foto.url }}" alt="Foto del reporte" loading="lazy"></button>{% endif %}
 
   <ul class="ficha-datos">
     <li><span>Visto</span> {{ r.visto_en|hace:ahora }} <small>({{ r.visto_en|date:"j M, H:i" }})</small></li>

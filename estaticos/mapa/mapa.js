@@ -158,11 +158,11 @@
   const detalle = document.getElementById('detalle');
   const cerca = document.getElementById('cerca');
   // La hoja tiene tres alturas: asomada, media y abierta. Se arrastra o se toca el asa.
-  const ASOMADA = 138;
+  const ASOMADA = 96;
   let alturaHoja = ASOMADA;
   const alturas = () => {
     const total = Math.round(hoja.parentElement.clientHeight * 0.88);
-    return [ASOMADA, Math.round(total * 0.62), total];
+    return [ASOMADA, Math.round(total * 0.7), total];
   };
   function ponerHoja(px, animar = true) {
     alturaHoja = px;
@@ -201,7 +201,7 @@
     const meta = alturaHoja + (alturaHoja - inicio) * 0.25;
     ponerHoja(pasos.reduce((a, b) => (Math.abs(b - meta) < Math.abs(a - meta) ? b : a)));
   }
-  for (const el of [document.getElementById('hoja-asa'), hoja.querySelector('.hoja-accion')]) {
+  for (const el of [document.getElementById('hoja-asa')]) {
     el.addEventListener('pointerdown', alTomar);
     el.addEventListener('pointermove', alArrastrar);
     el.addEventListener('pointerup', alSoltar);
@@ -239,6 +239,51 @@
     const fila = e.target.closest('[data-abrir-ficha]');
     if (fila) centrarEn([Number(fila.dataset.lon), Number(fila.dataset.lat)]);
   });
+  // ── Visor de fotos ────────────────────────────────────────────────────────
+  const visor = document.getElementById('visor');
+  let fotos = [], actual = 0;
+  function pintarFoto() {
+    const f = fotos[actual];
+    document.getElementById('visor-img').src = f.url;
+    document.getElementById('visor-img').alt = f.pie || 'Foto del reporte';
+    document.getElementById('visor-pie').textContent = f.pie || '';
+    document.getElementById('visor-cuenta').textContent = fotos.length > 1 ? `${actual + 1} de ${fotos.length}` : '';
+    for (const id of ['visor-anterior', 'visor-siguiente']) document.getElementById(id).hidden = fotos.length < 2;
+  }
+  const pasar = (d) => { actual = (actual + d + fotos.length) % fotos.length; pintarFoto(); };
+  const cerrarVisor = () => { visor.hidden = true; document.getElementById('visor-img').src = ''; };
+  SOS.verFotos = function (lista, indice) {
+    if (!lista.length) return;
+    fotos = lista; actual = indice || 0;
+    pintarFoto();
+    visor.hidden = false;
+  };
+  document.getElementById('visor-cerrar').addEventListener('click', cerrarVisor);
+  document.getElementById('visor-anterior').addEventListener('click', () => pasar(-1));
+  document.getElementById('visor-siguiente').addEventListener('click', () => pasar(1));
+  document.addEventListener('keydown', (e) => {
+    if (visor.hidden) return;
+    if (e.key === 'Escape') cerrarVisor();
+    if (e.key === 'ArrowLeft') pasar(-1);
+    if (e.key === 'ArrowRight') pasar(1);
+  });
+  // Deslizar con el dedo: a los lados cambia de foto.
+  let toqueX = null;
+  visor.addEventListener('touchstart', (e) => { toqueX = e.touches.length === 1 ? e.touches[0].clientX : null; }, { passive: true });
+  visor.addEventListener('touchend', (e) => {
+    if (toqueX === null || fotos.length < 2) return;
+    const d = e.changedTouches[0].clientX - toqueX;
+    if (Math.abs(d) > 50) pasar(d < 0 ? 1 : -1);
+    toqueX = null;
+  }, { passive: true });
+  // Cualquier foto de una ficha se abre en el visor, con todas las de ese reporte.
+  document.body.addEventListener('click', (e) => {
+    const boton = e.target.closest('[data-foto]');
+    if (!boton) return;
+    const todas = [...boton.closest('.ficha, #detalle').querySelectorAll('[data-foto]')];
+    SOS.verFotos(todas.map((b) => ({ url: b.dataset.foto, pie: b.dataset.pie || '' })), todas.indexOf(boton));
+  });
+
   // Tras «sigue ahí» o «ya bajó», el mapa se actualiza al instante.
   document.body.addEventListener('reportes-cambiaron', () => traerReportes(true));
 

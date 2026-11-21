@@ -19,6 +19,7 @@ Capturas en [`capturas/`](capturas/):
 | `11-nuevo-escritorio-mapa.png` | **Mapa nuevo** en el escritorio, con la lista de lo que hay cerca |
 | `12-nuevo-escritorio-capas-y-ficha.png` | **Mapa nuevo** con el panel Capas y la ficha de un reporte |
 | `14-nuevo-movil-fotos-3d-formulario.jpg` | **Mapa nuevo** en teléfono: reporte de campo con fotos, vista 3D y formulario a 360 px |
+| `24-nuevo-movil-fotos-primero-y-visor.jpg` | **Mapa nuevo** en teléfono: Reportar pequeño, ficha que empieza por las fotos y visor a pantalla completa |
 | `23-nuevo-al-dia-con-mapas.jpg` | **Mapa nuevo** al día con `/mapas` del 21-nov 11:13: flujo observado con flechas, áreas por validar y borde punteado en ubicaciones aproximadas |
 | `21-nuevo-marcadores-reportes-de-campo.png` | **Mapa nuevo:** reportes de campo como cuadrados con iconito, distintos de los pines redondos |
 | `20-nuevo-satelite-con-riesgo.jpg` | **Mapa nuevo:** vista de apertura, satélite con la capa de riesgo |

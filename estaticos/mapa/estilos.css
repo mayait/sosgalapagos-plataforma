@@ -210,24 +210,31 @@ a { color: inherit; }
      La hoja mide exactamente lo que se ve. Antes medía siempre el 88 % y se desplazaba
      hacia abajo: la parte oculta quedaba fuera de la pantalla y no se podía llegar al
      final de una ficha con fotos. */
-  --hoja-visible: 138px;
+  --hoja-visible: 96px;
   height: var(--hoja-visible); max-height: 88%;
   transition: height 0.22s ease;
 }
 .hoja.arrastrando { transition: none; }
-.hoja-asa { flex: none; border: 0; background: none; padding: 12px 0 10px; width: 100%; touch-action: none; cursor: grab; }
+.hoja-asa { flex: none; border: 0; background: none; padding: 12px 0 0; height: 52px; width: 100%; touch-action: none; cursor: grab; }
+.hoja-asa::before { margin-top: 0 !important; }
 .hoja-asa::before { content: ""; display: block; width: 38px; height: 4px; margin: 0 auto; border-radius: 4px; background: #d4d4d4; }
-.hoja-accion { flex: none; display: flex; align-items: center; gap: 12px; padding: 2px 14px 12px; touch-action: none; }
-.hoja-accion .reportar { flex: 1; }
+/* «Reportar» en segundo nivel: un botón pequeño junto al asa, para que la hoja muestre
+   primero el contenido (la lista o el reporte con sus fotos). */
+.reportar.compacto {
+  position: absolute; top: 9px; right: 12px; z-index: 2;
+  padding: 0 14px; height: 36px; border-radius: 999px; gap: 6px;
+  font-size: 12px; box-shadow: 0 2px 8px rgba(225, 27, 34, 0.3);
+}
+.reportar.compacto svg { width: 14px; height: 14px; }
 .hoja-cuerpo { flex: 1; min-height: 0; overflow-y: auto; touch-action: pan-y; padding: 0 14px calc(20px + env(safe-area-inset-bottom)); overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
-.con-hoja .leyenda, .con-hoja .ubicarme { bottom: 152px; }
-.con-hoja .relieve { bottom: 204px; }
-.con-hoja .sin-reportes { bottom: 206px; }
-.con-hoja .maplibregl-ctrl-bottom-right, .con-hoja .maplibregl-ctrl-bottom-left { bottom: 186px; }
+.con-hoja .leyenda, .con-hoja .ubicarme { bottom: 110px; }
+.con-hoja .relieve { bottom: 162px; }
+.con-hoja .sin-reportes { bottom: 164px; }
+.con-hoja .maplibregl-ctrl-bottom-right, .con-hoja .maplibregl-ctrl-bottom-left { bottom: 144px; }
 
 .cabecera-panel { display: none; }
 .seccion-titulo {
-  margin: 14px 0 8px; font: 800 12px/1.1 var(--titulo); letter-spacing: 0.04em; text-transform: uppercase;
+  margin: 2px 0 8px; font: 800 12px/1.1 var(--titulo); letter-spacing: 0.04em; text-transform: uppercase;
 }
 .vacio { color: var(--gris); font-size: 14px; padding: 6px 0 2px; }
 .vacio b { color: var(--tinta); }
@@ -295,10 +302,26 @@ a { color: inherit; }
 .globo-tabla td { padding: 1px 0; vertical-align: top; }
 .globo-tabla td:first-child { color: var(--gris); padding-right: 8px; white-space: nowrap; }
 
-/* Fotos de los reportes de campo (capas de /mapas) */
-.fotos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+/* Fotos de los reportes. Van primero en la ficha: la primera grande y las demás en rejilla.
+   Al tocarlas se abren en el visor a pantalla completa. */
+.fotos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 4px 0 12px; }
 .fotos figure { margin: 0; }
-.fotos img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; background: var(--fondo-suave); }
+.fotos figure:first-child { grid-column: 1 / -1; }
+.fotos figure:first-child img { aspect-ratio: 16 / 10; }
+.fotos button, .foto-grande { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
+.fotos img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; background: var(--fondo-suave); }
+.fotos-cuenta { margin: -4px 0 10px; font-size: 12px; color: var(--gris); }
+
+/* Visor de fotos: pantalla completa, fondo blanco. */
+.visor { position: fixed; inset: var(--aviso-alto) 0 0 0; z-index: 50; /* debajo del aviso del 911, que se ve siempre */ background: var(--blanco); display: flex; flex-direction: column; }
+.visor-barra { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 6px 16px; font-size: 13px; color: var(--gris); }
+.visor-barra button { border: 0; background: none; width: 48px; height: 48px; font-size: 32px; line-height: 1; color: var(--tinta); }
+.visor-foto { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 0 8px; touch-action: pan-y pinch-zoom; }
+.visor-foto img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; }
+.visor-pie { flex: none; margin: 0; padding: 12px 18px calc(18px + env(safe-area-inset-bottom)); font-size: 14.5px; line-height: 1.4; text-align: center; min-height: 54px; }
+.visor-paso { position: absolute; top: 50%; transform: translateY(-50%); width: 46px; height: 64px; border: 0; border-radius: 10px; background: rgba(255, 255, 255, 0.85); font-size: 34px; line-height: 1; color: var(--tinta); box-shadow: var(--sombra); }
+.visor-paso.anterior { left: 8px; }
+.visor-paso.siguiente { right: 8px; }
 .fotos figcaption { margin-top: 4px; font-size: 11.5px; line-height: 1.3; color: var(--gris); }
 .fotos figcaption b { color: var(--tinta); }
 .ficha-texto { margin: 10px 0; font-size: 14px; line-height: 1.45; }
@@ -307,7 +330,7 @@ a { color: inherit; }
 /* Teléfonos: objetivos táctiles amplios y panel de capas a todo el ancho. */
 @media (max-width: 1023px) {
   .pantalla { inset: var(--aviso-alto) 0 0 0; height: calc(100dvh - var(--aviso-alto)); }
-  .capas-panel { width: calc(100% - 20px); max-height: calc(100% - 152px); }
+  .capas-panel { width: calc(100% - 20px); max-height: calc(100% - 110px); }
   .capa { padding: 8px 0; }
   .capa-descargas { gap: 8px 16px; font-size: 12.5px; padding: 4px 0; }
   .pildoras button { padding: 7px 13px; font-size: 13.5px; }
@@ -352,7 +375,7 @@ a { color: inherit; }
   .cabecera-panel { display: block; padding: 20px 20px 4px; }
   .cabecera-panel h1 { margin: 6px 0 4px; font: 900 26px/0.95 var(--titulo); letter-spacing: -0.01em; text-transform: uppercase; }
   .cabecera-panel p { margin: 0; font-size: 13.5px; color: var(--gris); }
-  .hoja-accion { padding: 16px 20px 6px; }
+  .reportar.compacto { position: static; align-self: flex-start; margin: 14px 20px 4px; height: 40px; padding: 0 18px; font-size: 12.5px; }
   .hoja-cuerpo { padding: 0 20px 24px; }
 }
 

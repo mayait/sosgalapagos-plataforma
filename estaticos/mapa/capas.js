@@ -461,10 +461,19 @@
   function globo(e) {
     const ids = Object.values(estado.puestas).flat().filter((id) => estado.mapa.getLayer(id) && !id.endsWith('-halo') && !id.endsWith('-rotulo'));
     if (!ids.length) return false;
-    const f = estado.mapa.queryRenderedFeatures(e.point, { layers: ids })[0];
-    if (!f) return false;
-    const capa = estado.capas.find((c) => f.layer.source === 'capa-' + c.id);
-    if (!capa || !capa.popup) return false;
+    // Se busca en un cuadrito alrededor del dedo, no en un solo píxel. Si en ese lugar hay un
+    // reporte de campo (con sus fotos), gana el reporte aunque tenga encima otro punto: antes
+    // se abría el punto de control del modelo y las fotos no aparecían.
+    const r = 9, caja = [[e.point.x - r, e.point.y - r], [e.point.x + r, e.point.y + r]];
+    const capaDe = (x) => estado.capas.find((c) => x.layer.source === 'capa-' + c.id);
+    const tocados = estado.mapa.queryRenderedFeatures(caja, { layers: ids }).filter((x) => { const c = capaDe(x); return c && c.popup; });
+    if (!tocados.length) return false;
+    const enElPunto = estado.mapa.queryRenderedFeatures(e.point, { layers: ids });
+    const f = tocados.find((x) => capaDe(x).marcador === 'reporte')
+      || tocados.find((x) => x.geometry.type === 'Point')
+      || enElPunto.find((x) => { const c = capaDe(x); return c && c.popup; })
+      || tocados[0];
+    const capa = capaDe(f);
     const p = capa.popup, datos = f.properties;
     let fotos = p.fotos ? datos[p.fotos] : null;
     if (typeof fotos === 'string') { try { fotos = JSON.parse(fotos); } catch (err) { fotos = null; } }
@@ -478,21 +487,25 @@
   function fichaDeCapa(capa, datos, fotos) {
     const p = capa.popup, x = SOS.escapar, base = datosUrl() + (capa.fotos_base || '');
     const titulo = (datos[p.titulo] ?? p.titulo_defecto ?? capa.titulo) + (datos[p.titulo] != null ? p.sufijo_titulo || '' : '');
-    let h = `<article class="ficha"><button class="ficha-volver" type="button" data-cerrar-ficha>← Volver a la lista</button>
-      <p class="ficha-capa">${x(capa.titulo)}</p><h2 class="ficha-titulo">${x(titulo)}</h2><ul class="ficha-datos">`;
+    let h = `<article class="ficha"><button class="ficha-volver" type="button" data-cerrar-ficha>← Volver a la lista</button>`;
+    // Primero las fotos: es lo que la persona viene a ver. La primera va grande.
+    if (fotos.length) {
+      h += '<div class="fotos">';
+      fotos.forEach((f, i) => {
+        const pie = (f.hora && !(f.pie || '').startsWith(f.hora) ? f.hora + ' · ' : '') + (f.pie || '');
+        h += `<figure><button type="button" data-foto="${x(base + f.archivo)}" data-pie="${x(pie)}" aria-label="Ver la foto en grande">
+          <img ${i ? 'loading="lazy" ' : ''}src="${x(base + (i ? f.mini || f.archivo : f.archivo))}" alt="${x(f.pie || 'Foto del reporte')}"></button>
+          <figcaption>${x(pie)}</figcaption></figure>`;
+      });
+      h += '</div>';
+      if (fotos.length > 1) h += `<p class="fotos-cuenta">${fotos.length} fotos. Toca una para verla en grande.</p>`;
+    }
+    h += `<p class="ficha-capa">${x(capa.titulo)}</p><h2 class="ficha-titulo">${x(titulo)}</h2><ul class="ficha-datos">`;
     for (const [campo, etiqueta] of Object.entries(p.campos || {})) {
       if (datos[campo] != null && datos[campo] !== '') h += `<li><span>${x(etiqueta)}</span> ${x(datos[campo])}</li>`;
     }
     h += '</ul>';
     if (p.texto && datos[p.texto]) h += `<p class="ficha-texto">${x(datos[p.texto])}</p>`;
-    if (fotos.length) {
-      h += '<div class="fotos">';
-      for (const f of fotos) {
-        h += `<figure><a href="${x(base + f.archivo)}" target="_blank" rel="noopener"><img loading="lazy" src="${x(base + (f.mini || f.archivo))}" alt="${x(f.pie || 'Foto del reporte')}"></a>
-          <figcaption>${f.hora && !(f.pie || '').startsWith(f.hora) ? `<b>${x(f.hora)}</b> ` : ''}${x(f.pie || '')}</figcaption></figure>`;
-      }
-      h += '</div>';
-    }
     return h + `<p class="ficha-pie">${x(capa.fuente || '')}</p></article>`;
   }
 
@@ -546,8 +559,9 @@
   function ordenar(m) {
     estado.manifiesto = m;
     estado.capas = m.grupos.flatMap((g) => g.capas);
-    const altura = { raster: 0, teselas: 0, poligono: 1, linea: 2, punto: 3 };
-    estado.orden = estado.capas.map((c, i) => [c, i]).sort((a, b) => (altura[a[0].tipo] - altura[b[0].tipo]) || (a[1] - b[1])).map(([c]) => c);
+    // Abajo imágenes y áreas, luego líneas, luego puntos y, encima de todo, los reportes de campo.
+    const altura = (c) => (c.marcador === 'reporte' ? 4 : { raster: 0, teselas: 0, poligono: 1, linea: 2, punto: 3 }[c.tipo]);
+    estado.orden = estado.capas.map((c, i) => [c, i]).sort((a, b) => (altura(a[0]) - altura(b[0])) || (a[1] - b[1])).map(([c]) => c);
     const movil = SOS.esMovil(), siempre = SOS.cfg.capasSiempreGrupos || [], apagadas = SOS.cfg.capasApagadasAlAbrir || [];
     estado.iniciales = m.grupos.flatMap((g) => g.capas
       .filter((c) => c.visible && !apagadas.includes(c.id) && (!movil || c.visible_movil !== false || siempre.includes(g.id)))

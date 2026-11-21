@@ -4,6 +4,13 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 
 ## 2026-11-21 · Fase 1
 
+- **Al tocar un reporte con fotos se abría otra cosa (lo reportó Julián: «no veo las fotos»).** Tres causas juntas:
+  - Encima del reporte había un punto de control del modelo, en el mismo lugar, y el toque abría ese punto, que no tiene fotos. *Qué se hace:* el toque busca en un cuadrito alrededor del dedo y, si ahí hay un reporte de campo, gana el reporte. Además los reportes de campo se dibujan encima de los demás puntos.
+  - Las fotos iban al final de la ficha, bajo el título, los datos y el texto. *Qué se hace:* van primero, la primera en grande.
+  - Al tocar una foto se abría el archivo en otra pestaña. *Qué se hace:* visor propio a pantalla completa, con pie de foto, contador, flechas y deslizamiento.
+- **El botón Reportar ocupaba el mejor sitio de la hoja (indicación de Julián: «en segundo nivel»).** Era una barra roja de lado a lado sobre el contenido. *Qué se hace:* es un botón pequeño junto al asa. La hoja asomada baja de 138 a 96 px y deja ver más mapa.
+- **Probar «se abre la ficha» no es probar «se abre la ficha correcta».** Mi prueba anterior comprobaba que aparecía una ficha, no de qué capa era. *Qué se hace:* la revisión comprueba el nombre de la capa y que el número de fotos mostradas sea el del reporte.
+
 - **`/mapas` cambió y el mapa no sabía dibujar parte de lo nuevo (lo pidió revisar Julián).** Entre las 09:15 y las 11:13 el manifiesto pasó de 56 a 59 capas y estrenó formas de estilo. Lo que faltaba:
   - **Rangos numéricos** (`clasificar.rangos`, en «Población por manzana»): encender esa capa lanzaba un error.
   - **`fill: false`** (límite urbano): se dibujaba con relleno.

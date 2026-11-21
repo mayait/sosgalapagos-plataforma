@@ -26,6 +26,15 @@
   <div class="sin-conexion" id="sin-conexion" hidden></div>
   <div class="aviso-capas" id="aviso-capas" role="status" hidden></div>
 
+  {# Visor de fotos a pantalla completa #}
+  <div class="visor" id="visor" role="dialog" aria-modal="true" aria-label="Foto del reporte" hidden>
+    <div class="visor-barra"><span id="visor-cuenta"></span><button type="button" id="visor-cerrar" aria-label="Cerrar la foto">×</button></div>
+    <div class="visor-foto"><img id="visor-img" alt=""></div>
+    <p class="visor-pie" id="visor-pie"></p>
+    <button type="button" class="visor-paso anterior" id="visor-anterior" aria-label="Foto anterior">‹</button>
+    <button type="button" class="visor-paso siguiente" id="visor-siguiente" aria-label="Foto siguiente">›</button>
+  </div>
+
   <div class="leyenda flotante" aria-label="Leyenda de los reportes">
     <span><i class="pin-muestra" style="background:#fff;border-color:#6b7280"></i>Por verificar</span>
     <span><i class="pin-muestra" style="background:#e11b22;border-color:#fff;box-shadow:0 0 0 1px #e11b22"></i>Confirmado</span>
@@ -40,9 +49,7 @@
       <h1>Mapa de riesgos</h1>
       <p>Lugares de peligro que reporta la comunidad. Cada aviso se retira solo con el tiempo.</p>
     </header>
-    <div class="hoja-accion">
-      <a class="reportar" href="{% url 'reportes:reportar' %}" id="reportar"><svg><use href="#i-mas"/></svg>Reportar</a>
-    </div>
+    <a class="reportar compacto" href="{% url 'reportes:reportar' %}" id="reportar"><svg><use href="#i-mas"/></svg>Reportar</a>
     <div class="hoja-cuerpo">
       <div id="detalle"></div>
       <div id="cerca" hx-get="{% url 'reportes:cerca' %}" hx-trigger="load" hx-swap="innerHTML"></div>
