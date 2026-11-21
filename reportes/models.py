@@ -16,8 +16,18 @@ def nuevo_id_publico():
     return "".join(secrets.choice(ALFABETO_ID) for _ in range(8))
 
 
+class Clase(models.TextChoices):
+    # No todo lo que se avisa es un peligro: también hay cosas buenas y lugares donde ayudar.
+    RIESGO = "riesgo", "Un peligro"
+    BUENO = "bueno", "Algo bueno"
+    AYUDA = "ayuda", "Dónde donar o colaborar"
+
+
 class TipoRiesgo(models.Model):
+    """Tipo de aviso. Nació para los riesgos y conserva el nombre; hoy también cubre lo bueno y la ayuda."""
+
     codigo = models.SlugField("código", max_length=30, unique=True)
+    clase = models.CharField(max_length=8, choices=Clase, default=Clase.RIESGO)
     nombre = models.CharField(max_length=60)
     icono = models.CharField(max_length=30, help_text="Nombre del icono en estaticos/mapa/iconos.svg")
     plazo_horas = models.PositiveIntegerField("plazo de vida (horas)")
@@ -25,8 +35,8 @@ class TipoRiesgo(models.Model):
     activo = models.BooleanField(default=True)
 
     class Meta:
-        verbose_name = "tipo de riesgo"
-        verbose_name_plural = "tipos de riesgo"
+        verbose_name = "tipo de aviso"
+        verbose_name_plural = "tipos de aviso"
         ordering = ["orden", "nombre"]
 
     def __str__(self):

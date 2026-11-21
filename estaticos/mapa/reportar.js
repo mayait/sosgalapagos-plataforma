@@ -61,7 +61,7 @@
   }
 
   window.reporte = () => ({
-    paso: 1, tipo: '', profundidad: '', gravedad: 'cuidado', gravedadTocada: false, nota: '',
+    paso: 1, tipo: '', clase: 'riesgo', profundidad: '', gravedad: 'cuidado', gravedadTocada: false, nota: '',
     foto: null, lat: null, lon: null, precision: null, origen: '',
     vistoEn: new Date().toISOString(), enviando: false, error: '',
     tituloFinal: '', textoFinal: '', enlaceFinal: '/riesgos/', mini: null,
@@ -72,6 +72,13 @@
       this.pedirGps();
     },
     get alturaAgua() { return ALTURA[this.profundidad]; },
+    get ejemploDeNota() {
+      return {
+        riesgo: 'Ejemplo: el agua corre fuerte hacia la esquina',
+        bueno: 'Ejemplo: ya volvió la luz en el barrio; vecinos reparten almuerzos en la cancha',
+        ayuda: 'Ejemplo: reciben agua y ropa seca, de 8 a 18 h; hacen falta voluntarios para clasificar',
+      }[this.clase];
+    },
     get textoUbicacion() {
       const de = { gps: 'Usamos la ubicación de tu teléfono.', foto: 'Usamos la ubicación guardada en la foto.', mano: 'Punto puesto a mano.' }[this.origen]
         || 'No tenemos tu ubicación.';
@@ -98,8 +105,9 @@
     },
     sinFoto() { this.foto = null; this.paso = 2; },
 
-    elegirTipo(codigo) {
+    elegirTipo(codigo, clase) {
       this.tipo = codigo;
+      this.clase = clase || 'riesgo';
       if (CON_AGUA.includes(codigo)) { this.paso = 3; return; }
       this.profundidad = 'sin_dato';
       if (!this.gravedadTocada) this.gravedad = codigo === 'cable' || codigo === 'via_cortada' ? 'no_pasar' : 'cuidado';
@@ -142,6 +150,7 @@
         this.textoFinal = datos.duplicado
           ? 'Alguien ya había avisado de esto aquí mismo. Tu aviso confirma que sigue ahí y renueva el plazo.'
           : 'Ya aparece en el mapa como «por verificar». Se retira solo cuando pase su plazo.';
+        if (this.clase !== 'riesgo' && !datos.duplicado) this.textoFinal = 'Gracias. Ya aparece en el mapa; el texto se publica cuando coordinación lo revise.';
         this.enlaceFinal = '/riesgos/?r=' + datos.id;
         this.paso = 5;
       } catch (e) {

@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   const SOS = window.SOS, cfg = SOS.cfg;
-  const COLOR = { por_verificar: '#6b7280', confirmado: '#e11b22', bajando: '#d97706', cerrado: '#b4b4b4' };
+  const COLOR = { por_verificar: '#6b7280', confirmado: '#e11b22', bajando: '#d97706', cerrado: '#b4b4b4', bueno: '#f2b400', ayuda: '#000000' };
   const SONDEO_MS = 4000;       // cada cuánto se pregunta si hay reportes nuevos
   const OPACIDAD_MINIMA = 0.4;  // un reporte a punto de vencer no desaparece del todo
 
@@ -46,7 +46,7 @@
         img.onerror = listo;
         img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
       });
-      return Promise.all([pintar('#ffffff', ''), pintar('#6b7280', '-gris')]);
+      return Promise.all([pintar('#ffffff', ''), pintar('#6b7280', '-gris'), pintar('#1d1d1b', '-tinta')]);
     }));
   }
 
@@ -104,11 +104,12 @@
     mapa.addSource('reportes', {
       type: 'geojson', data: conEdad(coleccion),
       cluster: true, clusterRadius: 46, clusterMaxZoom: 15,
-      clusterProperties: { graves: ['+', ['case', ['==', ['get', 'gravedad'], 'peligro_vida'], 1, 0]] },
+      clusterProperties: { graves: ['+', ['case', ['all', ['==', ['get', 'clase'], 'riesgo'], ['==', ['get', 'gravedad'], 'peligro_vida']], 1, 0]] },
     });
     const suelto = ['!', ['has', 'point_count']];
     const opacidad = ['interpolate', ['linear'], ['get', 'frac'], 0, 1, 1, OPACIDAD_MINIMA];
-    const radio = ['match', ['get', 'gravedad'], 'peligro_vida', 17, 'no_pasar', 14.5, 12.5];
+    const esPeligro = ['==', ['get', 'clase'], 'riesgo'];
+    const radio = ['case', esPeligro, ['match', ['get', 'gravedad'], 'peligro_vida', 17, 'no_pasar', 14.5, 12.5], 13.5];
 
     // Grupos: círculo negro con el número. Borde rojo si dentro hay peligro de vida.
     mapa.addLayer({
@@ -128,7 +129,7 @@
     // Anillo negro: peligro de vida.
     mapa.addLayer({
       id: 'reportes-anillo', type: 'circle', source: 'reportes',
-      filter: ['all', suelto, ['==', ['get', 'gravedad'], 'peligro_vida'], ['!=', ['get', 'estado'], 'cerrado']],
+      filter: ['all', suelto, esPeligro, ['==', ['get', 'gravedad'], 'peligro_vida'], ['!=', ['get', 'estado'], 'cerrado']],
       paint: { 'circle-radius': 22, 'circle-color': 'rgba(0,0,0,0)', 'circle-stroke-color': '#000000', 'circle-stroke-width': 2.5, 'circle-stroke-opacity': opacidad },
     });
     // Pin: relleno según el estado. «Por verificar» va hueco, con borde gris.
@@ -136,7 +137,15 @@
       id: 'reportes-pin', type: 'circle', source: 'reportes', filter: suelto,
       paint: {
         'circle-radius': radio,
-        'circle-color': ['match', ['get', 'estado'], 'por_verificar', '#ffffff', 'confirmado', COLOR.confirmado, 'bajando', COLOR.bajando, COLOR.cerrado],
+        // Sin verificar, hueco. Cerrado, gris. Lo bueno, amarillo; donar o colaborar, negro.
+        // Los peligros, según su estado: rojo confirmado, ámbar bajando.
+        'circle-color': ['case',
+          ['==', ['get', 'estado'], 'por_verificar'], '#ffffff',
+          ['==', ['get', 'estado'], 'cerrado'], COLOR.cerrado,
+          ['==', ['get', 'clase'], 'bueno'], COLOR.bueno,
+          ['==', ['get', 'clase'], 'ayuda'], COLOR.ayuda,
+          ['==', ['get', 'estado'], 'bajando'], COLOR.bajando,
+          COLOR.confirmado],
         'circle-stroke-color': ['match', ['get', 'estado'], 'por_verificar', COLOR.por_verificar, '#ffffff'],
         'circle-stroke-width': ['match', ['get', 'estado'], 'por_verificar', 2.5, 2],
         'circle-opacity': opacidad, 'circle-stroke-opacity': opacidad,
@@ -145,7 +154,10 @@
     mapa.addLayer({
       id: 'reportes-icono', type: 'symbol', source: 'reportes', filter: suelto,
       layout: {
-        'icon-image': ['case', ['==', ['get', 'estado'], 'por_verificar'], ['concat', ['get', 'icono'], '-gris'], ['get', 'icono']],
+        'icon-image': ['case',
+          ['==', ['get', 'estado'], 'por_verificar'], ['concat', ['get', 'icono'], '-gris'],
+          ['all', ['==', ['get', 'clase'], 'bueno'], ['!=', ['get', 'estado'], 'cerrado']], ['concat', ['get', 'icono'], '-tinta'], // sobre amarillo, icono oscuro
+          ['get', 'icono']],
         'icon-size': ['match', ['get', 'gravedad'], 'peligro_vida', 0.85, 'no_pasar', 0.72, 0.62],
         'icon-allow-overlap': true, 'icon-ignore-placement': true,
       },
@@ -360,7 +372,8 @@
       if (f && f.properties.cluster) return { titulo: `${f.properties.point_count} reportes`, detalle: 'Toca para acercarte' };
       if (f) {
         const p = f.properties;
-        return { titulo: p.tipo_nombre, detalle: `${NOMBRES.gravedad[p.gravedad] || ''} · ${haceCuanto(p.visto)} · ${NOMBRES.estado[p.estado] || ''}` };
+        const partes = [p.clase === 'riesgo' ? NOMBRES.gravedad[p.gravedad] : '', haceCuanto(p.visto), NOMBRES.estado[p.estado]];
+        return { titulo: p.tipo_nombre, detalle: partes.filter(Boolean).join(' · ') };
       }
     }
     return SOS.capas.pista(punto);

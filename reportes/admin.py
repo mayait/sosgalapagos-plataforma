@@ -6,7 +6,7 @@ from .models import Confirmacion, Estado, MotivoCierre, Reporte, TipoRiesgo
 
 @admin.register(TipoRiesgo)
 class TipoRiesgoAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "codigo", "plazo_horas", "orden", "activo")
+    list_display = ("nombre", "codigo", "clase", "plazo_horas", "orden", "activo")
     list_editable = ("plazo_horas", "orden", "activo")
 
 
@@ -20,7 +20,7 @@ class ConfirmacionEnLinea(admin.TabularInline):
 @admin.register(Reporte)
 class ReporteAdmin(admin.GISModelAdmin):
     list_display = ("id_publico", "tipo", "gravedad", "estado", "contenido_visible", "zona", "visto_en", "vence_en", "fuente")
-    list_filter = ("estado", "tipo", "gravedad", "fuente", "contenido_visible")
+    list_filter = ("estado", "tipo__clase", "tipo", "gravedad", "fuente", "contenido_visible")
     search_fields = ("id_publico", "nota")
     readonly_fields = ("id_publico", "vence_en", "huella", "creado_en", "cerrado_en", "motivo_cierre")
     inlines = [ConfirmacionEnLinea]

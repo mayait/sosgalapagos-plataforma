@@ -42,7 +42,7 @@ Plataforma de reportes de riesgo de SOS Galápagos: un mapa único donde la gent
 | Quiero… | Voy a… |
 |---|---|
 | Cambiar un plazo, un duplicado o una confirmación | `reportes/reglas.py` y `plataforma/ajustes.py` |
-| Cambiar un tipo de riesgo | El admin (`/riesgos/admin/`), no el código |
+| Añadir o cambiar un tipo de aviso (peligro, algo bueno, donar o colaborar) | El admin (`/riesgos/admin/`), no el código |
 | Desplegar o actualizar el servidor | `despliegue/servidor.md` y `despliegue/produccion/desplegar.sh` |
 | Tocar el formulario | `plantillas/reportes/reportar.html` y `estaticos/mapa/reportar.js` |
 | Tocar los pines o el desteñido | `estaticos/mapa/mapa.js` |

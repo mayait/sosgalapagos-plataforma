@@ -4,6 +4,13 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 
 ## 2026-11-21 · Puesta en producción
 
+- **El mapa no es solo de peligros (indicación de Julián: «pines positivos de cosas lindas, y otro de dónde donar o colaborar»).** Busqué esos pines ya creados y no los hallé en `/mapas`, en el repo de datos, en la plataforma anterior ni en `/riesgos/`. *Qué se hace:* el mapa de riesgos admite tres clases de aviso: un peligro, algo bueno y dónde donar o colaborar. Cada tipo de aviso tiene su `clase`.
+  - **Algo bueno:** pin amarillo con corazón; vive 48 h.
+  - **Dónde donar o colaborar:** pin negro con caja de regalo; vive 72 h y se renueva con «sigue ahí».
+  - En esas dos clases no se pregunta profundidad ni si se puede pasar, y el segundo botón dice «Ya no está».
+  - Siguen las mismas reglas: entran «por verificar», el texto se publica cuando coordinación lo revisa y se retiran solos.
+- **Sigue sin usarse el verde en los pines.** Lo bueno va en amarillo, no en verde, para que nadie lo lea como «aquí es seguro».
+
 - **Muchos puntos no decían qué eran (lo pidió Julián: un «mouseover chiquito y simple»).** Había que tocar cada punto para saberlo. *Qué se hace:* al pasar el ratón sale una pista de dos líneas: qué es y su clase («Punto de inundación · Prioridad media · SC-020»). Vale para los puntos y las líneas de las capas y para los pines de los reportes. Los códigos no encabezan la pista, porque no explican nada. Las áreas no dan pista: cubren casi todo el mapa. En el teléfono no hay ratón: ahí se toca el punto.
 - **Cambiar solo el `#…` de la dirección no recarga la página.** Al probar, seguía corriendo el JavaScript anterior. *Qué se hace:* en las pruebas se navega a otra página y se vuelve.
 

@@ -146,3 +146,19 @@ def prueba_el_relieve_del_3d_se_sirve_y_el_mar_da_404(client, settings, tmp_path
     assert tesela.status_code == 200 and "max-age" in tesela["Cache-Control"]
     assert client.get("/riesgos/relieve3d/cota/8/1/1.png").status_code == 404
     assert client.get("/riesgos/relieve3d/../ajustes.py").status_code in (400, 404)  # nada fuera de la carpeta
+
+
+def prueba_se_puede_avisar_algo_bueno_y_donde_donar(client):
+    bueno = client.post("/riesgos/reportar/", {"tipo": "algo_bueno", "lat": "-0.7408", "lon": "-90.3152", "nota": "Volvió la luz"})
+    ayuda = client.post("/riesgos/reportar/", {"tipo": "donar_colaborar", "lat": "-0.7428", "lon": "-90.3108"})
+    assert bueno.status_code == 201 and ayuda.status_code == 201
+    datos = json.loads(client.get("/riesgos/api/reportes/vivos.geojson").content)
+    assert sorted(f["properties"]["clase"] for f in datos["features"]) == ["ayuda", "bueno"]
+    ficha = client.get(f"/riesgos/r/{bueno.json()['id']}/").content.decode()
+    assert "Ya no está" in ficha and "No pasar" not in ficha and "Pasar con cuidado" not in ficha
+
+
+def prueba_los_peligros_siguen_llevando_su_clase(client):
+    client.post("/riesgos/reportar/", DATOS)
+    datos = json.loads(client.get("/riesgos/api/reportes/vivos.geojson").content)
+    assert datos["features"][0]["properties"]["clase"] == "riesgo"

@@ -27,6 +27,8 @@ ESCENA = [
     ("agua_via", -90.3147, -0.7462, 320, "cuidado", "tobillo", "vecino", ""),
     ("deslizamiento", -90.3225, -0.7318, 1500, "no_pasar", "sin_dato", "coordinador", "Talud caído sobre media vía"),
     ("agua_via", -90.3075, -0.7419, 5, "no_pasar", "rodilla", "whatsapp", ""),
+    ("algo_bueno", -90.3152, -0.7408, 40, "cuidado", "sin_dato", "coordinador", "Vecinos reparten almuerzos calientes en la cancha"),
+    ("donar_colaborar", -90.3108, -0.7428, 90, "cuidado", "sin_dato", "coordinador", "Reciben agua y ropa seca de 8 a 18 h; faltan voluntarios para clasificar"),
 ]
 
 

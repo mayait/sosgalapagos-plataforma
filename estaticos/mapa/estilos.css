@@ -264,6 +264,12 @@ a { color: inherit; }
 .estado-por_verificar .fila-icono, .fila-icono.estado-por_verificar { background: var(--blanco); color: var(--por-verificar); box-shadow: inset 0 0 0 2px var(--por-verificar); }
 .estado-bajando .fila-icono, .fila-icono.estado-bajando { background: var(--ambar); }
 .estado-cerrado .fila-icono, .fila-icono.estado-cerrado { background: #c8c8c8; }
+/* Clases de aviso: lo bueno va en amarillo con icono oscuro; donar o colaborar, en negro. */
+.clase-bueno .fila-icono, .fila-icono.clase-bueno { background: #f2b400; color: var(--tinta); }
+.clase-ayuda .fila-icono, .fila-icono.clase-ayuda { background: var(--negro); color: var(--blanco); }
+.clase-bueno.estado-por_verificar .fila-icono, .fila-icono.clase-bueno.estado-por_verificar,
+.clase-ayuda.estado-por_verificar .fila-icono, .fila-icono.clase-ayuda.estado-por_verificar { background: var(--blanco); color: var(--por-verificar); }
+.opcion.clase-bueno svg { color: #b98900; }
 .fila-texto { flex: 1; min-width: 0; }
 .fila-titulo { font-weight: 700; font-size: 14.5px; }
 .fila-sub { font-size: 12.5px; color: var(--gris); }
