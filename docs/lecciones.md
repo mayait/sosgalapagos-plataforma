@@ -137,3 +137,9 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 - **Una regla CSS añadida al final gana a la consulta de escritorio de más arriba.** El buscador salió a la izquierda en escritorio. *Qué se hace:* las variantes de escritorio de un bloque nuevo van en su propio `@media`, después del bloque.
 - **La publicación de datos usa `rsync --delete`.** Al dejar de generar el `index.html` del visor, la siguiente publicación lo habría borrado del servidor. *Qué se hace:* `--exclude /index.html` en `publicar_mapas.sh` del repo de datos: ni se sube ni se borra.
 
+
+## Línea del tiempo (21-nov-2026)
+
+- **La página `/riesgos/informe/` se llama «Línea del tiempo»** (indicación de Julián). Es vertical: la lluvia de cada hora va a un lado del eje y los reportes al otro.
+- **El tiempo vacío no ocupa sitio.** Los días sin reportes y con menos de 5 mm se juntan en una fila («9 días sin reportes · del 3 al 11 nov»); las horas con menos de 1 mm y sin reportes van al resumen del día. Así la página abre con todo el evento y semanas de sol no la alargan. Los umbrales (`CALMA_MM`, `HORA_MM` en `informe.js`) son preliminares.
+- **Para moverse rápido hay un navegador fijo arriba:** un día por columna, lluvia hacia arriba y reportes hacia abajo, y botones de salto (hoy, último reporte, día más lluvioso, inicio). Un toque lleva al día. La escala va hasta el mayor valor real, dicho en la leyenda: con un tope «redondo» (500 mm para 236) las barras quedaban enanas.
