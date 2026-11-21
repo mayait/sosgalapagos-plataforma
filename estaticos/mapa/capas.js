@@ -421,7 +421,7 @@
     const m = estado.manifiesto;
     const zoom = estado.mapa.getZoom();
     const x = SOS.escapar;
-    let h = '<div class="capas-titulo">Ir a</div><div class="pildoras">';
+    let h = '<div class="capas-titulo">Ir a</div><div class="pildoras"><button type="button" data-ir="Archipiélago">Archipiélago</button>';
     for (const nombre of Object.keys(m.islas || {})) h += `<button type="button" data-ir="${x(nombre)}">${x(nombre)}</button>`;
     h += '</div><div class="capas-titulo">Mapa base</div><div class="selector">';
     h += `<button type="button" data-base="gris" aria-pressed="${estado.base === 'gris'}">Gris</button>`;
@@ -471,7 +471,7 @@
     if (b.dataset.accion === 'apagar') return dejarEncendidas([]);
     if (b.dataset.accion === 'iniciales') return dejarEncendidas(estado.iniciales);
     if (b.dataset.ir) {
-      const [[s, o], [n, este]] = m.islas[b.dataset.ir].bounds;
+      const [[s, o], [n, este]] = b.dataset.ir === 'Archipiélago' ? lugares().archipielago : m.islas[b.dataset.ir].bounds;
       estado.mapa.fitBounds([[o, s], [este, n]], { padding: 30, duration: 600 });
       history.replaceState(null, '', location.pathname + location.search + '#' + claveLugar(b.dataset.ir));
       if (SOS.esMovil()) cerrar();

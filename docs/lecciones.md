@@ -4,6 +4,12 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 
 ## 2026-11-21 · Puesta en producción
 
+- **Los pines positivos sí existían: llegaron 20 minutos después de que los busqué.** A las 14:52 `/mapas` publicó la capa «Buenas noticias y ayuda del 21-nov», con un marcador nuevo, `corazon`. Mi mapa la dibujaba como un punto rosa cualquiera, y la orden `revisar_capas` no avisó porque miraba la clave `marcador` pero no su valor. *Qué se hace:* el mapa dibuja el corazón; `revisar_capas` comprueba también el valor de `marcador`. Queda la duda de si conviven bien con los pines «Algo bueno» que añadí antes: son dos caminos para lo mismo (uno curado por el equipo de datos, otro abierto a cualquiera).
+- **Informe: la lluvia no se suma entre estaciones.** Se muestra la serie de una estación, tal como la publica `/clima`. Sumar o promediar varias sería un dato derivado, y las licencias de algunas fuentes no lo permiten. Tampoco hay dos ejes en un gráfico: lluvia y reportes van en dos gráficos apilados con el mismo eje de tiempo.
+- **Un gráfico con ancho fijo se vuelve ilegible en el teléfono.** Con un lienzo de 720 px escalado, la letra de los ejes quedaba en 4 px. *Qué se hace:* el lienzo mide lo mismo que su hueco en pantalla y se vuelve a dibujar al cambiar el ancho.
+- **Dar de baja `/mapas` es dar de baja su visor, no sus datos.** `/riesgos/` lee de `/mapas/` el manifiesto, las capas, las descargas y las teselas. El plan está en `plan-baja-mapas.md`; hoy no se cumple ninguno de sus cinco criterios.
+- **Pulsación larga sin sorpresas.** Abre un aviso con «Reportar aquí» en vez de saltar al formulario: una pulsación sin querer no saca a nadie del mapa. En 3D el clic derecho gira el mapa, así que ahí no se ofrece.
+
 - **El mapa no es solo de peligros (indicación de Julián: «pines positivos de cosas lindas, y otro de dónde donar o colaborar»).** Busqué esos pines ya creados y no los hallé en `/mapas`, en el repo de datos, en la plataforma anterior ni en `/riesgos/`. *Qué se hace:* el mapa de riesgos admite tres clases de aviso: un peligro, algo bueno y dónde donar o colaborar. Cada tipo de aviso tiene su `clase`.
   - **Algo bueno:** pin amarillo con corazón; vive 48 h.
   - **Dónde donar o colaborar:** pin negro con caja de regalo; vive 72 h y se renueva con «sigue ahí».
