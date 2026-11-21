@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static %}
+{% block clase_cuerpo %}con-hoja{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'terceros/maplibre-gl.css' %}">{% endblock %}
+
+{% block contenido %}
+<main class="pantalla">
+  <div id="mapa" role="application" aria-label="Mapa de reportes de riesgo"></div>
+
+  <div class="barra-superior">
+    <div id="lluvia" hx-get="{% url 'reportes:lluvia' %}" hx-trigger="load, every 300s" hx-swap="innerHTML"></div>
+    <div class="tiempo flotante" role="group" aria-label="Periodo">
+      <button type="button" data-periodo="ahora" aria-pressed="true">Ahora</button>
+      <button type="button" data-periodo="24h" aria-pressed="false">24 h</button>
+      <button type="button" data-periodo="evento" aria-pressed="false">Todo el evento</button>
+    </div>
+  </div>
+
+  <button class="capas-boton flotante" type="button" id="capas-abrir">Capas</button>
+  <section class="capas-panel flotante" id="capas-panel" hidden aria-label="Capas del mapa">
+    <div class="capas-cabecera"><span>Capas</span><button type="button" id="capas-cerrar" aria-label="Cerrar capas">×</button></div>
+    <div class="capas-cuerpo" id="capas-cuerpo"></div>
+  </section>
+
+  <div class="sin-reportes flotante" id="sin-reportes" hidden>Sin reportes activos en esta vista</div>
+  <div class="sin-conexion" id="sin-conexion" hidden></div>
+
+  <div class="leyenda flotante" aria-label="Leyenda de los reportes">
+    <span><i class="pin-muestra" style="background:#fff;border-color:#6b7280"></i>Por verificar</span>
+    <span><i class="pin-muestra" style="background:#e11b22;border-color:#fff;box-shadow:0 0 0 1px #e11b22"></i>Confirmado</span>
+    <span><i class="pin-muestra" style="background:#d97706;border-color:#fff;box-shadow:0 0 0 1px #d97706"></i>Bajando</span>
+  </div>
+  <button class="ubicarme flotante" type="button" id="ubicarme" aria-label="Ir a mi ubicación"><svg><use href="#i-ubicar"/></svg></button>
+
+  <aside class="hoja" id="hoja">
+    <button class="hoja-asa" type="button" id="hoja-asa" aria-label="Abrir o cerrar la lista"></button>
+    <header class="cabecera-panel">
+      <img src="{% static 'marca/usfq-galapagos-color.svg' %}" alt="USFQ Galápagos">
+      <h1>Mapa de riesgos</h1>
+      <p>Lugares de peligro que reporta la comunidad. Cada aviso se retira solo con el tiempo.</p>
+    </header>
+    <div class="hoja-accion">
+      <a class="reportar" href="{% url 'reportes:reportar' %}" id="reportar"><svg><use href="#i-mas"/></svg>Reportar</a>
+    </div>
+    <div class="hoja-cuerpo">
+      <div id="detalle"></div>
+      <div id="cerca" hx-get="{% url 'reportes:cerca' %}" hx-trigger="load" hx-swap="innerHTML"></div>
+    </div>
+  </aside>
+</main>
+{% endblock %}
+
+{% block guiones %}
+{{ configuracion|json_script:"configuracion" }}
+<script src="{% static 'terceros/maplibre-gl.js' %}"></script>
+<script src="{% static 'terceros/pmtiles.js' %}"></script>
+<script src="{% static 'terceros/basemaps.js' %}"></script>
+<script src="{% static 'terceros/htmx.min.js' %}"></script>
+<script src="{% static 'mapa/comun.js' %}"></script>
+<script src="{% static 'mapa/base.js' %}"></script>
+<script src="{% static 'mapa/capas.js' %}"></script>
+<script src="{% static 'mapa/mapa.js' %}"></script>
+{% endblock %}

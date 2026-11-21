@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load static %}
+{% block titulo %}Reportar{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'terceros/maplibre-gl.css' %}">{% endblock %}
+
+{% block contenido %}
+<main class="formulario" x-data="reporte()" x-cloak>
+  <div class="form-cabecera">
+    <a href="{% url 'reportes:mapa' %}" x-show="paso === 1">← Mapa</a>
+    <button type="button" x-show="paso > 1 && paso < 5" @click="paso--">← Atrás</button>
+    <span></span>
+  </div>
+  <div class="pasos" x-show="paso < 5"><i :class="paso >= 1 && 'hecho'"></i><i :class="paso >= 2 && 'hecho'"></i><i :class="paso >= 3 && 'hecho'"></i><i :class="paso >= 4 && 'hecho'"></i></div>
+
+  {# 1 · Foto #}
+  <section x-show="paso === 1">
+    <h1 class="form-titulo">¿Qué ves?</h1>
+    <p class="form-ayuda">Toma una foto del lugar. Con la foto ubicamos el punto en el mapa.</p>
+    <input type="file" accept="image/*" capture="environment" x-ref="camara" hidden @change="alElegirFoto($event)">
+    <button type="button" class="foto-boton" @click="$refs.camara.click()">
+      <svg><use href="#i-camara"/></svg>
+      <span>Tomar foto<br><small>No fotografíes caras ni documentos</small></span>
+    </button>
+    <button type="button" class="enlace" @click="sinFoto()">Seguir sin foto</button>
+  </section>
+
+  {# 2 · Tipo #}
+  <section x-show="paso === 2">
+    <h1 class="form-titulo">¿Qué está pasando?</h1>
+    <p class="form-ayuda">Elige lo que más se parece.</p>
+    <div class="rejilla">
+      {% for t in tipos %}
+      <button type="button" class="opcion" :aria-pressed="tipo === '{{ t.codigo }}'" @click="elegirTipo('{{ t.codigo }}')">
+        <svg><use href="#i-{{ t.icono }}"/></svg>{{ t.nombre }}
+      </button>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# 3 · Profundidad #}
+  <section x-show="paso === 3">
+    <h1 class="form-titulo">¿Hasta dónde llega el agua?</h1>
+    <p class="form-ayuda">Toca la altura en la silueta.</p>
+    <div class="silueta-caja">
+      <svg class="silueta" viewBox="0 0 130 300" aria-hidden="true">
+        <rect x="0" :y="alturaAgua" width="130" :height="300 - alturaAgua" fill="#e11b22" opacity="0.16"/>
+        <line x1="0" x2="130" :y1="alturaAgua" :y2="alturaAgua" stroke="#e11b22" stroke-width="2.5" x-show="profundidad !== 'sin_dato'"/>
+        <g fill="none" stroke="#1d1d1b" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="65" cy="34" r="17"/>
+          <path d="M65 51v104"/><path d="M65 76L36 128"/><path d="M65 76l29 52"/>
+          <path d="M65 155L46 288"/><path d="M65 155l19 133"/>
+        </g>
+        <line x1="0" x2="130" y1="298" y2="298" stroke="#1d1d1b" stroke-width="3"/>
+      </svg>
+      <div class="niveles">
+        <button type="button" class="nivel" :aria-pressed="profundidad === 'puerta_auto'" @click="elegirProfundidad('puerta_auto')">A la puerta de un auto</button>
+        <button type="button" class="nivel" :aria-pressed="profundidad === 'cintura'" @click="elegirProfundidad('cintura')">A la cintura</button>
+        <button type="button" class="nivel" :aria-pressed="profundidad === 'rodilla'" @click="elegirProfundidad('rodilla')">A la rodilla</button>
+        <button type="button" class="nivel" :aria-pressed="profundidad === 'tobillo'" @click="elegirProfundidad('tobillo')">Al tobillo</button>
+        <button type="button" class="nivel" :aria-pressed="profundidad === 'sin_dato'" @click="elegirProfundidad('sin_dato')">No sé</button>
+      </div>
+    </div>
+  </section>
+
+  {# 4 · Lugar, gravedad y envío #}
+  <section x-show="paso === 4">
+    <h1 class="form-titulo">¿Es aquí?</h1>
+    <div class="mini-mapa">
+      <div id="mini-mapa"></div>
+      <svg class="mini-pin" viewBox="0 0 30 40"><path d="M15 1C7 1 1 7 1 15c0 10 14 24 14 24s14-14 14-24C29 7 23 1 15 1z" fill="#e11b22" stroke="#fff" stroke-width="2"/><circle cx="15" cy="15" r="5" fill="#fff"/></svg>
+    </div>
+    <p class="mini-nota" x-text="textoUbicacion"></p>
+
+    <div class="campo-titulo">¿Se puede pasar?</div>
+    <div class="chips">
+      {% for valor, nombre in gravedades %}
+      <button type="button" :aria-pressed="gravedad === '{{ valor }}'" @click="gravedad = '{{ valor }}'">{{ nombre }}</button>
+      {% endfor %}
+    </div>
+
+    <div class="campo-titulo">Nota (opcional)</div>
+    <textarea class="nota" maxlength="280" x-model="nota" placeholder="Ejemplo: el agua corre fuerte hacia la esquina"></textarea>
+    <p class="nota-ayuda">No escribas nombres, teléfonos ni cédulas. La foto y la nota se publican cuando coordinación las revise; el punto aparece de inmediato.</p>
+
+    <p class="form-error" x-show="error" x-text="error" role="alert"></p>
+    <div class="form-pie">
+      <button type="button" class="reportar" :disabled="enviando" @click="enviar()" x-text="enviando ? 'Enviando…' : 'Enviar reporte'"></button>
+    </div>
+  </section>
+
+  {# 5 · Listo #}
+  <section x-show="paso === 5" class="listo">
+    <svg style="color:#e11b22"><use href="#i-listo"/></svg>
+    <h1 class="form-titulo" x-text="tituloFinal"></h1>
+    <p class="form-ayuda" x-text="textoFinal"></p>
+    <a class="reportar" :href="enlaceFinal">Ver el mapa</a>
+    <p class="form-ayuda" style="margin-top:22px">Si hay personas en peligro, llama al <a href="tel:911"><b>911</b></a>.</p>
+    {% include "parciales/firma.html" %}
+  </section>
+</main>
+{% endblock %}
+
+{% block guiones %}
+{{ configuracion|json_script:"configuracion" }}
+<script src="{% static 'terceros/maplibre-gl.js' %}"></script>
+<script src="{% static 'terceros/pmtiles.js' %}"></script>
+<script src="{% static 'terceros/basemaps.js' %}"></script>
+<script src="{% static 'mapa/comun.js' %}"></script>
+<script src="{% static 'mapa/base.js' %}"></script>
+<script src="{% static 'mapa/reportar.js' %}"></script>
+<script defer src="{% static 'terceros/alpine.min.js' %}"></script>
+{% endblock %}

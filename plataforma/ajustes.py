@@ -1,0 +1,122 @@
+"""Ajustes de la plataforma de reportes de SOS Galápagos.
+
+Todo lo que cambia entre la Mac y el servidor llega por variables de entorno.
+Los umbrales de las reglas de vida están al final y son preliminares.
+"""
+import os
+from pathlib import Path
+
+RAIZ = Path(__file__).resolve().parent.parent
+
+
+def entorno(nombre, defecto=None):
+    return os.environ.get(nombre, defecto)
+
+
+DEBUG = entorno("DEPURAR", "0") == "1"
+SECRET_KEY = entorno("CLAVE_SECRETA", "solo-para-desarrollo-local" if DEBUG else None)
+if not SECRET_KEY:
+    raise RuntimeError("Falta la variable CLAVE_SECRETA")
+
+ALLOWED_HOSTS = entorno("ANFITRIONES", "localhost,127.0.0.1").split(",")
+CSRF_TRUSTED_ORIGINS = [o for o in entorno("ORIGENES_CONFIABLES", "").split(",") if o]
+
+INSTALLED_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django.contrib.gis",
+    "django_tasks_db",
+    "reportes",
+    "zonas",
+    "api",
+    "entradas",
+]
+
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
+ROOT_URLCONF = "plataforma.rutas"
+WSGI_APPLICATION = "plataforma.wsgi.application"
+
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [RAIZ / "plantillas"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
+]
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "NAME": entorno("BD_NOMBRE", "plataforma"),
+        "USER": entorno("BD_USUARIO", "plataforma"),
+        "PASSWORD": entorno("BD_CLAVE", "plataforma"),
+        "HOST": entorno("BD_ANFITRION", "localhost"),
+        "PORT": entorno("BD_PUERTO", "5432"),
+    }
+}
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Tareas en segundo plano: en la base de datos, sin Redis ni Celery.
+TASKS = {"default": {"BACKEND": "django_tasks_db.DatabaseBackend"}}
+
+LANGUAGE_CODE = "es"
+TIME_ZONE = "Pacific/Galapagos"
+USE_I18N = True
+USE_TZ = True  # en la base todo se guarda en UTC
+
+STATIC_URL = "/estaticos/"
+STATICFILES_DIRS = [RAIZ / "estaticos"]
+STATIC_ROOT = RAIZ / "estaticos_reunidos"
+MEDIA_URL = "/medios/"
+MEDIA_ROOT = Path(entorno("MEDIOS_DIR", RAIZ / "medios"))
+DATA_UPLOAD_MAX_MEMORY_SIZE = 8 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 8 * 1024 * 1024
+
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+X_FRAME_OPTIONS = "SAMEORIGIN"  # igual que la cabecera que ya pone Caddy
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# ── Mapa ──────────────────────────────────────────────────────────────────────
+# Vista inicial: centro de Puerto Ayora, a nivel de calles (ver docs/visual-mapa.md).
+MAPA_CENTRO = (-90.3145, -0.7435)  # longitud, latitud
+MAPA_ZOOM = 16
+
+# Capas de riesgo: el manifiesto y sus archivos salen del repo sosgalapagos-datos.
+# En la Mac se sirven desde el clon vecino; en el servidor, desde la URL publicada.
+CAPAS_DIR = Path(entorno("CAPAS_DIR", RAIZ.parent / "sosgalapagos-datos" / "mapas-galapagos" / "datos"))
+CAPAS_URL = entorno("CAPAS_URL", "/capas/")
+# Capas que arrancan encendidas. Son pocas a propósito: lo principal son los reportes.
+CAPAS_ENCENDIDAS = ["susceptibilidad", "quebradas", "barrios"]
+CAPAS_ENCENDIDAS_MOVIL = ["barrios"]
+
+# Lluvia: el JSON que publica /clima. Ruta de archivo en el servidor o URL en la Mac.
+CLIMA_ESTADO = entorno("CLIMA_ESTADO", "https://sosgalapagos.org/clima/datos/estado.json")
+CLIMA_MAX_EDAD_MIN = 20  # con datos más viejos no se muestra nivel
+
+# ── Reglas de vida del reporte (PRELIMINARES; ver reportes/reglas.py) ─────────
+DUPLICADO_METROS = 50          # mismo tipo y más cerca que esto = confirmación del existente
+YA_BAJO_PARA_CERRAR = 2        # confirmaciones «ya bajó» de dispositivos distintos
+CERCA_METROS = 1500            # radio de «lo que hay cerca»
+LIMITE_REPORTES_HORA = 12      # por dispositivo, en el formulario web

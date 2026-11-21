@@ -1,0 +1,21 @@
+{% load reportes_extras %}
+<h2 class="seccion-titulo">Cerca de aquí</h2>
+{% if reportes %}
+<ul class="lista">
+  {% for r in reportes %}
+  <li>
+    <button class="fila estado-{{ r.estado }}" hx-get="{% url 'reportes:ficha' r.id_publico %}" hx-target="#detalle" data-lon="{{ r.punto.x|stringformat:'f' }}" data-lat="{{ r.punto.y|stringformat:'f' }}" data-abrir-ficha>
+      <span class="fila-icono"><svg><use href="#i-{{ r.tipo.icono }}"/></svg></span>
+      <span class="fila-texto">
+        <span class="fila-titulo">{{ r.tipo.nombre }}</span><br>
+        <span class="fila-sub">{{ r.get_gravedad_display }} · {{ r.visto_en|hace:ahora }}{% if r.zona %} · {{ r.zona.nombre }}{% endif %}</span>
+      </span>
+      <span class="fila-distancia">{{ r.distancia.m|metros }}</span>
+    </button>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="vacio"><b>Sin reportes activos</b> cerca de este punto. Eso no significa que no haya peligro: puede que nadie lo haya reportado todavía.</p>
+{% endif %}
+{% include "parciales/firma.html" %}

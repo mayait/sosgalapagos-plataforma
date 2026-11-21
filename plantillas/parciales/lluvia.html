@@ -1,0 +1,11 @@
+{% if lluvia %}
+<a class="lluvia flotante" href="/clima/?zona={{ lluvia.zona }}" title="Nivel preliminar de SOS Galápagos, no oficial. Toca para ver el detalle.">
+  <span class="lluvia-punto" style="background:{{ lluvia.color }}"></span>
+  <span class="lluvia-texto">Lluvia <b>{{ lluvia.nivel }}</b> · {{ lluvia.nombre }}{% if lluvia.lluvia_1h is not None %} <span class="lluvia-detalle">· {{ lluvia.lluvia_1h|floatformat:0 }} mm en 1 h</span>{% endif %}</span>
+</a>
+{% else %}
+<a class="lluvia flotante" href="/clima/">
+  <span class="lluvia-punto" style="background:#c8c8c8"></span>
+  <span class="lluvia-texto">Lluvia: sin dato reciente <span class="lluvia-detalle">· ver /clima</span></span>
+</a>
+{% endif %}

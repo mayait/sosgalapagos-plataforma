@@ -1,0 +1,78 @@
+/* Service worker del mapa. Guarda la interfaz, el mapa base y las capas ya vistas,
+   para que la app instalada abra sin señal. Los reportes van siempre a la red:
+   el mapa guarda la última respuesta por su cuenta y muestra de qué hora es. */
+const VERSION = 'sos-v2';
+const E = '{{ estaticos }}';
+const INTERFAZ = [
+  '/mapa/', '/mapa/reportar/',
+  E + 'mapa/estilos.css', E + 'mapa/comun.js', E + 'mapa/base.js', E + 'mapa/capas.js', E + 'mapa/mapa.js', E + 'mapa/reportar.js',
+  E + 'terceros/maplibre-gl.js', E + 'terceros/maplibre-gl.css', E + 'terceros/pmtiles.js', E + 'terceros/basemaps.js',
+  E + 'terceros/htmx.min.js', E + 'terceros/alpine.min.js',
+  E + 'marca/ZalandoSansExpanded.ttf', E + 'marca/usfq-galapagos-color.svg',
+  E + 'base/iconos/light.json', E + 'base/iconos/light.png', E + 'base/iconos/light@2x.json', E + 'base/iconos/light@2x.png',
+];
+
+self.addEventListener('install', (e) => {
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(INTERFAZ)).then(() => self.skipWaiting()));
+});
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== VERSION).map((k) => caches.delete(k)))).then(() => self.clients.claim()),
+  );
+});
+
+self.addEventListener('fetch', (e) => {
+  const pedido = e.request;
+  const url = new URL(pedido.url);
+  if (pedido.method !== 'GET' || url.origin !== location.origin) return;
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin/')) return; // siempre a la red
+
+  // El mapa base se pide por trozos (Range). Se guarda el archivo entero una vez y de ahí se corta.
+  if (url.pathname.endsWith('.pmtiles')) { e.respondWith(trozo(pedido)); return; }
+
+  // Lo que casi nunca cambia (librerías, mapa base, marca, capas): primero lo guardado.
+  // El código propio (mapa/) va primero a la red, para que un cambio se vea al instante.
+  const estatico = ['terceros/', 'base/', 'marca/', 'app/'].some((d) => url.pathname.startsWith(E + d)) || url.pathname.startsWith('/capas/');
+  if (estatico) {
+    // Primero lo guardado, y se refresca por detrás.
+    e.respondWith(
+      caches.open(VERSION).then(async (c) => {
+        const guardado = await c.match(pedido);
+        const red = fetch(pedido).then((r) => { if (r.ok) c.put(pedido, r.clone()); return r; }).catch(() => guardado);
+        return guardado || red;
+      }),
+    );
+    return;
+  }
+  // Páginas y fragmentos: primero la red; sin señal, lo último guardado.
+  e.respondWith(
+    fetch(pedido).then((r) => {
+      const guardar = pedido.mode === 'navigate' || url.pathname.startsWith(E);
+      if (r.ok && guardar) { const copia = r.clone(); caches.open(VERSION).then((c) => c.put(url.pathname, copia)); }
+      return r;
+    }).catch(() => caches.match(url.pathname).then((r) => r || new Response('', { status: 503 }))),
+  );
+});
+
+async function trozo(pedido) {
+  const cache = await caches.open(VERSION);
+  const clave = new URL(pedido.url).pathname;
+  let entero = await cache.match(clave);
+  if (!entero) {
+    try {
+      const r = await fetch(clave);
+      if (!r.ok) return fetch(pedido);
+      await cache.put(clave, r.clone());
+      entero = r;
+    } catch (err) { return fetch(pedido); }
+  }
+  const rango = /bytes=(\d+)-(\d*)/.exec(pedido.headers.get('Range') || '');
+  if (!rango) return entero;
+  const datos = await entero.arrayBuffer();
+  const desde = Number(rango[1]);
+  const hasta = rango[2] ? Math.min(Number(rango[2]), datos.byteLength - 1) : datos.byteLength - 1;
+  return new Response(datos.slice(desde, hasta + 1), {
+    status: 206,
+    headers: { 'Content-Range': `bytes ${desde}-${hasta}/${datos.byteLength}`, 'Content-Length': String(hasta - desde + 1), 'Content-Type': 'application/octet-stream' },
+  });
+}
