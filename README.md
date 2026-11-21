@@ -3,7 +3,7 @@
 Un mapa único donde la gente reporta **lugares de riesgo o peligro con fecha**, y donde los reportes **se retiran solos** a medida que pasa la emergencia. Sirve a vecinos que buscan por dónde moverse y a equipos de alerta que planifican.
 
 - **Responsable:** Julián Maya, Universidad San Francisco de Quito (USFQ) · jamaya@usfq.edu.ec. Coordinación: USFQ Galápagos.
-- **Estado:** fase 1 de 4, en desarrollo. **Todavía no está publicado.**
+- **Estado:** fase 1 de 4. Se publica en `https://sosgalapagos.org/mapa/`; cómo, en [`despliegue/servidor.md`](despliegue/servidor.md).
 - **Repositorios hermanos:** [`sosgalapagos-datos`](https://github.com/mayait/sosgalapagos-datos) (capas de riesgo y clima) y [`sosgalapagos`](https://github.com/mayait/sosgalapagos) (la plataforma actual, que este proyecto reemplazará).
 
 > ⚠️ **Información ciudadana preliminar, no oficial.** Los reportes los hace la comunidad. Emergencias: 911.
@@ -49,7 +49,7 @@ despliegue/local.sh servidor
 |---|---|
 | `despliegue/local.sh pruebas` | Corre las pruebas |
 | `despliegue/local.sh revisar_capas` | Avisa si `/mapas` publica algo que el mapa todavía no sabe dibujar |
-| `despliegue/local.sh createsuperuser` | Crea la cuenta para entrar a `/admin/` |
+| `despliegue/local.sh createsuperuser` | Crea la cuenta para entrar a `/mapa/admin/` |
 | `despliegue/local.sh sembrar_demo --cantidad 200` | Añade 200 reportes al azar, para probar el rendimiento en un teléfono |
 | `despliegue/local.sh db_worker` | Trabajador de tareas en segundo plano |
 | `despliegue/local.sh reloj` | Encola las tareas periódicas cada minuto |

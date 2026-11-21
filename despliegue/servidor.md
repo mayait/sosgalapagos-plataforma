@@ -1,67 +1,81 @@
-# Despliegue en el servidor (preparado, sin aplicar)
+# Despliegue en el servidor
 
-**Nada de esto se ha ejecutado.** Son los fragmentos listos para cuando Julián apruebe el primer despliegue. Solo añaden; no reemplazan ninguna ruta existente.
+El mapa de riesgos corre en el mismo servidor que el sitio (152.44.45.89), detrás del mismo Caddy, en `https://sosgalapagos.org/mapa/`.
 
-El `docker-compose.yml` y el `Caddyfile` de todo el servidor viven en `mayait/sosgalapagos`, carpeta `deploy/sosgalapagos/`. Los cambios van allí, con pull request.
-
-## Servicios nuevos en `docker-compose.yml`
-
-```yaml
-  postgis:
-    build: /opt/sosgalapagos-plataforma/despliegue/postgis
-    restart: unless-stopped
-    env_file: plataforma.env          # POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
-    volumes:
-      - plataformabd:/var/lib/postgresql/data
-
-  plataforma: &plataforma
-    build:
-      context: /opt/sosgalapagos-plataforma
-      dockerfile: despliegue/Dockerfile
-    restart: unless-stopped
-    env_file: plataforma.env          # CLAVE_SECRETA, BD_*, ANFITRIONES, ORIGENES_CONFIABLES
-    environment:
-      - BD_ANFITRION=postgis
-      - CLIMA_ESTADO=/srv/clima/datos/estado.json
-      - MEDIOS_DIR=/medios
-    volumes:
-      - plataformamedios:/medios
-      - /srv/sosgalapagos-clima:/srv/clima:ro
-    depends_on: [postgis]
-    expose: ['8000']
-
-  plataforma-trabajador:
-    <<: *plataforma
-    command: python manage.py db_worker
-
-  plataforma-reloj:
-    <<: *plataforma
-    command: python manage.py reloj
-```
-
-Volúmenes nuevos: `plataformabd` y `plataformamedios`.
-
-## Bloques nuevos en el `Caddyfile`
-
-Van antes del `handle` final, que manda todo lo demás a la web actual.
+**Solo añade.** Es un proyecto de Compose aparte del sitio y no reinicia nada de lo que ya corre. `/mapas`, `/clima` y la portada no se tocan.
 
 ```
+Cloudflare ─► Caddy del sitio ─┬─ /mapas/  /clima/  /          lo de siempre
+                               └─ /mapa/*  ─► plataforma:8000   (este repo)
+                                                 │
+                              postgis · trabajador · reloj      proyecto «sosgalapagos-plataforma»
+```
+
+Todo lo de la plataforma vive bajo `/mapa/`: páginas, `/mapa/api/`, `/mapa/admin/`, estáticos y fotos. El sitio actual ya usa `/api` y `/admin`, así que no se comparten.
+
+## 1. La primera vez
+
+```bash
+ssh root@152.44.45.89
+git clone https://github.com/mayait/sosgalapagos-plataforma.git /opt/sosgalapagos-plataforma
+/opt/sosgalapagos-plataforma/despliegue/produccion/desplegar.sh   # crea el .env con claves nuevas, construye y levanta
+```
+
+## 2. La ruta en Caddy
+
+Está en `mayait/sosgalapagos`, `deploy/sosgalapagos/Caddyfile`, antes del `handle` final:
+
+```
+	redir /mapa /mapa/ permanent
 	handle /mapa/* {
 		reverse_proxy plataforma:8000
 	}
-	handle /api/* {
-		reverse_proxy plataforma:8000
-	}
-	handle_path /medios/* {
-		root * /srv/plataforma-medios
-		file_server
-	}
 ```
 
-## Antes de desplegar
+Para aplicarla **sin reiniciar Caddy** (un reinicio corta todo el sitio unos segundos):
 
-- [ ] Comprobar que la web actual no usa ya la ruta `/api/`.
-- [ ] Medir la memoria libre del servidor (4 vCPU, 8 GB).
-- [ ] Añadir la base nueva y las fotos al respaldo diario.
-- [ ] Correr `collectstatic` en la imagen y servir `/estaticos/` con WhiteNoise.
-- [ ] La cabecera `Permissions-Policy` de Caddy dice hoy `camera=()`. No afecta al botón de foto del formulario, que usa la cámara del sistema, pero hay que comprobarlo en un teléfono.
+```bash
+cd /opt/sosgalapagos && git pull --ff-only
+cd deploy/sosgalapagos
+docker compose cp Caddyfile caddy:/tmp/Caddyfile
+docker compose exec -T caddy caddy validate --config /tmp/Caddyfile --adapter caddyfile   # si falla, no seguir
+docker compose exec -T caddy caddy reload   --config /tmp/Caddyfile --adapter caddyfile
+```
+
+El archivo del repo queda igual que el que está cargado, así que el próximo reinicio de Caddy no cambia nada.
+
+## 3. Actualizar
+
+```bash
+/opt/sosgalapagos-plataforma/despliegue/produccion/desplegar.sh
+```
+
+## 4. Comprobar
+
+```bash
+curl -sI https://sosgalapagos.org/mapa/ | head -1
+curl -s  https://sosgalapagos.org/mapa/api/reportes/vivos.geojson | head -c 200
+curl -sI https://sosgalapagos.org/mapas/ | head -1      # sigue igual
+curl -sI https://sosgalapagos.org/clima/ | head -1      # sigue igual
+cd /opt/sosgalapagos-plataforma/despliegue/produccion && docker compose ps
+```
+
+## 5. Volver atrás
+
+- **Quitar la ruta:** revertir el commit del `Caddyfile` y repetir el paso 2. `/mapa/` deja de responder y lo demás sigue igual.
+- **Parar la plataforma:** `docker compose stop` en `despliegue/produccion`. Los datos quedan en los volúmenes `bd` y `medios`. No se borra nada.
+
+## 6. Cuenta de coordinación
+
+```bash
+cd /opt/sosgalapagos-plataforma/despliegue/produccion
+docker compose exec plataforma python manage.py createsuperuser
+```
+
+Se entra en `https://sosgalapagos.org/mapa/admin/`. Ahí se revisan y publican las fotos y notas de los vecinos.
+
+## Pendiente
+
+- [ ] Sumar la base (`bd`) y las fotos (`medios`) al respaldo diario del servidor.
+- [ ] Publicar las teselas de cota del 3D con `/mapas` (PR 101 de `sosgalapagos-datos`). Mientras tanto el 3D usa un relieve de respaldo.
+- [ ] Marcar `version.txt` de `/mapas` como «no guardar» en Caddy, para que el mapa se entere antes de una publicación nueva.

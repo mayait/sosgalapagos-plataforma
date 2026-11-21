@@ -86,10 +86,11 @@ TIME_ZONE = "Pacific/Galapagos"
 USE_I18N = True
 USE_TZ = True  # en la base todo se guarda en UTC
 
-STATIC_URL = "/estaticos/"
+# Todo lo de la plataforma vive bajo /mapa/: el sitio actual ya usa /api y /admin.
+STATIC_URL = "/mapa/estaticos/"
 STATICFILES_DIRS = [RAIZ / "estaticos"]
 STATIC_ROOT = RAIZ / "estaticos_reunidos"
-MEDIA_URL = "/medios/"
+MEDIA_URL = "/mapa/medios/"
 MEDIA_ROOT = Path(entorno("MEDIOS_DIR", RAIZ / "medios"))
 DATA_UPLOAD_MAX_MEMORY_SIZE = 8 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 8 * 1024 * 1024

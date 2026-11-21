@@ -50,7 +50,7 @@ def _configuracion():
         "capasSiempreGrupos": settings.CAPAS_SIEMPRE_GRUPOS,
         "capasApagadasAlAbrir": settings.CAPAS_APAGADAS_AL_ABRIR,
         "estaticos": settings.STATIC_URL,
-        "vivos": "/api/reportes/vivos.geojson",
+        "vivos": "/mapa/api/reportes/vivos.geojson",
         "cerca": reverse("reportes:cerca"),
         "lluvia": reverse("reportes:lluvia"),
         "ficha": "/mapa/r/",

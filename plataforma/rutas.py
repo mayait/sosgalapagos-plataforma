@@ -1,7 +1,8 @@
 """Rutas de la plataforma.
 
-Hasta la fase 4 todo lo nuevo vive bajo /mapa/ y /api/, para no chocar con
-ResponseGrid, que sigue sirviendo la portada.
+Todo vive bajo /mapa/ (páginas, API, administración, estáticos y fotos). Así en el
+servidor basta una sola ruta nueva en Caddy y nada choca con el sitio actual, que ya
+usa /api y /admin.
 """
 from django.conf import settings
 from django.contrib import admin
@@ -13,15 +14,16 @@ from api.rutas import api
 from reportes.vistas import copia_de_mapas
 
 urlpatterns = [
-    path("", RedirectView.as_view(url="/mapa/")),
+    path("mapa/api/", api.urls),
+    path("mapa/admin/", admin.site.urls),
+    # Fotos de los reportes. Son pocas y pequeñas: las sirve Django, sin tocar los volúmenes de Caddy.
+    re_path(r"^mapa/medios/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
     path("mapa/", include("reportes.rutas")),
-    path("api/", api.urls),
-    path("admin/", admin.site.urls),
 ]
 
 if settings.DEBUG:
-    # Solo en la Mac: las fotos, y una copia de lo que publica /mapas. En el servidor los sirve Caddy.
+    # Solo en la Mac: la portada lleva al mapa, y /mapas es una copia de lo publicado.
     urlpatterns += [
-        re_path(r"^medios/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
+        path("", RedirectView.as_view(url="/mapa/")),
         re_path(r"^mapas/(?P<ruta>.*)$", copia_de_mapas),
     ]

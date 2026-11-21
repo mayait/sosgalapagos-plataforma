@@ -36,20 +36,20 @@ def prueba_crear_un_reporte_desde_el_formulario(client):
 
 def prueba_el_reporte_aparece_enseguida_en_el_geojson(client):
     nuevo = client.post("/mapa/reportar/", DATOS).json()["id"]
-    datos = json.loads(client.get("/api/reportes/vivos.geojson").content)
+    datos = json.loads(client.get("/mapa/api/reportes/vivos.geojson").content)
     assert [f["properties"]["id"] for f in datos["features"]] == [nuevo]
 
 
 def prueba_el_geojson_responde_sin_cambios_si_nada_cambio(client):
     client.post("/mapa/reportar/", DATOS)
-    primera = client.get("/api/reportes/vivos.geojson")
-    segunda = client.get("/api/reportes/vivos.geojson", headers={"If-None-Match": primera["ETag"]})
+    primera = client.get("/mapa/api/reportes/vivos.geojson")
+    segunda = client.get("/mapa/api/reportes/vivos.geojson", headers={"If-None-Match": primera["ETag"]})
     assert segunda.status_code == 304
 
 
 def prueba_el_geojson_no_trae_nota_ni_foto(client):
     client.post("/mapa/reportar/", {**DATOS, "nota": "Casa de Fulano"})
-    assert b"Fulano" not in client.get("/api/reportes/vivos.geojson").content
+    assert b"Fulano" not in client.get("/mapa/api/reportes/vivos.geojson").content
 
 
 def prueba_sin_tipo_o_fuera_de_galapagos_se_rechaza(client):
