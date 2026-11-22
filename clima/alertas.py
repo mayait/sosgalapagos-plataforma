@@ -57,17 +57,20 @@ def revisar(ahora=None):
 def _lluvia(ahora):
     from reportes import clima as panel
 
-    salida = []
     inundacion = (panel.estado() or {}).get("inundacion") or {}
-    bloque = ahora.astimezone(GALAPAGOS).strftime("%Y-%m-%d") + f"-{ahora.astimezone(GALAPAGOS).hour // 8}"  # como mucho uno cada 8 horas por zona y nivel
+    local = ahora.astimezone(GALAPAGOS)
+    bloque = f"{local:%Y-%m-%d}-{local.hour // 8}"  # como mucho uno cada 8 horas por isla y nivel
+    # Una isla puede tener varias zonas en alerta: sale un solo aviso, con la de nivel más alto.
+    peor = {}
     for z in inundacion.get("zonas") or []:
-        nivel = (z.get("nivel") or "").lower()
-        zona = ZONA_DE_CLIMA.get(z.get("id"))
-        if nivel not in ("alto", "muy alto") or not zona:
-            continue
+        nivel, isla = (z.get("nivel") or "").lower(), ZONA_DE_CLIMA.get(z.get("id"))
+        if nivel in ("alto", "muy alto") and isla and (isla not in peor or (nivel == "muy alto" and peor[isla][0] != "muy alto")):
+            peor[isla] = (nivel, z)
+    salida = []
+    for isla, (nivel, z) in peor.items():
         lluvia = (z.get("R") or {}).get("R24h")
-        salida.append(emitir("lluvia", zona, f"lluvia:{z['id']}:{nivel}:{bloque}", f"Lluvia peligrosa: nivel {nivel} en {z.get('zona', ZONAS[zona])}",
-                             (f"Han caído {round(lluvia)} mm en 24 horas. " if lluvia else "") + "Aléjate de quebradas y zonas bajas. Estimación preliminar, no oficial. Emergencias: 911.",
+        salida.append(emitir("lluvia", isla, f"lluvia:{isla}:{nivel}:{bloque}", f"Lluvia peligrosa en {ZONAS[isla]}: nivel {nivel}",
+                             f"{z.get('zona', '')}. " + (f"Han caído {round(lluvia)} mm en 24 horas. " if lluvia else "") + "Aléjate de quebradas y zonas bajas. Estimación preliminar, no oficial. Emergencias: 911.",
                              f"/clima/?zona={z['id']}"))
     return salida
 
