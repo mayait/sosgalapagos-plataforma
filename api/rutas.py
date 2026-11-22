@@ -98,6 +98,18 @@ def vivos(request, periodo: str = "ahora"):
 
 
 # ── WhatsApp: lo que manda el servidor OpenWA cuando llega un mensaje ────────
+def openwa_forma(o, nivel=0):
+    """La estructura de un dato sin su contenido: de un texto solo queda su largo."""
+    if isinstance(o, dict):
+        return {k: openwa_forma(v, nivel + 1) for k, v in list(o.items())[:40]} if nivel < 5 else "{…}"
+    if isinstance(o, list):
+        return [openwa_forma(o[0], nivel + 1)] if o else []
+    if isinstance(o, str):
+        # Los valores cortos de estos campos no son personales y dicen cómo leer el mensaje.
+        return f"texto({len(o)})"
+    return type(o).__name__
+
+
 @api.post("/whatsapp/entrada", summary="Mensaje entrante de WhatsApp", tags=["interno"], include_in_schema=False)
 def whatsapp_entrada(request, secreto: str = ""):
     """Recibe el aviso del servidor de WhatsApp, descarta lo que no toca y encola el resto.
@@ -119,6 +131,12 @@ def whatsapp_entrada(request, secreto: str = ""):
         carga = json.loads(request.body or b"{}")
     except ValueError:
         return api.create_response(request, {"error": "se esperaba JSON"}, status=400)
+    if settings.WHATSAPP_MODO == "ensayo":
+        # En ensayo se anota la forma de lo que llega (nombres de campo y tipos, nunca el contenido):
+        # sirve para ajustar el lector al formato real del servidor de WhatsApp.
+        import logging
+
+        logging.getLogger("entradas").warning("forma del webhook: %s", json.dumps(openwa_forma(carga), ensure_ascii=False)[:1500])
     mensaje = flujo.recibir(carga)
     if mensaje:
         procesar_mensaje.enqueue(mensaje.pk)

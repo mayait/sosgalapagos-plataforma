@@ -223,3 +223,11 @@ def prueba_normaliza_la_ubicacion_y_la_miniatura():
     m = openwa.normalizar({"data": {"waMessageId": "x", "chatId": CHAT, "type": "location", "body": "/9j/4AAQ" + "A" * 500,
                                     "location": {"latitude": -0.74, "longitude": -90.31}}})
     assert (m.lat, m.lon, m.texto) == (-0.74, -90.31, "")
+
+
+def prueba_la_forma_del_webhook_no_lleva_contenido():
+    from api.rutas import openwa_forma
+
+    forma = json.dumps(openwa_forma({"event": "message.received", "data": {"chatId": CHAT, "body": "texto privado", "location": {"latitude": -0.74}, "ids": ["a"]}}))
+    assert "593990000001" not in forma and "privado" not in forma
+    assert '"latitude": "float"' in forma and "texto(13)" in forma
