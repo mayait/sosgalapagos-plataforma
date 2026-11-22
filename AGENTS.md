@@ -46,6 +46,10 @@ Plataforma de reportes de riesgo de SOS Galápagos: un mapa único donde la gent
 | Tocar el informe (línea del tiempo y lluvia) | `estaticos/mapa/informe.js` y `plantillas/reportes/informe.html` |
 | Saber cómo se retiró el visor de `/mapas` y cómo volver atrás | `docs/plan-baja-mapas.md` |
 | Tocar el buscador o «Mis puntos» | `estaticos/mapa/buscar.js` |
+| Tocar WhatsApp (filtro, modelo, conversación) | `entradas/` y `docs/whatsapp.md`. Se prueba con `despliegue/local.sh whatsapp_probar` |
+| Cambiar de modelo de lenguaje (Anthropic o Gemini) | La variable `IA_MODELO`; nada de código |
+| Tocar los puntos | `reportes/reglas.py` (`sumar_puntos`) y `PUNTOS` en los ajustes |
+| Tocar la instalación de la app o los avisos | `estaticos/mapa/app.js`, `reportes/avisos.py` y `plantillas/reportes/sw.js` |
 | Desplegar o actualizar el servidor | `despliegue/servidor.md` y `despliegue/produccion/desplegar.sh` |
 | Tocar el formulario | `plantillas/reportes/reportar.html` y `estaticos/mapa/reportar.js` |
 | Tocar los pines o el desteñido | `estaticos/mapa/mapa.js` |

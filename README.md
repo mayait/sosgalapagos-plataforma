@@ -19,6 +19,9 @@ Un mapa único donde la gente reporta **lugares de riesgo o peligro con fecha**,
 - **«Sigue ahí»** renueva el plazo. **Dos «ya bajó»** de teléfonos distintos cierran el reporte.
 - **Duplicados:** un reporte del mismo tipo a menos de 50 m de uno vivo cuenta como confirmación.
 - **Capas de riesgo:** las que publica el repo de datos bajo `/mapas/…`, en un solo panel. Este es el único mapa del sitio: `/mapas/` redirige aquí desde el 21-nov-2026. El riesgo modelado y las quebradas arrancan encendidos. Cada una se enciende, se apaga y se descarga en Shapefile y GeoJSON, y se baja solo al encenderla.
+- **WhatsApp:** un filtro de reglas separa lo que es para el mapa; un modelo de lenguaje (Anthropic o Gemini, se cambia con una variable) saca los datos; el asistente pregunta lo que falte y responde con el enlace. Ver `docs/whatsapp.md`.
+- **Puntos:** publicar suma. Tabla en `/riesgos/puntos/`, solo con el nombre o apodo que cada persona elige.
+- **App y avisos:** el mapa se instala en el teléfono y avisa de los peligros confirmados a quien lo pida.
 - **Buscador y «Mis puntos»:** la lupa busca calles, barrios, lugares y coordenadas; los puntos propios se guardan solo en el navegador.
 - **Capas siempre al día:** si otro equipo publica un modelo nuevo en `/mapas`, el mapa abierto lo recoge en un par de minutos y avisa.
 - **Reportes de campo con fotos:** la capa de reportes ciudadanos que publica `/mapas` se abre con su texto y sus fotos.

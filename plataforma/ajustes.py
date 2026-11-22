@@ -153,3 +153,41 @@ DUPLICADO_METROS = 50          # mismo tipo y más cerca que esto = confirmació
 YA_BAJO_PARA_CERRAR = 2        # confirmaciones «ya bajó» de dispositivos distintos
 CERCA_METROS = 1500            # radio de «lo que hay cerca»
 LIMITE_REPORTES_HORA = 12      # por dispositivo, en el formulario web
+
+# ── Puntos: publicar suma (valores preliminares) ─────────────────────────────
+PUNTOS = {"reporte": 10, "foto": 5, "confirmacion": 2}
+
+# Dirección pública del sitio, para los enlaces que se mandan por WhatsApp y en los avisos.
+SITIO_URL = entorno("SITIO_URL", "http://localhost:8000" if DEBUG else "https://sosgalapagos.org")
+
+# ── Modelo de lenguaje ───────────────────────────────────────────────────────
+# «proveedor:modelo». Se cambia de Anthropic a Gemini solo con esta variable:
+#   IA_MODELO=anthropic:claude-haiku-5-5      con ANTHROPIC_API_KEY
+#   IA_MODELO=google:gemini-3.5-flash-lite    con GOOGLE_API_KEY
+# Vacío: no se llama a ningún modelo y la extracción se hace con reglas simples.
+IA_MODELO = entorno("IA_MODELO", "")
+IA_ESPERA_S = int(entorno("IA_ESPERA_S", "40"))
+
+# ── WhatsApp (servidor OpenWA) ───────────────────────────────────────────────
+# Modo: «apagado» no atiende nada; «ensayo» procesa y guarda lo que respondería, sin enviar
+# nada ni publicar; «activo» responde y publica.
+WHATSAPP_MODO = entorno("WHATSAPP_MODO", "apagado")
+OPENWA_URL = entorno("OPENWA_URL", "").rstrip("/")
+OPENWA_LLAVE = entorno("OPENWA_LLAVE", "")
+OPENWA_SESION = entorno("OPENWA_SESION", "")  # id de la sesión (no el nombre)
+# Lo que OpenWA debe mandar en la cabecera X-Secreto (o ?secreto=) al llamar al webhook.
+WHATSAPP_SECRETO = entorno("WHATSAPP_SECRETO", "")
+# Chats que se atienden, separados por comas (identificadores de grupo o de persona).
+# Ningún otro chat se lee. «*» en WHATSAPP_DIRECTOS abre los chats privados, y aun así
+# solo se atiende lo que pasa el filtro o una conversación ya abierta.
+WHATSAPP_CHATS = [c.strip() for c in entorno("WHATSAPP_CHATS", "").split(",") if c.strip()]
+WHATSAPP_DIRECTOS = entorno("WHATSAPP_DIRECTOS", "0") == "1"
+WHATSAPP_RESPONDER_EN_GRUPOS = entorno("WHATSAPP_RESPONDER_EN_GRUPOS", "0") == "1"
+WHATSAPP_CONVERSACION_MIN = 45   # una conversación sin actividad se cierra sola
+WHATSAPP_RETENCION_DIAS = 7      # después se borra el texto de los mensajes
+
+# ── Avisos del navegador (Web Push) ──────────────────────────────────────────
+# Las genera «manage.py llaves_push». Sin ellas, el botón de avisos no aparece.
+PUSH_PUBLICA = entorno("PUSH_PUBLICA", "")
+PUSH_PRIVADA = entorno("PUSH_PRIVADA", "")
+PUSH_CONTACTO = entorno("PUSH_CONTACTO", "mailto:sosgalapagos@usfq.edu.ec")

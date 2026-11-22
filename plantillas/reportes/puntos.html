@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static reportes_extras %}
+{% block titulo %}Puntos{% endblock %}
+{% block contenido %}
+<main class="pagina">
+  <nav class="migas"><a href="{% url 'reportes:mapa' %}">← Mapa de riesgos</a><a href="{% url 'reportes:reportar' %}">Reportar</a></nav>
+  <h1 class="form-titulo">Puntos</h1>
+  <p class="form-ayuda">Cada aviso que publicas ayuda a tus vecinos, y suma. Aquí solo aparece el nombre o apodo que cada persona eligió.</p>
+
+  {% if yo %}<div class="cifra mis-puntos"><span>Tus puntos en este teléfono</span><b>{{ yo.puntos }}</b><small>{{ yo.avisos }} aviso{{ yo.avisos|pluralize }} publicado{{ yo.avisos|pluralize }}{% if yo.nombre %} · {{ yo.nombre }}{% else %} · pon tu nombre al reportar para aparecer en la tabla{% endif %}</small></div>{% endif %}
+
+  <ol class="tabla-puntos">
+    {% for c in tabla %}
+    <li{% if yo and yo.pk == c.pk %} class="yo"{% endif %}><span class="puesto">{{ forloop.counter }}</span><span class="quien">{{ c.nombre }}</span><span class="cuantos"><b>{{ c.puntos }}</b> pts · {{ c.avisos }} aviso{{ c.avisos|pluralize }}</span></li>
+    {% empty %}
+    <li class="vacio">Todavía no hay nadie en la tabla. <a href="{% url 'reportes:reportar' %}">Publica el primer aviso</a>.</li>
+    {% endfor %}
+  </ol>
+
+  <h2 class="seccion-titulo">Cómo se ganan</h2>
+  <ul class="ficha-datos">
+    <li><span>{{ valores.reporte }} puntos</span> por cada aviso nuevo en el mapa</li>
+    <li><span>+{{ valores.foto }} puntos</span> si lleva foto</li>
+    <li><span>{{ valores.confirmacion }} puntos</span> si avisas de algo que ya estaba: confirma que sigue ahí</li>
+  </ul>
+  <p class="ficha-pie">Vale por el formulario y por WhatsApp. Los puntos no dan premios: son un gracias. Un aviso falso se retira y no cuenta.</p>
+  {% include "parciales/firma.html" %}
+</main>
+{% endblock %}

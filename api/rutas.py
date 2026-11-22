@@ -95,3 +95,31 @@ def vivos(request, periodo: str = "ahora"):
     if request.headers.get("If-None-Match") == etiqueta:
         return HttpResponse(status=304, headers={"ETag": etiqueta})
     return HttpResponse(cuerpo, content_type="application/geo+json", headers={"ETag": etiqueta, "Cache-Control": "no-cache"})
+
+
+# ── WhatsApp: lo que manda el servidor OpenWA cuando llega un mensaje ────────
+@api.post("/whatsapp/entrada", summary="Mensaje entrante de WhatsApp", tags=["interno"], include_in_schema=False)
+def whatsapp_entrada(request, secreto: str = ""):
+    """Recibe el aviso del servidor de WhatsApp, descarta lo que no toca y encola el resto.
+
+    Responde enseguida: el trabajo con el modelo de lenguaje va en segundo plano.
+    """
+    import hmac
+
+    from django.conf import settings
+
+    from entradas import flujo
+    from entradas.tareas import procesar_mensaje
+
+    esperado = settings.WHATSAPP_SECRETO
+    dado = request.headers.get("X-Secreto") or secreto
+    if not esperado or not hmac.compare_digest(dado.encode(), esperado.encode()):
+        return api.create_response(request, {"error": "no autorizado"}, status=403)
+    try:
+        carga = json.loads(request.body or b"{}")
+    except ValueError:
+        return api.create_response(request, {"error": "se esperaba JSON"}, status=400)
+    mensaje = flujo.recibir(carga)
+    if mensaje:
+        procesar_mensaje.enqueue(mensaje.pk)
+    return {"atendido": bool(mensaje)}

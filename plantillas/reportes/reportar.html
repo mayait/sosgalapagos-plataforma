@@ -39,7 +39,7 @@
     <div class="campo-titulo">{{ grupo.grouper }}</div>
     <div class="rejilla">
       {% for t in grupo.list %}
-      <button type="button" class="opcion clase-{{ t.clase }}" :aria-pressed="tipo === '{{ t.codigo }}'" @click="elegirTipo('{{ t.codigo }}', '{{ t.clase }}')">
+      <button type="button" class="opcion clase-{{ t.clase }}" :aria-pressed="tipo === '{{ t.codigo }}'" @click="elegirTipo('{{ t.codigo }}', '{{ t.clase }}', {{ t.pide_contacto|yesno:'true,false' }})">
         <svg><use href="#i-{{ t.icono }}"/></svg>{{ t.nombre }}
       </button>
       {% endfor %}
@@ -81,6 +81,14 @@
     </div>
     <img class="foto-vista mini" x-show="vistaFoto" :src="vistaFoto" alt="La foto que vas a enviar">
     <p class="mini-nota" x-text="textoUbicacion"></p>
+    {# La ubicación del teléfono: se pide con un toque y se dice con claridad qué pasó #}
+    <button type="button" class="boton ubicar" @click="pedirGps(true)" :disabled="gps === 'buscando'">
+      <svg><use href="#i-ubicar"/></svg><span x-text="gps === 'buscando' ? 'Buscando tu ubicación…' : origen === 'gps' ? 'Volver a tomar mi ubicación' : 'Estoy aquí: usar mi ubicación'"></span>
+    </button>
+    <div class="gps-aviso" x-show="avisoGps" :class="'gps-' + gps" role="status">
+      <b x-text="avisoGps.titulo"></b>
+      <template x-for="paso in avisoGps.pasos" :key="paso"><span x-text="paso"></span></template>
+    </div>
 
     <div class="campo-titulo" x-show="clase === 'riesgo'">¿Se puede pasar?</div>
     <div class="chips" x-show="clase === 'riesgo'">
@@ -93,6 +101,16 @@
     <textarea class="nota" maxlength="280" x-model="nota" :placeholder="ejemploDeNota"></textarea>
     <p class="nota-ayuda">No escribas nombres, teléfonos ni cédulas. La foto y la nota se publican cuando coordinación las revise; el punto aparece de inmediato.</p>
 
+    <div x-show="pideContacto">
+      <div class="campo-titulo">Teléfono de contacto del lugar</div>
+      <input class="campo-texto" type="tel" inputmode="tel" maxlength="20" x-model="contacto" placeholder="Ejemplo: 05 252 0000 o 099 000 0000" autocomplete="off">
+      <p class="nota-ayuda">El del centro de acopio o de la institución, para que la gente llame antes de ir. No pongas un teléfono personal sin permiso.</p>
+    </div>
+
+    <div class="campo-titulo">Tu nombre o apodo <small>(opcional)</small></div>
+    <input class="campo-texto" type="text" maxlength="40" x-model="nombre" placeholder="Para sumar puntos y aparecer en la tabla" autocomplete="nickname">
+    <p class="nota-ayuda">Cada aviso suma puntos. Solo se muestra este nombre; nada más de ti. <a href="{% url 'reportes:puntos' %}">Ver la tabla</a></p>
+
     <p class="form-error" x-show="error" x-text="error" role="alert"></p>
     <div class="form-pie">
       <button type="button" class="reportar" :disabled="enviando" @click="enviar()" x-text="enviando ? 'Enviando…' : 'Enviar reporte'"></button>
@@ -104,6 +122,7 @@
     <svg style="color:#e11b22"><use href="#i-listo"/></svg>
     <h1 class="form-titulo" x-text="tituloFinal"></h1>
     <p class="form-ayuda" x-text="textoFinal"></p>
+    <p class="puntos-ganados" x-show="puntos"><svg><use href="#i-estrella"/></svg><span x-text="textoPuntos"></span> <a href="{% url 'reportes:puntos' %}">Ver la tabla</a></p>
     <a class="reportar" :href="enlaceFinal">Ver el mapa</a>
     <p class="form-ayuda" style="margin-top:22px">Si hay personas en peligro, llama al <a href="tel:911"><b>911</b></a>.</p>
     {% include "parciales/firma.html" %}

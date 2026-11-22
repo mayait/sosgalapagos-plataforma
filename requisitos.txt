@@ -8,3 +8,9 @@ whitenoise>=6.8
 gunicorn>=23
 pytest>=8
 pytest-django>=4.9
+# Fase 2 (22-nov-2026). Capa de modelos de lenguaje que no depende del proveedor: el mismo
+# código corre con Anthropic o con Gemini cambiando una variable (IA_MODELO).
+pydantic-ai-slim[anthropic,google]>=2.71,<3
+# Notificaciones del navegador (Web Push con VAPID). Trae «cryptography», que también
+# cifra el identificador del chat de WhatsApp.
+pywebpush>=2.5,<3

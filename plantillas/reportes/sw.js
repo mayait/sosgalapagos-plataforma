@@ -1,11 +1,11 @@
 {% load reportes_extras %}/* Service worker del mapa. Guarda la interfaz, el mapa base y las capas ya vistas,
    para que la app instalada abra sin señal. Los reportes van siempre a la red:
    el mapa guarda la última respuesta por su cuenta y muestra de qué hora es. */
-const VERSION = 'sos-v21';
+const VERSION = 'sos-v22';
 const E = '{{ estaticos }}';
 const INTERFAZ = [
   '/riesgos/', '/riesgos/reportar/',
-  "{% propio 'mapa/estilos.css' %}", "{% propio 'mapa/comun.js' %}", "{% propio 'mapa/base.js' %}", "{% propio 'mapa/capas.js' %}", "{% propio 'mapa/buscar.js' %}", "{% propio 'mapa/mapa.js' %}", "{% propio 'mapa/reportar.js' %}",
+  "{% propio 'mapa/estilos.css' %}", "{% propio 'mapa/comun.js' %}", "{% propio 'mapa/base.js' %}", "{% propio 'mapa/capas.js' %}", "{% propio 'mapa/buscar.js' %}", "{% propio 'mapa/mapa.js' %}", "{% propio 'mapa/app.js' %}", "{% propio 'mapa/reportar.js' %}",
   E + 'terceros/maplibre-gl.js', E + 'terceros/maplibre-gl.css', E + 'terceros/pmtiles.js', E + 'terceros/basemaps.js',
   E + 'terceros/htmx.min.js', E + 'terceros/alpine.min.js',
   E + 'marca/ZalandoSansExpanded.ttf', E + 'marca/usfq-galapagos-color.svg',
@@ -91,3 +91,24 @@ async function trozo(pedido) {
     headers: { 'Content-Range': `bytes ${desde}-${hasta}/${datos.byteLength}`, 'Content-Length': String(hasta - desde + 1), 'Content-Type': 'application/octet-stream' },
   });
 }
+
+// ── Avisos (Web Push) ───────────────────────────────────────────────────────
+// Llegan aunque la app esté cerrada. Solo traen lo que ya es público en el mapa.
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { cuerpo: e.data && e.data.text() }; }
+  e.waitUntil(self.registration.showNotification(d.titulo || 'SOS Galápagos', {
+    body: d.cuerpo || 'Hay un aviso nuevo en el mapa de riesgos.',
+    icon: E + 'app/icono-192.png', badge: E + 'app/icono-192.png',
+    tag: d.etiqueta || undefined, data: { enlace: d.enlace || '/riesgos/' },
+  }));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const enlace = (e.notification.data && e.notification.data.enlace) || '/riesgos/';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((ventanas) => {
+    const abierta = ventanas.find((v) => new URL(v.url).pathname.startsWith('/riesgos/'));
+    if (abierta) { abierta.navigate(enlace); return abierta.focus(); }
+    return self.clients.openWindow(enlace);
+  }));
+});

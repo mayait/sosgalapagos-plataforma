@@ -63,11 +63,13 @@
   window.reporte = () => ({
     paso: 1, tipo: '', clase: 'riesgo', profundidad: '', gravedad: 'cuidado', gravedadTocada: false, nota: '',
     foto: null, vistaFoto: '', lat: null, lon: null, precision: null, origen: '',
+    gps: '', codigoGps: 0, pideContacto: false, contacto: '', nombre: '', puntos: 0, textoPuntos: '',
     vistoEn: new Date().toISOString(), enviando: false, error: '',
     tituloFinal: '', textoFinal: '', enlaceFinal: '/riesgos/', mini: null,
 
     init() {
       this.$watch('paso', (p) => { if (p === 4) this.$nextTick(() => this.abrirMiniMapa()); });
+      try { this.nombre = localStorage.getItem('sos-nombre') || ''; } catch (e) { /* sin acceso */ }
       // Si se llegó desde el mapa (pulsación larga en un punto), ese punto manda sobre el GPS.
       const q = new URLSearchParams(location.search);
       const lat = Number(q.get('lat')), lon = Number(q.get('lon'));
@@ -86,19 +88,50 @@
       }[this.clase];
     },
     get textoUbicacion() {
-      const de = { gps: 'Usamos la ubicación de tu teléfono.', foto: 'Usamos la ubicación guardada en la foto.', mano: 'Punto puesto a mano.', mapa: 'Es el punto que marcaste en el mapa.' }[this.origen]
+      const de = { gps: 'Usamos la ubicación de tu teléfono, tomada ahora.', foto: 'Usamos la ubicación guardada en la foto.', mano: 'Punto puesto a mano.', mapa: 'Es el punto que marcaste en el mapa.' }[this.origen]
         || 'No tenemos tu ubicación.';
       return de + ' Mueve el mapa hasta que el pin quede en el lugar.';
     },
 
-    pedirGps() {
-      if (!navigator.geolocation) return;
+    // Lo que se le dice a la persona sobre la ubicación de su teléfono, con los pasos para arreglarlo.
+    get avisoGps() {
+      const esIphone = /iPhone|iPad|iPod/.test(navigator.userAgent);
+      if (this.gps === 'ok') {
+        const m = Math.round(this.precision || 0);
+        if (m > 150) return { titulo: `Ubicación poco precisa (±${m} m).`, pasos: ['Tu teléfono no sabe bien dónde estás. Sal a cielo abierto y vuelve a tocar el botón, o mueve el mapa hasta que el pin quede en el lugar.'] };
+        return { titulo: `Ubicación tomada (±${Math.max(m, 1)} m).`, pasos: ['¿El pin está donde ocurre? Si estás lejos del lugar, mueve el mapa hasta él.'] };
+      }
+      if (this.gps === 'inseguro') return { titulo: 'Esta página no puede pedir tu ubicación.', pasos: ['Ábrela en sosgalapagos.org/riesgos o mueve el mapa hasta el lugar.'] };
+      if (this.gps === 'sin_soporte') return { titulo: 'Este navegador no da la ubicación.', pasos: ['Mueve el mapa hasta que el pin quede en el lugar.'] };
+      if (this.gps === 'denegado') {
+        return {
+          titulo: 'No tenemos permiso para ver tu ubicación.',
+          pasos: esIphone
+            ? ['1. Abre Ajustes → Privacidad y seguridad → Localización y enciéndela.', '2. En esa lista entra a «Sitios web de Safari» (o a tu navegador) y elige «Al usar la app».', '3. Vuelve aquí y toca otra vez el botón. O mueve el mapa hasta el lugar.']
+            : ['1. Enciende la ubicación del teléfono (desliza desde arriba y toca «Ubicación»).', '2. Toca el candado o el icono junto a la dirección de la página → Permisos → Ubicación → Permitir.', '3. Vuelve aquí y toca otra vez el botón. O mueve el mapa hasta el lugar.'],
+        };
+      }
+      if (this.gps === 'apagado') return { titulo: 'El teléfono no encontró su ubicación.', pasos: ['Revisa que la ubicación (GPS) esté encendida y que no estés en modo avión.', 'Si estás bajo techo, acércate a una ventana y vuelve a tocar el botón. O mueve el mapa hasta el lugar.'] };
+      if (this.gps === 'tardo') return { titulo: 'La ubicación tardó demasiado.', pasos: ['Vuelve a tocar el botón; a cielo abierto es más rápido. O mueve el mapa hasta el lugar.'] };
+      return null;
+    },
+
+    // `pedida` es true cuando la persona tocó el botón: entonces su ubicación manda sobre la foto o el mapa.
+    pedirGps(pedida) {
+      if (!window.isSecureContext) { if (pedida) this.gps = 'inseguro'; return; }
+      if (!navigator.geolocation) { if (pedida) this.gps = 'sin_soporte'; return; }
+      if (pedida) this.gps = 'buscando';
       navigator.geolocation.getCurrentPosition((p) => {
-        if (['foto', 'mano', 'mapa'].includes(this.origen)) return; // la foto, la mano o el punto del mapa mandan
+        if (!pedida && ['foto', 'mano', 'mapa'].includes(this.origen)) return; // la foto, la mano o el punto del mapa mandan
         this.lat = p.coords.latitude; this.lon = p.coords.longitude;
-        this.precision = p.coords.accuracy; this.origen = 'gps';
-        if (this.mini) this.mini.jumpTo({ center: [this.lon, this.lat] });
-      }, () => {}, { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
+        this.precision = p.coords.accuracy; this.origen = 'gps'; this.gps = 'ok';
+        if (this.mini) this.mini.jumpTo({ center: [this.lon, this.lat], zoom: Math.max(this.mini.getZoom(), 17) });
+        if (pedida && navigator.vibrate) navigator.vibrate(15);
+      }, (error) => {
+        this.codigoGps = error.code;
+        // Si no se pidió con el botón, solo se anota: el aviso sale al llegar al paso del lugar.
+        this.gps = { 1: 'denegado', 2: 'apagado', 3: 'tardo' }[error.code] || 'apagado';
+      }, { enableHighAccuracy: true, timeout: pedida ? 20000 : 10000, maximumAge: pedida ? 0 : 30000 });
     },
 
     async alElegirFoto(e) {
@@ -116,8 +149,9 @@
     },
     sinFoto() { this.foto = null; this.vistaFoto = ''; this.paso = 2; },
 
-    elegirTipo(codigo, clase) {
+    elegirTipo(codigo, clase, pideContacto) {
       this.tipo = codigo;
+      this.pideContacto = Boolean(pideContacto);
       this.clase = clase || 'riesgo';
       if (CON_AGUA.includes(codigo)) { this.paso = 3; return; }
       this.profundidad = 'sin_dato';
@@ -139,7 +173,7 @@
         maxBounds: [[-93.2, -2.4], [-88.0, 1.6]], attributionControl: { compact: true }, dragRotate: false, fadeDuration: 0,
       });
       this.mini.touchZoomRotate.disableRotation();
-      this.mini.on('dragend', () => { this.origen = 'mano'; this.precision = null; });
+      this.mini.on('dragend', () => { this.origen = 'mano'; this.precision = null; if (this.gps === 'ok') this.gps = ''; });
     },
 
     campos() {
@@ -147,11 +181,23 @@
       return {
         tipo: this.tipo, profundidad: this.profundidad, gravedad: this.gravedad, nota: this.nota.trim(),
         lat: c.lat, lon: c.lng, precision: this.origen === 'gps' ? this.precision : '', visto_en: this.vistoEn, foto: this.foto,
+        contacto: this.pideContacto ? this.contacto.trim() : '', nombre: this.nombre.trim(),
       };
     },
 
     async enviar() {
-      this.error = ''; this.enviando = true;
+      this.error = '';
+      // Sin ubicación del teléfono, de la foto ni puesta a mano, el pin estaría en cualquier parte.
+      if (!this.origen) {
+        this.error = 'Falta el lugar. Toca «Estoy aquí: usar mi ubicación» o mueve el mapa hasta que el pin quede donde ocurre.';
+        return;
+      }
+      if (this.pideContacto && this.contacto.replace(/\D/g, '').length < 7) {
+        this.error = 'Pon un teléfono de contacto del lugar, para que la gente llame antes de ir.';
+        return;
+      }
+      try { localStorage.setItem('sos-nombre', this.nombre.trim()); } catch (e) { /* sin acceso */ }
+      this.enviando = true;
       const campos = this.campos();
       try {
         const r = await SOS.enviarReporte(campos);
@@ -163,6 +209,9 @@
           : 'Ya aparece en el mapa como «por verificar». Se retira solo cuando pase su plazo.';
         if (this.clase !== 'riesgo' && !datos.duplicado) this.textoFinal = 'Gracias. Ya aparece en el mapa; el texto se publica cuando coordinación lo revise.';
         this.enlaceFinal = '/riesgos/?r=' + datos.id;
+        this.puntos = datos.puntos || 0;
+        this.textoPuntos = `Ganaste ${this.puntos} puntos${datos.nombre ? ', ' + datos.nombre : ''}. Llevas ${datos.total || this.puntos}.`
+          + (datos.nombre ? '' : ' La próxima vez pon tu nombre o apodo para aparecer en la tabla.');
         this.paso = 5;
       } catch (e) {
         // Sin señal: queda guardado en el teléfono con la hora en que se vio.

@@ -145,3 +145,15 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 - **Para moverse rápido hay un navegador fijo arriba:** un día por columna, lluvia hacia arriba y reportes hacia abajo, y botones de salto (hoy, último reporte, día más lluvioso, inicio). Un toque lleva al día. La escala va hasta el mayor valor real, dicho en la leyenda: con un tope «redondo» (500 mm para 236) las barras quedaban enanas.
 - **En la línea del tiempo lo relevante son los reportes, no la lluvia** (corrección de Julián el mismo día). Se quitó la columna de lluvia, su cifra y el selector de estación. La lluvia queda solo como hito («Llovió X mm este día») los días de 50 mm o más (`HITO_MM`, preliminar), con la estación de la isla. Los días sin reportes ni hito se juntan en una fila. En el mapa, el acceso se llama **«Ver como lista»**.
 - **La línea del tiempo se filtra por zonas grandes, no por barrio** (indicación de Julián): Santa Cruz (Puerto Ayora), Santa Cruz parte alta, San Cristóbal (Puerto Baquerizo), San Cristóbal parte alta e Isabela. Se asignan por coordenadas en `informe.js` (`zonaGrande`): parte alta de Santa Cruz al norte de la latitud −0,718; parte alta de San Cristóbal al este de la longitud −89,585. Son cortes aproximados y preliminares.
+
+## Fase 2: WhatsApp, puntos, app y avisos (22-nov-2026)
+
+- **El formulario dejaba enviar sin lugar.** Si el teléfono no daba la ubicación, el pin quedaba en el centro por defecto del mapa y el reporte salía ahí, sin avisar. *Qué se hace:* no se envía sin un origen del lugar (teléfono, foto, mapa o a mano); el botón «Estoy aquí» dice qué pasó (sin permiso, GPS apagado, poco preciso) y cómo arreglarlo en iPhone y en Android.
+- **El asistente de WhatsApp vive en la plataforma (`entradas/`), no en `sosgalapagos-bot`.** El plan decía reescribir el bot; ese bot está hecho para pedidos y voluntarios de ResponseGrid y no sirve aquí. Un módulo pequeño junto a las reglas del reporte evita un segundo servicio y una segunda base. `sosgalapagos-bot` queda sin tocar.
+- **Antes del modelo va un filtro de reglas.** Lo pidió Julián («algo como regex»). Lo que no lo pasa no se guarda ni sale del servidor: es la privacidad de los chats, además del costo.
+- **Capa de modelos que no depende del proveedor: Pydantic AI.** Se descartó LiteLLM por el paquete comprometido de marzo de 2026. El prefijo de Gemini en la versión 2 es `google:`, no `google-gla:`.
+- **Las pruebas del flujo destaparon dos reglas flojas:** «se inundó» no se reconocía, y al responder «¿qué teléfono?» una frase con «se inundó» cambiaba el tipo del aviso. *Qué se hace:* mientras la persona responde a una pregunta, el tipo ya dicho no cambia.
+- **Un daño en infraestructura pública no es una inundación:** tipo aparte, con 14 días de plazo.
+- **Los puntos son un gracias, no un premio.** 10 por aviso, 5 más con foto, 2 por confirmar. Solo se muestra el nombre o apodo que la persona eligió; coordinación puede ocultar uno impropio. Un «nombre» con forma de teléfono o correo no se guarda.
+- **Avisos del navegador (Web Push):** en iPhone solo llegan a la app instalada. Solo se avisa de peligros confirmados, a quien lo pidió.
+

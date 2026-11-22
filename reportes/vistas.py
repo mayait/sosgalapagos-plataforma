@@ -18,8 +18,8 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 
 from zonas.models import zona_de
 
-from . import clima, fotos, reglas
-from .models import Gravedad, Profundidad, Reporte, TipoConfirmacion, TipoRiesgo
+from . import avisos, clima, fotos, reglas
+from .models import Gravedad, Profundidad, Reporte, SuscripcionPush, TipoConfirmacion, TipoRiesgo
 
 GALLETA = "dispositivo"
 
@@ -58,6 +58,8 @@ def _configuracion():
         "ficha": "/riesgos/r/",
         "reportar": reverse("reportes:reportar"),
         "mapa": reverse("reportes:mapa"),
+        "pushPublica": settings.PUSH_PUBLICA if avisos.activos() else "",
+        "pushSuscribir": reverse("reportes:push_suscribir"),
         "todos": "/riesgos/api/reportes/vivos.geojson?periodo=evento",
         "lluviaHoraria": "/riesgos/api/lluvia.json",
     }
@@ -119,6 +121,15 @@ def reportar(request):
     if not (-2 <= lat <= 2 and -92.5 <= lon <= -88.5):
         return JsonResponse({"error": "Ese punto está fuera de Galápagos."}, status=400)
 
+    # Un lugar que recibe donaciones lleva un teléfono al que llamar antes de ir.
+    import re
+
+    contacto = re.sub(r"[^\d+ ]", "", request.POST.get("contacto") or "").strip()[:40]
+    if tipo.pide_contacto and len(re.sub(r"\D", "", contacto)) < 7:
+        return JsonResponse({"error": "Pon un teléfono de contacto del lugar, para que la gente llame antes de ir."}, status=400)
+    if not tipo.pide_contacto:
+        contacto = ""
+
     profundidad = request.POST.get("profundidad")
     if profundidad not in Profundidad.values:
         profundidad = Profundidad.SIN_DATO
@@ -147,6 +158,8 @@ def reportar(request):
         profundidad=profundidad,
         foto=foto,
         nota=(request.POST.get("nota") or "").strip()[:280],
+        contacto=contacto,
+        nombre_autor=request.POST.get("nombre") or "",
         precision_m=round(precision) if precision and precision < 100000 else None,
         zona=zona_de(punto),
     )
@@ -159,6 +172,9 @@ def reportar(request):
                 "lon": r.punto.x,
                 "lat": r.punto.y,
                 "url": reverse("reportes:ficha", args=[r.id_publico]),
+                "puntos": resultado.puntos,
+                "total": resultado.colaborador.puntos if resultado.colaborador else resultado.puntos,
+                "nombre": resultado.colaborador.nombre if resultado.colaborador else "",
             },
             status=200 if resultado.duplicado else 201,
         ),
@@ -314,3 +330,37 @@ def relieve(request, ruta):
     # No cambian hasta que se regeneran: el navegador y Cloudflare pueden guardarlas un día.
     respuesta["Cache-Control"] = "public, max-age=86400"
     return respuesta
+
+
+@require_GET
+def puntos(request):
+    """Tabla de puntos: quién ha publicado más. Solo el nombre o apodo que cada persona eligió."""
+    huella, _ = _huella(request)
+    return render(
+        request,
+        "reportes/puntos.html",
+        {"tabla": reglas.tabla_de_puntos(), "yo": reglas.colaborador_de(huella), "valores": settings.PUNTOS},
+    )
+
+
+@require_POST
+def push_suscribir(request):
+    """Guarda (o retira) la suscripción de este navegador a los avisos."""
+    try:
+        datos = json.loads(request.body or b"{}")
+    except ValueError:
+        return JsonResponse({"error": "datos ilegibles"}, status=400)
+    direccion = str(datos.get("endpoint") or "")
+    if not direccion.startswith("https://") or len(direccion) > 2000:
+        return JsonResponse({"error": "suscripción inválida"}, status=400)
+    if datos.get("baja"):
+        SuscripcionPush.objects.filter(direccion=direccion).delete()
+        return JsonResponse({"suscrito": False})
+    llaves = datos.get("keys") or {}
+    if not llaves.get("p256dh") or not llaves.get("auth"):
+        return JsonResponse({"error": "suscripción inválida"}, status=400)
+    huella, nuevo = _huella(request)
+    SuscripcionPush.objects.update_or_create(
+        direccion=direccion, defaults={"p256dh": str(llaves["p256dh"])[:200], "auth": str(llaves["auth"])[:80], "huella": huella}
+    )
+    return _con_galleta(JsonResponse({"suscrito": True}), nuevo)

@@ -139,7 +139,7 @@ def prueba_el_relieve_del_3d_se_sirve_y_el_mar_da_404(client, settings, tmp_path
 
 def prueba_se_puede_avisar_algo_bueno_y_donde_donar(client):
     bueno = client.post("/riesgos/reportar/", {"tipo": "algo_bueno", "lat": "-0.7408", "lon": "-90.3152", "nota": "Volvió la luz"})
-    ayuda = client.post("/riesgos/reportar/", {"tipo": "donar_colaborar", "lat": "-0.7428", "lon": "-90.3108"})
+    ayuda = client.post("/riesgos/reportar/", {"tipo": "donar_colaborar", "lat": "-0.7428", "lon": "-90.3108", "contacto": "05 252 0000"})
     assert bueno.status_code == 201 and ayuda.status_code == 201
     datos = json.loads(client.get("/riesgos/api/reportes/vivos.geojson").content)
     assert sorted(f["properties"]["clase"] for f in datos["features"]) == ["ayuda", "bueno"]
@@ -242,3 +242,85 @@ def prueba_el_informe_se_llama_linea_del_tiempo(client):
 def prueba_el_mapa_ofrece_ver_como_lista(client):
     html = client.get("/riesgos/").content.decode()
     assert ">Ver como lista</a>" in html
+
+
+# ── Fase 2: puntos, contacto, daño en infraestructura, avisos ────────────────
+def prueba_publicar_suma_puntos_y_guarda_el_nombre(client):
+    r = client.post("/riesgos/reportar/", {**DATOS, "nombre": "  Lucía  "})
+    assert r.status_code == 201
+    d = r.json()
+    assert d["puntos"] == 10 and d["total"] == 10 and d["nombre"] == "Lucía"
+    # Avisar de lo mismo, ahí mismo, confirma y suma menos.
+    d2 = client.post("/riesgos/reportar/", DATOS).json()
+    assert d2["duplicado"] and d2["puntos"] == 2 and d2["total"] == 12
+    tabla = client.get("/riesgos/puntos/").content.decode()
+    assert "Lucía" in tabla and "<b>12</b>" in tabla
+
+
+def prueba_la_tabla_no_muestra_a_quien_no_dio_nombre_ni_telefonos(client):
+    client.post("/riesgos/reportar/", DATOS)
+    otro = client.__class__()
+    otro.post("/riesgos/reportar/", {**DATOS, "lat": "-0.7300", "nombre": "0991234567"})  # un teléfono no es un nombre
+    from reportes.models import Colaborador
+
+    assert Colaborador.objects.count() == 2 and not Colaborador.objects.exclude(nombre="").exists()
+    assert "Todavía no hay nadie" in client.get("/riesgos/puntos/").content.decode()
+
+
+def prueba_un_lugar_de_donacion_pide_telefono_de_contacto(client):
+    sin = client.post("/riesgos/reportar/", {"tipo": "donar_colaborar", "lat": "-0.7428", "lon": "-90.3108"})
+    assert sin.status_code == 400 and "teléfono de contacto" in sin.json()["error"]
+    con = client.post("/riesgos/reportar/", {"tipo": "donar_colaborar", "lat": "-0.7428", "lon": "-90.3108", "contacto": "099-123-4567"})
+    r = Reporte.objects.get(id_publico=con.json()["id"])
+    assert r.contacto == "0991234567"
+    # El teléfono, como la nota, no se ve hasta que coordinación lo revisa.
+    assert "0991234567" not in client.get(f"/riesgos/r/{r.id_publico}/").content.decode()
+    Reporte.objects.filter(pk=r.pk).update(contenido_visible=True)
+    assert 'href="tel:0991234567"' in client.get(f"/riesgos/r/{r.id_publico}/").content.decode()
+
+
+def prueba_un_peligro_no_guarda_contacto(client):
+    r = client.post("/riesgos/reportar/", {**DATOS, "contacto": "0991234567"})
+    assert Reporte.objects.get(id_publico=r.json()["id"]).contacto == ""
+
+
+def prueba_el_dano_en_infraestructura_dura_dias(client):
+    r = client.post("/riesgos/reportar/", {"tipo": "dano_infraestructura", "lat": "-0.7435", "lon": "-90.3145", "nota": "Puente con la baranda caída"})
+    assert r.status_code == 201
+    reporte = Reporte.objects.get(id_publico=r.json()["id"])
+    assert (reporte.vence_en - reporte.visto_en).days == 14
+    assert "Daño en infraestructura pública" in client.get("/riesgos/reportar/").content.decode()
+
+
+def prueba_el_formulario_explica_la_ubicacion(client):
+    pagina = client.get("/riesgos/reportar/").content.decode()
+    assert "pedirGps(true)" in pagina and "gps-aviso" in pagina
+    assert "Tu nombre o apodo" in pagina and "Teléfono de contacto del lugar" in pagina
+
+
+def prueba_suscribirse_y_darse_de_baja_de_los_avisos(client):
+    from reportes.models import SuscripcionPush
+
+    datos = {"endpoint": "https://push.ejemplo.test/abc", "keys": {"p256dh": "BPk", "auth": "xyz"}}
+    assert client.post("/riesgos/avisos/suscribir/", json.dumps(datos), content_type="application/json").json() == {"suscrito": True}
+    client.post("/riesgos/avisos/suscribir/", json.dumps(datos), content_type="application/json")  # dos veces no duplica
+    assert SuscripcionPush.objects.count() == 1
+    mala = client.post("/riesgos/avisos/suscribir/", json.dumps({"endpoint": "http://sin-cifrar"}), content_type="application/json")
+    assert mala.status_code == 400
+    client.post("/riesgos/avisos/suscribir/", json.dumps({**datos, "baja": True}), content_type="application/json")
+    assert SuscripcionPush.objects.count() == 0
+
+
+def prueba_sin_llaves_no_se_ofrecen_avisos_y_no_se_envia_nada(client, settings):
+    from reportes import avisos
+
+    settings.PUSH_PUBLICA = settings.PUSH_PRIVADA = ""
+    assert avisos.enviar("t", "c", "/riesgos/") == 0
+    assert '"pushPublica": ""' in client.get("/riesgos/").content.decode()
+
+
+def prueba_el_mapa_ofrece_la_app_y_los_puntos(client):
+    html = client.get("/riesgos/").content.decode()
+    assert 'id="app-caja"' in html and "mapa/app.js" in html and ">Puntos</a>" in html
+    sw = client.get("/riesgos/sw.js").content.decode()
+    assert "addEventListener('push'" in sw and "notificationclick" in sw
