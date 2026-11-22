@@ -71,7 +71,7 @@ def extraer(textos, foto=None, tipos=(), borrador=None, pregunta=""):
         pedido = [_contexto(tipos, borrador, pregunta) + "\n" + "\n".join(f"«{t}»" for t in textos if t)]
         if foto:
             pedido.append(BinaryContent(data=foto, media_type="image/jpeg"))
-        return agente.run_sync(pedido, model_settings={"timeout": settings.IA_ESPERA_S, "temperature": 0}).output
+        return agente.run_sync(pedido, model_settings={"timeout": settings.IA_ESPERA_S}).output
     except Exception:
         registro.exception("El modelo de lenguaje no respondió; se usa la extracción con reglas")
         return por_reglas(textos, borrador)
