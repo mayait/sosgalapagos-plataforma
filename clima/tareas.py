@@ -4,21 +4,35 @@ from django.tasks import task
 
 @task
 def sincronizar_clima():
+    """El ciclo de cada cinco minutos: recoger lo que ya recoge esta aplicación, copiar lo demás,
+    calcular el nivel de cada zona y, si esta aplicación es la que publica, generar los datos del panel."""
+    from django.conf import settings
+
+    from . import fuentes, niveles, panel
     from .sincronizar import sincronizar
 
-    from . import fuentes
-
-    nativas = fuentes.recolectar() if fuentes.nativas() else {}
-    s = sincronizar()
-    r = {"nativas": nativas, "leidas": s.leidas, "cambiadas": s.cambiadas, "borradas": s.borradas, "segundos": s.segundos, "error": s.error}
-    if not s.error:  # con los datos frescos se recalcula el nivel de cada zona
-        from . import niveles
-
+    r = {"nativas": fuentes.recolectar() if fuentes.nativas() else {}}
+    if settings.CLIMA_SQLITE:
+        s = sincronizar()
+        r.update(leidas=s.leidas, cambiadas=s.cambiadas, borradas=s.borradas, segundos=s.segundos, error=s.error)
+    try:
+        r["nivel"] = niveles.actualizar()
+    except Exception as e:  # una parte que falla no frena a las demás
+        r["nivel"] = f"{type(e).__name__}: {e}"
+    if settings.CLIMA_PUBLICAR_PANEL and settings.CLIMA_SALIDA:
         try:
-            r["nivel"] = niveles.actualizar()
-        except Exception as e:  # el cálculo nuevo está en prueba: un fallo no debe frenar la copia
-            r["nivel"] = f"{type(e).__name__}: {e}"
+            r["panel"] = panel.publicar()
+        except Exception as e:
+            r["panel"] = f"{type(e).__name__}: {e}"
     return r
+
+
+@task
+def publicar_descargas():
+    """Cada hora: los ZIP de descarga pública y la copia completa privada."""
+    from . import panel
+
+    return panel.descargas()
 
 
 @task

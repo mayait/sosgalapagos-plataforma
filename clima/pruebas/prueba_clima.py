@@ -197,8 +197,24 @@ def prueba_el_pronostico_de_los_proximos_dias_responde_vacio(client):
     assert "no oficial" in datos["aviso"]
 
 
-# ── Etapa 5: fuentes nativas ─────────────────────────────────────────────────
-def prueba_una_fuente_nativa_se_recoge_aqui_y_deja_de_copiarse(origen, settings, monkeypatch):
+# ── Etapa 5: las fuentes las recoge esta aplicación, con el código del recolector anterior ──
+@pytest.fixture
+def metar(monkeypatch, settings):
+    """La fuente de los aeropuertos, con la red simulada."""
+    from clima.compat import modulos
+
+    modulos()
+    import fuentes_extra
+
+    monkeypatch.setenv("CLIMA_METAR_API", "https://metar.test/api")
+    settings.CLIMA_FUENTES_NATIVAS = ["metar"]
+    t = int((AHORA - timedelta(minutes=20)).timestamp())
+    respuesta = [{"icaoId": "SEGS", "obsTime": t, "temp": 27, "altim": 1012.5, "wspd": 10, "wxString": "+TSRA"}, {"icaoId": "KJFK", "obsTime": t, "temp": 5}]
+    monkeypatch.setattr(fuentes_extra, "http_json", lambda url, **k: respuesta)
+    return fuentes_extra
+
+
+def prueba_una_fuente_nativa_se_recoge_aqui_y_deja_de_copiarse(origen, metar):
     from clima import fuentes
 
     con = sqlite3.connect(origen)
@@ -206,34 +222,104 @@ def prueba_una_fuente_nativa_se_recoge_aqui_y_deja_de_copiarse(origen, settings,
     con.execute("INSERT INTO corridas VALUES (?,?,?,?,?,?)", [iso(AHORA - timedelta(minutes=3)), "metar", 1, 1, 1.0, None])
     con.commit()
     con.close()
-    settings.CLIMA_FUENTES_NATIVAS, settings.CLIMA_METAR_API = ["metar"], "https://metar.test/api"
-    t = int((AHORA - timedelta(minutes=20)).timestamp())
-    monkeypatch.setattr(fuentes, "http_json", lambda url, **k: [
-        {"icaoId": "SEGS", "obsTime": t, "temp": 27, "altim": 1012.5, "wspd": 10, "wxString": "+TSRA"}, {"icaoId": "KJFK", "obsTime": t, "temp": 5}])
     assert fuentes.recolectar() == {"metar": 4}
-    assert fuentes.recolectar() == {"metar": 4}  # repetir no duplica
+    assert Observacion.objects.filter(estacion__fuente="metar").count() == 4
     valores = {o.variable: o.valor for o in Observacion.objects.filter(estacion__fuente="metar")}
     assert valores == {"temp_c": 27.0, "presion_hpa": 1012.5, "viento_ms": 5.1, "lluvia_codigo": 3.0}  # nudos a m/s; tormenta = 3
-    assert Corrida.objects.filter(fuente="metar", ok=True).count() == 2
+    e = Estacion.objects.get(fuente="metar", codigo="SEGS")
+    assert e.nombre.startswith("Aeropuerto Seymour") and abs(e.punto.y + 0.4539) < 1e-6
+    assert Corrida.objects.filter(fuente="metar", ok=True).count() == 1
+    assert Horaria.objects.filter(estacion=e, variable="temp_c").exists()  # los resúmenes por hora se rehacen
     # La copia no trae el 99 del recolector anterior ni borra lo recogido aquí.
     s = sincronizar(ruta=origen)
     assert not s.error and Observacion.objects.filter(estacion__fuente="metar").count() == 4
-    assert not Observacion.objects.filter(valor=99.0).exists() and Corrida.objects.filter(fuente="metar").count() == 2
+    assert not Observacion.objects.filter(valor=99.0).exists() and Corrida.objects.filter(fuente="metar").count() == 1
     assert Observacion.objects.filter(estacion__fuente="ierse").count() == 14  # las demás fuentes sí se copian
 
 
-def prueba_si_una_fuente_nativa_falla_queda_anotado(settings, monkeypatch):
+def prueba_si_una_fuente_nativa_falla_queda_anotado_y_siguen_las_demas(metar, monkeypatch, settings):
     from clima import fuentes
-
-    settings.CLIMA_FUENTES_NATIVAS, settings.CLIMA_METAR_API = ["metar", "inventada"], "https://metar.test/api"
 
     def roto(url, **k):
         raise TimeoutError("sin respuesta")
 
-    monkeypatch.setattr(fuentes, "http_json", roto)
+    monkeypatch.setattr(metar, "http_json", roto)
+    settings.CLIMA_FUENTES_NATIVAS = ["metar", "inventada"]
     assert fuentes.recolectar() == {"metar": "error: TimeoutError"}
     c = Corrida.objects.get(fuente="metar")
     assert not c.ok and "sin respuesta" in c.error
+
+
+def prueba_una_fuente_sin_nada_nuevo_no_es_un_fallo(metar, monkeypatch):
+    import io
+
+    from clima import fuentes
+    from clima.compat import modulos
+
+    recolector = modulos()
+    monkeypatch.setattr(metar, "http_json", recolector.http_json)  # la función de verdad, con la red simulada
+
+    class SinContenido(io.BytesIO):  # como responde la fuente de noche: 204 y cuerpo vacío
+        status = 204
+
+    monkeypatch.setattr(recolector.urllib.request, "urlopen", lambda pedido, timeout=0: SinContenido(b""))
+    assert fuentes.recolectar() == {"metar": 0}
+    assert Corrida.objects.get(fuente="metar").ok is True
+
+
+def prueba_la_conexion_de_compatibilidad_lee_y_escribe_como_sqlite(origen):
+    """El código del recolector anterior usa «?», INSERT OR REPLACE y horas en texto: todo eso llega a los modelos."""
+    from clima.compat import Conexion
+
+    sincronizar(completa=True, ruta=origen)
+    con = Conexion()
+    hora = AHORA.replace(minute=0) - timedelta(hours=1)
+    assert con.execute("SELECT MAX(ts) FROM obs WHERE fuente=? AND estacion=?", ("ierse", "n1")).fetchone()[0] == iso(hora + timedelta(minutes=55))
+    con.executemany("INSERT OR REPLACE INTO obs VALUES (?,?,?,?,?)", [("ierse", "n1", "lluvia_mm", iso(hora), 9.5), ("nueva", "x1", "temp_c", iso(hora), 20.0)])
+    assert Observacion.objects.get(estacion__codigo="n1", variable="lluvia_mm", ts=hora).valor == 9.5      # reemplaza
+    assert Estacion.objects.filter(fuente="nueva", codigo="x1").exists()                                    # crea la estación si falta
+    con.execute("DELETE FROM obs WHERE fuente='ierse' AND estacion=? AND substr(ts,1,13)=? AND variable='temp_c'", ("n1", iso(hora)[:13]))
+    assert not Observacion.objects.filter(estacion__codigo="n1", variable="temp_c").exists()
+    con.execute("INSERT OR REPLACE INTO estaciones VALUES (?,?,?,?,?,?,?,?,?,?)", ("nueva", "x1", "Nueva", "Isabela", -0.95, -90.97, 12, "Prueba", None, "{}"))
+    e = Estacion.objects.get(fuente="nueva")
+    assert e.nombre == "Nueva" and abs(e.punto.x + 90.97) < 1e-6
+    con.execute("INSERT INTO corridas VALUES (?,?,?,?,?,?)", (iso(AHORA), "nueva", 1, 2, 0.5, None))
+    assert Corrida.objects.get(fuente="nueva").ok is True
+    assert con.execute("SELECT date(?, '-6 hours')", ("2026-11-21T03:00:00Z",)).fetchone()[0] == "2026-11-20"
+    assert [r[0] for r in con.execute("SELECT estacion FROM estaciones WHERE fuente='goes'")] == []     # las zonas del satélite no son estaciones
+
+
+def prueba_el_panel_se_genera_desde_esta_base_con_la_forma_de_siempre(origen, tmp_path, settings):
+    import json
+
+    from clima import panel
+    from clima.models import EstacionDanada
+
+    sincronizar(completa=True, ruta=origen)
+    settings.CLIMA_SALIDA = str(tmp_path / "datos")
+    (tmp_path / "datos").mkdir()
+    (tmp_path / "datos" / "satelite.json").write_text(json.dumps({"generado": "x"}))
+    r = panel.publicar()
+    assert r["total_s"] < 20
+    est = json.loads((tmp_path / "datos" / "estado.json").read_text())
+    assert set(est) == {"generado", "estaciones", "fuentes", "eventos", "inundacion", "mareas", "pronostico", "satelite"}
+    e = next(x for x in est["estaciones"] if x["estacion"] == "n1")
+    assert e["nombre"] == "Los Guayabillos" and e["operador"] == "IERSE-WSN" and e["lluvia"]["24h"] == 6.0 and e["actual"]["temp_c"] == 22.0
+    assert any(x["fuente"] == "darwin" and x["en_vivo"] is False for x in est["estaciones"])     # la red sin transmisión sigue listada
+    assert not any(x["fuente"] == "goes" for x in est["estaciones"])
+    assert est["fuentes"]["IERSE-WSN"]["ok"] in (0, 1) and est["satelite"] == {"generado": "x"}
+    assert [z["id"] for z in est["inundacion"]["zonas"]] == ["la-cascada", "santa-cruz-alta", "san-cristobal", "isabela"]
+    hor = json.loads((tmp_path / "datos" / "horario.json").read_text())
+    assert hor["horas"] == len(hor["series"]["ierse/n1"]["lluvia_mm"]) and 6.0 in hor["series"]["ierse/n1"]["lluvia_mm"]
+    dia = json.loads((tmp_path / "datos" / "diario.json").read_text())
+    assert sum(v or 0 for v in dia["diario"]["ierse/n1"]["lluvia"]) == 6.0 and "estacionalidad" in dia
+    # Un sensor dañado: su lluvia sale en blanco en los tres archivos.
+    EstacionDanada.objects.create(estacion=Estacion.objects.get(codigo="n1"), desde=AHORA - timedelta(days=30), motivo="prueba")
+    panel.publicar()
+    est = json.loads((tmp_path / "datos" / "estado.json").read_text())
+    e = next(x for x in est["estaciones"] if x["estacion"] == "n1")
+    assert e["lluvia"]["24h"] is None and e["danada"]["motivo"] == "prueba"
+    assert set(json.loads((tmp_path / "datos" / "horario.json").read_text())["series"]["ierse/n1"]["lluvia_mm"]) == {None}
 
 
 def prueba_la_linea_del_tiempo_lee_la_lluvia_de_esta_base(origen):
@@ -244,19 +330,3 @@ def prueba_la_linea_del_tiempo_lee_la_lluvia_de_esta_base(origen):
     hora = AHORA.replace(minute=0, second=0, microsecond=0) - timedelta(hours=1)
     inicio, valores = panel.lluvia_por_hora("ierse/n1", hora - timedelta(hours=1), hora + timedelta(hours=1))
     assert inicio == hora - timedelta(hours=1) and valores == [None, 6.0]
-
-
-def prueba_una_fuente_sin_nada_nuevo_no_es_un_fallo(settings, monkeypatch):
-    import io
-
-    from clima import fuentes
-
-    settings.CLIMA_FUENTES_NATIVAS, settings.CLIMA_METAR_API = ["metar"], "https://metar.test/api"
-
-    class SinContenido(io.BytesIO):  # como responde la fuente de noche: 204 y cuerpo vacío
-        status = 204
-
-    monkeypatch.setattr(fuentes.urllib.request, "urlopen", lambda pedido, timeout=0: SinContenido(b""))
-    assert fuentes.recolectar() == {"metar": 0}
-    assert Corrida.objects.get(fuente="metar").ok is True
-

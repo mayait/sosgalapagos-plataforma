@@ -14,3 +14,4 @@ pydantic-ai-slim[anthropic,google]>=2.71,<3
 # Notificaciones del navegador (Web Push con VAPID). Trae «cryptography», que también
 # cifra el identificador del chat de WhatsApp.
 pywebpush>=2.5,<3
+websockets>=15
