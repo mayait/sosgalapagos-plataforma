@@ -169,3 +169,10 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 - **El formato del webhook de OpenWA se averiguó anotando solo la estructura** (campos y tipos, sin contenido) en modo ensayo. La ubicación de WhatsApp sí trae coordenadas en el webhook, aunque la base de OpenWA no las guarde.
 - **La llave «ANTHROPIC DEV» no tenía saldo.** Se usó «CLAUDE_API_KEY». *Qué se hace:* probar cada llave con una llamada mínima antes de configurarla.
 
+
+## Una sola app para todo el sitio (22-nov-2026)
+
+- **Los botones «Instalar» y «Avisos» no funcionaban en el teléfono.** Tres causas: en iPhone el permiso de avisos se pedía después de esperar al service worker, y Safari solo muestra la pregunta si se pide dentro del mismo toque; «Instalar» en iPhone mostraba una nota pequeña al fondo del panel, que nadie veía; y la portada tenía otro manifiesto (el de ResponseGrid), o sea, otra app. *Qué se hace:* el permiso es lo primero que se pide en el toque; los mensajes salen en una ventana centrada; al suscribirse llega un aviso de prueba, para saber que funciona.
+- **El componente vive en `/riesgos/app.js`** (`plantillas/reportes/app.js`) y no depende del mapa: cualquier página del sitio lo usa con `<div data-sos-app></div>` y la etiqueta del script. Lo usan la portada, `/riesgos/` y `/clima/`.
+- **Un solo manifiesto, con alcance `/`**: portada, riesgos y clima se abren dentro de la misma app instalada. El identificador sigue siendo `/riesgos/`, para que quien ya la instaló no tenga dos.
+- **La suscripción a los avisos no pide la cookie del formulario** (se llama también desde la portada y desde clima), pero solo se acepta desde páginas del propio sitio (cabecera `Origin`).

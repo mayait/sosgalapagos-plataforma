@@ -17,3 +17,13 @@ def avisar_reporte(reporte_id):
 
     reporte = Reporte.objects.filter(pk=reporte_id).select_related("tipo", "zona").first()
     return avisos.de_reporte(reporte) if reporte else 0
+
+
+@task
+def avisar_bienvenida(suscripcion_id):
+    from . import avisos
+    from .models import SuscripcionPush
+
+    s = SuscripcionPush.objects.filter(pk=suscripcion_id).first()
+    return avisos.bienvenida(s) if s else 0
+

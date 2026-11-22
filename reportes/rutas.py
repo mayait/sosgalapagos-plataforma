@@ -16,4 +16,5 @@ urlpatterns = [
     path("r/<str:id_publico>/confirmar/", vistas.confirmar, name="confirmar"),
     path("app.webmanifest", vistas.manifiesto_app, name="manifiesto_app"),
     path("sw.js", vistas.service_worker, name="service_worker"),
+    path("app.js", vistas.app_js, name="app_js"),
 ]

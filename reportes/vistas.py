@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.cache import cache_control
-from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.static import serve
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
@@ -257,15 +257,17 @@ def descargas(request):
 
 @cache_control(max_age=3600)
 def manifiesto_app(request):
+    """El manifiesto de la app. Cubre todo el sitio: portada, riesgos y clima son una sola app."""
     e = settings.STATIC_URL
     return JsonResponse(
         {
-            "name": "SOS Galápagos · Mapa de riesgos",
+            "id": "/riesgos/",  # se mantiene el de la primera versión: quien ya la instaló conserva su app
+            "name": "SOS Galápagos",
             "short_name": "SOS Galápagos",
-            "description": "Reportes ciudadanos de lugares de riesgo. Información preliminar, no oficial.",
+            "description": "Mapa de riesgos, clima en vivo y avisos de la emergencia en Galápagos. Información preliminar, no oficial.",
             "lang": "es",
             "start_url": "/riesgos/",
-            "scope": "/riesgos/",
+            "scope": "/",
             "display": "standalone",
             "background_color": "#ffffff",
             "theme_color": "#ffffff",
@@ -273,9 +275,30 @@ def manifiesto_app(request):
                 {"src": f"{e}app/icono-192.png", "sizes": "192x192", "type": "image/png"},
                 {"src": f"{e}app/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
             ],
+            "shortcuts": [
+                {"name": "Reportar", "url": "/riesgos/reportar/"},
+                {"name": "Clima en vivo", "url": "/clima/"},
+                {"name": "Ver como lista", "url": "/riesgos/informe/"},
+            ],
         },
         content_type="application/manifest+json",
     )
+
+
+def app_js(request):
+    """Componente «Instalar la app» y «Recibir avisos», para cualquier página del sitio."""
+    respuesta = render(
+        request,
+        "reportes/app.js",
+        {
+            "push_publica": settings.PUSH_PUBLICA if avisos.activos() else "",
+            "suscribir": reverse("reportes:push_suscribir"),
+            "manifiesto": reverse("reportes:manifiesto_app"),
+        },
+        content_type="text/javascript",
+    )
+    respuesta["Cache-Control"] = "no-cache"
+    return respuesta
 
 
 def service_worker(request):
@@ -343,9 +366,19 @@ def puntos(request):
     )
 
 
+@csrf_exempt  # se llama también desde la portada y desde /clima/, que no tienen la cookie de este formulario
 @require_POST
 def push_suscribir(request):
-    """Guarda (o retira) la suscripción de este navegador a los avisos."""
+    """Guarda (o retira) la suscripción de este navegador a los avisos.
+
+    Solo se acepta desde páginas del propio sitio. Lo único que guarda es la dirección de
+    entrega que da el navegador; al suscribirse se manda un aviso de prueba.
+    """
+    from urllib.parse import urlparse
+
+    origen = request.headers.get("Origin") or request.headers.get("Referer") or ""
+    if not settings.DEBUG and urlparse(origen).netloc != request.get_host():
+        return JsonResponse({"error": "origen no permitido"}, status=403)
     try:
         datos = json.loads(request.body or b"{}")
     except ValueError:
@@ -360,7 +393,10 @@ def push_suscribir(request):
     if not llaves.get("p256dh") or not llaves.get("auth"):
         return JsonResponse({"error": "suscripción inválida"}, status=400)
     huella, nuevo = _huella(request)
-    SuscripcionPush.objects.update_or_create(
+    suscripcion, _ = SuscripcionPush.objects.update_or_create(
         direccion=direccion, defaults={"p256dh": str(llaves["p256dh"])[:200], "auth": str(llaves["auth"])[:80], "huella": huella}
     )
+    from .tareas import avisar_bienvenida
+
+    avisar_bienvenida.enqueue(suscripcion.pk)  # confirma a la persona que los avisos le llegan
     return _con_galleta(JsonResponse({"suscrito": True}), nuevo)

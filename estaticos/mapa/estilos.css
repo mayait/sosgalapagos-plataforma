@@ -712,3 +712,8 @@ textarea.nota { width: 100%; min-height: 64px; padding: 10px 12px; border: 2px s
 .app-caja button small { display: block; font-weight: 400; font-size: 11.5px; color: var(--gris); }
 .app-caja button[aria-pressed="true"] { border-color: var(--negro); }
 .app-nota { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--fondo-suave); font-size: 12.5px; line-height: 1.45; }
+
+/* La app (instalar y avisos): el componente trae sus estilos; aquí solo su sitio en la página. */
+.app-en-hoja { margin: 0 0 14px; }
+.app-en-firma { margin-top: 14px; }
+.hoja .app-en-firma { display: none; } /* en el mapa ya está arriba, junto a los atajos */
