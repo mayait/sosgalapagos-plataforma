@@ -787,6 +787,8 @@
       for (const capa of estado.orden) {
         if (arranque.includes(capa.id)) { estado.encendidas.add(capa.id); await encender(capa); }
       }
+      // Si la persona entró en 3D antes de que llegara el manifiesto, los volúmenes se ponen ahora.
+      if (estado.en3d) await vista3d(true);
       if (location.hash.length > 1 && !/^#-?\d/.test(location.hash)) irSegunURL(); // nombre de lugar
       window.addEventListener('hashchange', irSegunURL);
       setInterval(() => { if (!document.hidden) revisar(); }, CONSULTA_MS);
