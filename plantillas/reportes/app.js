@@ -165,6 +165,7 @@
       <p class="nota">De noche no mandamos avisos: a las 06:00 llega un resumen de lo que pasó.</p>
       <label class="opcion"><input type="checkbox" data-noche${tengo.de_noche ? ' checked' : ''}><span>Despiértame solo si llueve muy fuerte en ese momento o hay un peligro de vida confirmado</span></label>
       <p class="nota">Son estimaciones y reportes preliminares, no alertas oficiales. Las alertas las dan el COE, la SNGR y el ECU 911.</p>
+      <p class="nota">Solo guardamos la dirección de entrega de este navegador y lo que elijas aquí. Nada más te llegará. <a href="/riesgos/privacidad/">Privacidad</a></p>
       <button type="button" class="secundario" data-apagar>Apagar todos los avisos</button>`, 'Guardar');
     dialogo.onclose = null;
     dialogo.querySelector('[data-cerrar]').addEventListener('click', () => {

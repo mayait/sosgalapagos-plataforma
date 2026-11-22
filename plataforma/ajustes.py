@@ -213,6 +213,9 @@ CLIMA_INAMHI_PRONOSTICO_URL = entorno("CLIMA_INAMHI_PRONOSTICO_URL", "")
 CLIMA_INAMHI_LLUVIA_HORAS_URL = entorno("CLIMA_INAMHI_LLUVIA_HORAS_URL", "")
 CLIMA_STORMGLASS_API = entorno("CLIMA_STORMGLASS_API", "")
 CLIMA_STORMGLASS_LLAVES = entorno("CLIMA_STORMGLASS_LLAVES", "")
+# Privacidad: el correo para ejercer derechos (el mismo de sosgalapagos.org/privacidad) y la fecha de la política.
+PRIVACIDAD_CORREO = entorno("PRIVACIDAD_CORREO", "privacidad@sosgalapagos.org")
+PRIVACIDAD_ACTUALIZADA = "22 de noviembre de 2026"
 # Mapa animado de Windy (prototipo). La llave se ve en la página: Windy la limita por dominio.
 WINDY_MAPA_LLAVE = entorno("WINDY_MAPA_LLAVE", "")       # separadas por comas; 10 llamadas al día cada una
 

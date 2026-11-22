@@ -388,6 +388,16 @@ def tiempo(request):
 
 
 @require_GET
+def privacidad(request):
+    """Privacidad y uso de datos del mapa de riesgos: para qué sirve lo que la gente reporta."""
+    return render(
+        request,
+        "reportes/privacidad.html",
+        {"correo": settings.PRIVACIDAD_CORREO, "actualizada": settings.PRIVACIDAD_ACTUALIZADA},
+    )
+
+
+@require_GET
 def puntos(request):
     """Tabla de puntos: quién ha publicado más. Solo el nombre o apodo que cada persona eligió."""
     huella, _ = _huella(request)

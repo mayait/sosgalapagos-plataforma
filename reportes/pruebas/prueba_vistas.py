@@ -380,3 +380,20 @@ def prueba_los_datos_del_mapa_de_lluvia_los_sirve_la_plataforma(client, settings
     r = client.get("/riesgos/api/clima/lluvia-mapa.json")
     assert r.status_code == 200 and b"".join(r.streaming_content) == b'{"generado": "x"}' and "max-age" in r["Cache-Control"]
 
+||||||| parent of e049bb0 (feat(privacidad): para qué sirve cada reporte y política de uso de datos del mapa de riesgos)
+
+
+
+def prueba_el_formulario_dice_para_que_sirve_el_reporte(client):
+    pagina = client.get("/riesgos/reportar/").content.decode()
+    assert "Para qué sirve tu reporte" in pagina
+    assert "No te vamos a contactar" in pagina
+    assert "/riesgos/privacidad/" in pagina
+
+
+def prueba_la_politica_de_privacidad_cubre_lo_que_pide_la_ley(client):
+    pagina = client.get("/riesgos/privacidad/").content.decode()
+    for texto in ("Quién es responsable", "Qué datos recogemos", "Con quién los compartimos",
+                  "Cuánto tiempo", "Tus derechos", "Superintendencia de Protección de Datos Personales",
+                  "privacidad@sosgalapagos.org", "fines comerciales"):
+        assert texto in pagina, texto

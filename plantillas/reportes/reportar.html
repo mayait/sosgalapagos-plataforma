@@ -28,6 +28,7 @@
       <svg><use href="#i-galeria"/></svg>Elegir de la galería
     </button>
     <button type="button" class="enlace" @click="sinFoto()">Seguir sin foto</button>
+    {% include "parciales/para_que.html" %}
   </section>
 
   {# 2 · Tipo #}
@@ -127,6 +128,7 @@
     <input class="campo-texto" type="text" maxlength="40" x-model="nombre" placeholder="Para sumar puntos y aparecer en la tabla" autocomplete="nickname">
     <p class="nota-ayuda">Cada aviso suma puntos. Solo se muestra este nombre; nada más de ti. <a href="{% url 'reportes:puntos' %}">Ver la tabla</a></p>
 
+    <p class="nota-ayuda envio-aviso">Al enviar aceptas que usemos este reporte para tomar decisiones en la emergencia y mejorar los modelos de riesgo, como explica la página de <a href="{% url 'reportes:privacidad' %}">privacidad y uso de datos</a>. No te contactaremos ni lo usaremos con fines comerciales.</p>
     <p class="form-error" x-show="error" x-text="error" role="alert"></p>
     <div class="form-pie">
       <button type="button" class="reportar" :disabled="enviando" @click="enviar()" x-text="enviando ? 'Enviando…' : 'Enviar reporte'"></button>

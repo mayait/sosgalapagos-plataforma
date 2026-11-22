@@ -1,0 +1,10 @@
+{# Para qué sirve lo que la gente reporta. Va en el formulario (corto) y en la política (completo). #}
+<aside class="para-que" aria-label="Para qué sirve tu reporte">
+  <b class="para-que-titulo">Para qué sirve tu reporte</b>
+  <ul>
+    <li><b>Tomar decisiones</b> en la emergencia: dónde no pasar, a dónde mandar ayuda, qué calle cerrar.</li>
+    <li><b>Saber hasta dónde subió el agua</b>, en qué lugar y a qué hora.</li>
+    <li><b>Rehacer y mejorar los modelos</b> de inundación, para entender mejor cómo se forma el riesgo y anticiparlo en el futuro.</li>
+  </ul>
+  <p class="para-que-promesa">No te vamos a contactar, no te vamos a vender nada y no usaremos tus datos con fines comerciales.{% if completo %} Solo recibirás lo que tú pidas: la respuesta en la conversación de WhatsApp que abriste y los avisos que actives en «Mis avisos».{% else %} <a href="{% url 'reportes:privacidad' %}">Cómo cuidamos tus datos</a>{% endif %}</p>
+</aside>

@@ -13,6 +13,7 @@ urlpatterns = [
     path("informe/", vistas.informe, name="informe"),
     path("descargas/", vistas.descargas, name="descargas"),
     path("puntos/", vistas.puntos, name="puntos"),
+    path("privacidad/", vistas.privacidad, name="privacidad"),
     path("mapa-del-tiempo/", vistas.tiempo, name="tiempo"),
     path("avisos/suscribir/", vistas.push_suscribir, name="push_suscribir"),
     path("r/<str:id_publico>/", vistas.ficha, name="ficha"),
