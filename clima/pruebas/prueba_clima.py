@@ -103,3 +103,79 @@ def prueba_la_api_da_series_estaciones_y_salud(origen, client):
     ierse = next(f for f in salud["fuentes"] if f["fuente"] == "ierse")
     assert ierse["corridas"] == 2 and ierse["bien"] == 1 and ierse["acierto_pct"] == 50
     assert salud["observaciones"] == 15 and salud["copia"]["con_error"] == 0
+
+
+# ── Pronóstico: guardar y verificar ──────────────────────────────────────────
+def _respuesta(base_utc, mm_por_hora):
+    """Una respuesta como la de los modelos: 7 puntos, 72 horas, dos modelos."""
+    horas = [(base_utc + timedelta(hours=i)).strftime("%Y-%m-%dT%H:%M") for i in range(72)]
+    return [{"hourly": {"time": horas, "precipitation_gfs_seamless": [mm_por_hora] * 72, "precipitation_icon_seamless": [0.0] * 72}} for _ in range(7)]
+
+
+def prueba_el_dia_del_modelo_es_el_de_galapagos():
+    from clima import pronostico
+
+    # 24 horas que terminan entre las 07:00 y las 06:00 UTC del día siguiente = el día de Galápagos.
+    base = datetime(2026, 11, 10, 7, 0, tzinfo=timezone.utc)
+    horas = [(base + timedelta(hours=i)).strftime("%Y-%m-%dT%H:%M") for i in range(30)]
+    totales = pronostico.totales_por_dia(horas, [1.0] * 30)
+    assert totales == {datetime(2026, 11, 10).date(): 24.0}  # el día incompleto no se cuenta
+
+
+def prueba_guarda_solo_lo_que_cambia_y_verifica(tmp_path, origen, settings):
+    import gzip
+    import json
+
+    from clima import pronostico
+    from clima.models import EstacionDanada, PronosticoEmitido, PronosticoModelo
+
+    carpeta = tmp_path / "pronostico" / "archivo" / "2026-11"
+    carpeta.mkdir(parents=True)
+    dia = (AHORA.astimezone(consultas.GALAPAGOS) - timedelta(days=1)).date()  # ayer en Galápagos
+    base = datetime.combine(dia - timedelta(days=1), datetime.min.time(), timezone.utc) + timedelta(hours=7)
+    obtenido = datetime.combine(dia - timedelta(days=1), datetime.min.time(), timezone.utc) + timedelta(hours=12)
+    for hora in (0, 1):  # dos archivos con lo mismo: el segundo no añade filas
+        with gzip.open(carpeta / f"{obtenido + timedelta(hours=hora):%Y%m%dT%H}_deterministas.json.gz", "wt") as f:
+            json.dump(_respuesta(base, 1.0), f)
+    leidos, nuevas = pronostico.guardar_archivo(tmp_path / "pronostico")
+    assert leidos == 2 and nuevas == PronosticoModelo.objects.count() and nuevas > 0
+    fila = PronosticoModelo.objects.get(punto="puerto-ayora", modelo="gfs_seamless", fecha=dia)
+    assert fila.mm == 24.0 and fila.anticipacion == 1
+    assert pronostico.guardar_archivo(tmp_path / "pronostico")[1] == 0  # repetir no duplica
+
+    # Lo publicado.
+    publicado = tmp_path / "pronostico.json"
+    publicado.write_text(json.dumps({"generado": (obtenido).strftime("%Y-%m-%dT%H:%M:%SZ"), "hoy_local": str(dia - timedelta(days=1)), "zonas": {"la-cascada": {"puntos": [
+        {"id": "puerto-ayora", "dias": [{"fecha": str(dia), "prob": {"10": 0.9, "20": 0.8, "50": 0.1}, "consenso": 0.9, "n_modelos": 7, "mm_modelos_mediana": 22.0, "nivel": "alta", "calibrado": True}]}]}}}))
+    assert pronostico.guardar_emitido(publicado) == 1 and pronostico.guardar_emitido(publicado) == 0
+    assert PronosticoEmitido.objects.get().anticipacion == 1
+
+    # Lo que llovió: una estación de Puerto Ayora con el día completo y 30 mm.
+    con = sqlite3.connect(origen)
+    con.execute("INSERT INTO estaciones VALUES ('inamhi','M0191','Puerto Ayora','Santa Cruz',-0.74,-90.31,6,'INAMHI',NULL,NULL)")
+    inicio = datetime.combine(dia, datetime.min.time(), timezone.utc) + timedelta(hours=6)
+    con.executemany("INSERT INTO obs VALUES ('inamhi','M0191','lluvia_mm',?,?)", [(iso(inicio + timedelta(hours=h)), 1.25) for h in range(24)])
+    con.commit()
+    con.close()
+    sincronizar(completa=True, ruta=origen)
+    v = pronostico.verificar(dias=10)
+    assert v["dias_observados"] == 1 and v["dias_de_lluvia_fuerte"] == 1
+    gfs = next(m for m in v["por_modelo"] if m["modelo"] == "gfs_seamless" and m["anticipacion"] == 1)
+    assert gfs == {"modelo": "gfs_seamless", "anticipacion": 1, "dias": 1, "error_medio_mm": 6.0, "sesgo_mm": -6.0, "dias_de_lluvia_fuerte": 1, "avisados": 1, "falsas_alarmas": 0, "brier": None}
+    icon = next(m for m in v["por_modelo"] if m["modelo"] == "icon_seamless" and m["anticipacion"] == 1)
+    assert icon["avisados"] == 0 and icon["sesgo_mm"] == -30.0  # no avisó: se le pasó
+    assert v["publicado"][0]["brier"] == pytest.approx(0.04) and v["publicado"][0]["punto"] == "puerto-ayora"
+
+    # Un sensor marcado como dañado no cuenta como observación.
+    EstacionDanada.objects.create(estacion=Estacion.objects.get(codigo="M0191"), variable="lluvia_mm", desde=inicio - timedelta(days=2), motivo="prueba")
+    assert pronostico.verificar(dias=10)["dias_observados"] == 0
+
+
+def prueba_la_lluvia_de_un_sensor_danado_no_se_publica(origen, client):
+    from clima.models import EstacionDanada
+
+    sincronizar(completa=True, ruta=origen)
+    EstacionDanada.objects.create(estacion=Estacion.objects.get(codigo="n1"), desde=AHORA - timedelta(days=5), motivo="marca lluvias imposibles")
+    e = client.get("/riesgos/api/clima/estaciones").json()["estaciones"][0]
+    assert e["lluvia_mm"] is None and e["danada"]["motivo"] == "marca lluvias imposibles"
+
