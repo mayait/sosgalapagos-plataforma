@@ -1,11 +1,11 @@
 {% load reportes_extras %}/* Service worker del mapa. Guarda la interfaz, el mapa base y las capas ya vistas,
    para que la app instalada abra sin señal. Los reportes van siempre a la red:
    el mapa guarda la última respuesta por su cuenta y muestra de qué hora es. */
-const VERSION = 'sos-v22';
+const VERSION = 'sos-v23';
 const E = '{{ estaticos }}';
 const INTERFAZ = [
   '/riesgos/', '/riesgos/reportar/',
-  "{% propio 'mapa/estilos.css' %}", "{% propio 'mapa/comun.js' %}", "{% propio 'mapa/base.js' %}", "{% propio 'mapa/capas.js' %}", "{% propio 'mapa/buscar.js' %}", "{% propio 'mapa/mapa.js' %}", "{% propio 'mapa/app.js' %}", "{% propio 'mapa/reportar.js' %}",
+  "{% propio 'mapa/estilos.css' %}", "{% propio 'mapa/comun.js' %}", "{% propio 'mapa/base.js' %}", "{% propio 'mapa/capas.js' %}", "{% propio 'mapa/buscar.js' %}", "{% propio 'mapa/mapa.js' %}", "{% propio 'mapa/reportar.js' %}",
   E + 'terceros/maplibre-gl.js', E + 'terceros/maplibre-gl.css', E + 'terceros/pmtiles.js', E + 'terceros/basemaps.js',
   E + 'terceros/htmx.min.js', E + 'terceros/alpine.min.js',
   E + 'marca/ZalandoSansExpanded.ttf', E + 'marca/usfq-galapagos-color.svg',

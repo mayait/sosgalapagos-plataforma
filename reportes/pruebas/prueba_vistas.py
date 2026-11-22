@@ -298,8 +298,12 @@ def prueba_el_formulario_explica_la_ubicacion(client):
     assert "Tu nombre o apodo" in pagina and "Teléfono de contacto del lugar" in pagina
 
 
-def prueba_suscribirse_y_darse_de_baja_de_los_avisos(client):
+def prueba_suscribirse_y_darse_de_baja_de_los_avisos(client, monkeypatch):
+    from reportes import tareas
     from reportes.models import SuscripcionPush
+
+    monkeypatch.setattr(tareas, "avisar_bienvenida", type("Tarea", (), {"enqueue": staticmethod(lambda pk: None)}))
+    client.defaults["HTTP_ORIGIN"] = "http://testserver"  # el navegador siempre dice desde qué sitio llama
 
     datos = {"endpoint": "https://push.ejemplo.test/abc", "keys": {"p256dh": "BPk", "auth": "xyz"}}
     assert client.post("/riesgos/avisos/suscribir/", json.dumps(datos), content_type="application/json").json() == {"suscrito": True}
@@ -321,6 +325,39 @@ def prueba_sin_llaves_no_se_ofrecen_avisos_y_no_se_envia_nada(client, settings):
 
 def prueba_el_mapa_ofrece_la_app_y_los_puntos(client):
     html = client.get("/riesgos/").content.decode()
-    assert 'id="app-caja"' in html and "mapa/app.js" in html and ">Puntos</a>" in html
+    assert "data-sos-app" in html and 'src="/riesgos/app.js"' in html and ">Puntos</a>" in html and 'href="/clima/"' in html
     sw = client.get("/riesgos/sw.js").content.decode()
     assert "addEventListener('push'" in sw and "notificationclick" in sw
+
+
+def prueba_el_componente_de_la_app_sirve_en_todo_el_sitio(client, settings):
+    settings.PUSH_PUBLICA, settings.PUSH_PRIVADA = "BPublica", "privada"
+    js = client.get("/riesgos/app.js")
+    assert js["Content-Type"].startswith("text/javascript") and js["Cache-Control"] == "no-cache"
+    codigo = js.content.decode()
+    assert "publica: 'BPublica'" in codigo and "/riesgos/avisos/suscribir/" in codigo
+    # En iPhone el permiso hay que pedirlo antes de esperar a nada más.
+    assert codigo.index("Notification.requestPermission()") < codigo.index("await registro()")
+    manifiesto = client.get("/riesgos/app.webmanifest").json()
+    assert manifiesto["scope"] == "/" and manifiesto["start_url"] == "/riesgos/"
+    assert {a["url"] for a in manifiesto["shortcuts"]} >= {"/clima/", "/riesgos/reportar/"}
+    for pagina in ("/riesgos/informe/", "/riesgos/puntos/", "/riesgos/descargas/"):
+        assert "data-sos-app" in client.get(pagina).content.decode()
+
+
+def prueba_suscribirse_desde_la_portada_manda_un_aviso_de_prueba(client, monkeypatch, settings):
+    from django.test import Client
+
+    from reportes import tareas
+    from reportes.models import SuscripcionPush
+
+    enviados = []
+    monkeypatch.setattr(tareas, "avisar_bienvenida", type("Tarea", (), {"enqueue": staticmethod(enviados.append)}))
+    settings.DEBUG = False
+    sin_csrf = Client(enforce_csrf_checks=True)  # la portada no tiene la cookie del formulario
+    datos = json.dumps({"endpoint": "https://push.ejemplo.test/portada", "keys": {"p256dh": "BPk", "auth": "xyz"}})
+    ajeno = sin_csrf.post("/riesgos/avisos/suscribir/", datos, content_type="application/json", headers={"Origin": "https://otro-sitio.test"})
+    assert ajeno.status_code == 403
+    propio = sin_csrf.post("/riesgos/avisos/suscribir/", datos, content_type="application/json", headers={"Origin": "http://testserver"})
+    assert propio.json() == {"suscrito": True}
+    assert enviados == [SuscripcionPush.objects.get().pk]
