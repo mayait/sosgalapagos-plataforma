@@ -18,7 +18,10 @@ def actualizar():
     from . import nivel
 
     t0 = time.monotonic()
-    viejo = (panel._leer() or {}).get("inundacion") or {}
+    from django.conf import settings
+
+    # Si esta aplicación ya es la que publica el panel, no hay un cálculo anterior con el que comparar.
+    viejo = {} if settings.CLIMA_PUBLICAR_PANEL else ((panel._leer() or {}).get("inundacion") or {})
     # Se calcula para el mismo instante que el anterior, así la comparación es justa.
     try:
         ahora = datetime.fromisoformat(viejo["calculado"].replace("Z", "+00:00"))
