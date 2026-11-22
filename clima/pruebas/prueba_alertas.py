@@ -166,3 +166,65 @@ def prueba_elegir_temas_e_islas_desde_el_telefono(client, monkeypatch):
     assert enviar({"endpoint": base["endpoint"], "consulta": True}) == {"suscrito": True, "temas": ["mar"], "zonas": ["isabela"]}
     temas = client.get("/riesgos/api/clima/alertas").json()
     assert [t["id"] for t in temas["temas"]] == ["peligros", "lluvia", "pronostico", "mar", "oficiales"] and len(temas["zonas"]) == 3
+
+
+# ── Nivel de lluvia peligrosa calculado en Django ────────────────────────────
+def _lluvia(clave, ahora, mm_cada_5min, horas=3, hasta_hace_min=5):
+    from clima.models import Estacion, Observacion
+
+    fuente, codigo = clave.split("/")
+    e, _ = Estacion.objects.get_or_create(fuente=fuente, codigo=codigo, defaults={"nombre": codigo})
+    fin = ahora - timedelta(minutes=hasta_hace_min)
+    Observacion.objects.bulk_create([Observacion(estacion=e, variable="lluvia_mm", ts=fin - timedelta(minutes=5 * i), valor=mm_cada_5min) for i in range(horas * 12)])
+    return e
+
+
+def prueba_el_nivel_sube_con_la_lluvia_y_sin_estaciones_dice_sin_datos():
+    from clima import nivel
+
+    ahora = datetime(2026, 11, 21, 12, 0, tzinfo=timezone.utc)
+    _lluvia("inamhi/M0191", ahora, 5.0)      # 60 mm por hora en Puerto Ayora
+    _lluvia("inamhi/M0221", ahora, 0.0)      # San Cristóbal, seco
+    zonas = {z["id"]: z for z in nivel.calcular(ahora, recoleccion_ok=lambda f, t: True)["zonas"]}
+    assert zonas["la-cascada"]["nivel"] == "muy alto" and zonas["la-cascada"]["R"]["R1h"] == 60.0
+    assert zonas["san-cristobal"]["nivel"] == "bajo"
+    assert zonas["isabela"]["nivel"] == "sin datos"       # nunca «bajo» por falta de datos
+    usadas = [e for e in zonas["la-cascada"]["estaciones"] if e.get("usada")]
+    assert len(usadas) == 1 and len(zonas["la-cascada"]["historial_72h"]) == 72
+
+
+def prueba_un_sensor_danado_no_cuenta_y_un_reporte_de_campo_solo_sube():
+    from clima import nivel
+    from clima.models import EstacionDanada, NivelManual
+
+    ahora = datetime(2026, 11, 21, 12, 0, tzinfo=timezone.utc)
+    e = _lluvia("inamhi/M0191", ahora, 5.0)
+    _lluvia("inamhi/M0221", ahora, 0.0)
+    EstacionDanada.objects.create(estacion=e, variable="lluvia_mm", desde=ahora - timedelta(days=10), motivo="marca lluvias imposibles")
+    NivelManual.objects.create(zona="san-cristobal", nivel="alto", desde=ahora - timedelta(hours=1), hasta=ahora + timedelta(hours=5), motivo="Reporte de campo")
+    zonas = {z["id"]: z for z in nivel.calcular(ahora, recoleccion_ok=lambda f, t: True)["zonas"]}
+    assert zonas["la-cascada"]["nivel"] == "sin datos" and any(x.get("danada") for x in zonas["la-cascada"]["estaciones"])
+    assert zonas["san-cristobal"]["nivel"] == "alto" and zonas["san-cristobal"]["manual"]["motivo"] == "Reporte de campo"
+    assert zonas["san-cristobal"]["nivel_instantaneo"] == "bajo"   # lo medido sigue a la vista
+
+
+def prueba_cada_pasada_se_compara_con_el_recolector_anterior(monkeypatch, client):
+    from clima import nivel, niveles
+    from clima.models import NivelZona
+    from reportes import clima as panel
+
+    ahora = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+    _lluvia("inamhi/M0191", ahora, 5.0)
+    monkeypatch.setattr(nivel, "_recoleccion_viva", lambda desde: {"inamhi": {(ahora - timedelta(minutes=m)).strftime("%Y-%m-%dT%H") for m in range(0, 6000, 30)}})
+    monkeypatch.setattr(panel, "_leer", lambda: {"inundacion": {"calculado": ahora.strftime("%Y-%m-%dT%H:%M:%SZ"), "zonas": [
+        {"id": "la-cascada", "nivel": "muy alto"}, {"id": "isabela", "nivel": "bajo"}]}})
+    r = niveles.actualizar()
+    assert r["zonas"] == 4 and r["comparadas"] == 2 and r["coinciden"] == 1
+    assert NivelZona.objects.get(zona="la-cascada").coincide is True
+    distinta = NivelZona.objects.get(zona="isabela")
+    assert distinta.coincide is False and distinta.nivel == "sin datos" and distinta.anterior == "bajo"
+    assert NivelZona.objects.get(zona="san-cristobal").coincide is None   # el anterior no la traía
+    c = niveles.coincidencia()
+    assert c["comparaciones"] == 2 and c["coincidencia_pct"] == 50.0 and c["ultimas_diferencias"][0]["zona"] == "isabela"
+    datos = client.get("/riesgos/api/clima/nivel").json()
+    assert datos["en_prueba"] and len(datos["zonas"]) == 4 and datos["coincidencia_con_el_anterior"]["comparaciones"] == 2

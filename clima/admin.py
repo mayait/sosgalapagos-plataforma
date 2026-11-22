@@ -1,6 +1,6 @@
 from django.contrib.gis import admin
 
-from .models import AvisoEnviado, Boletin, Calibracion, Corrida, Estacion, EstacionDanada, MareaExtremo, PronosticoOficial, Sincronizacion
+from .models import NivelManual, NivelZona, AvisoEnviado, Boletin, Calibracion, Corrida, Estacion, EstacionDanada, MareaExtremo, PronosticoOficial, Sincronizacion
 
 
 class SoloLectura(admin.ModelAdmin):
@@ -69,4 +69,18 @@ class MareaExtremoAdmin(SoloLectura):
 @admin.register(PronosticoOficial)
 class PronosticoOficialAdmin(SoloLectura):
     list_display = ("fecha", "isla", "minima_c", "maxima_c", "obtenido")
+
+
+@admin.register(NivelManual)
+class NivelManualAdmin(admin.ModelAdmin):
+    """Subir a mano el nivel de una zona por un reporte de campo. Solo sube, nunca baja."""
+
+    list_display = ("zona", "nivel", "desde", "hasta", "motivo")
+    list_filter = ("zona",)
+
+
+@admin.register(NivelZona)
+class NivelZonaAdmin(SoloLectura):
+    list_display = ("calculado", "zona", "nivel", "instantaneo", "anterior", "coincide", "silencio")
+    list_filter = ("zona", "coincide", "nivel")
 

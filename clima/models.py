@@ -303,3 +303,52 @@ class AvisoEnviado(models.Model):
         verbose_name_plural = "avisos enviados"
         ordering = ["-creado"]
 
+
+class NivelManual(models.Model):
+    """Nivel puesto a mano por la coordinación a partir de reportes de campo.
+
+    Solo SUBE el nivel calculado, nunca lo baja, y vale entre «desde» y «hasta». Reemplaza al
+    archivo niveles_manuales.json del recolector anterior.
+    """
+
+    zona = models.CharField(max_length=30)      # la-cascada, santa-cruz-alta, san-cristobal, isabela
+    nivel = models.CharField(max_length=12)     # medio, alto, muy alto
+    desde = models.DateTimeField()
+    hasta = models.DateTimeField()
+    motivo = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "nivel puesto a mano"
+        verbose_name_plural = "niveles puestos a mano"
+        ordering = ["-desde"]
+
+
+class NivelZona(models.Model):
+    """El nivel de lluvia peligrosa de una zona en cada pasada, con el del recolector anterior al lado.
+
+    Sirve para dos cosas: tener la historia del nivel, y medir si el cálculo nuevo da lo mismo
+    que el anterior antes de reemplazarlo.
+    """
+
+    zona = models.CharField(max_length=30)
+    calculado = models.DateTimeField()
+    nivel = models.CharField(max_length=12)
+    instantaneo = models.CharField("nivel instantáneo", max_length=12, blank=True)
+    silencio = models.BooleanField(default=False)
+    lluvia = models.JSONField(default=dict)     # R1h, R3h, R24h, R72h
+    anterior = models.CharField("nivel del recolector anterior", max_length=12, blank=True)
+    coincide = models.BooleanField(null=True)   # None: no había con qué comparar
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["zona", "calculado"], name="nivel_zona_unico")]
+        indexes = [models.Index(fields=["calculado"], name="nivel_zona_ts")]
+        ordering = ["-calculado"]
+
+
+class Estado(models.Model):
+    """Resultados ya calculados, listos para servir (el nivel por zona, por ejemplo)."""
+
+    clave = models.CharField(max_length=30, primary_key=True)
+    datos = models.JSONField(default=dict)
+    generado = models.DateTimeField()
+

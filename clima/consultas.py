@@ -106,4 +106,5 @@ def salud(ahora=None):
             "ultimo_error": con_error[0].error if con_error else "",
         },
         "fuentes": fuentes,
+        "nivel_en_django": __import__("clima.niveles", fromlist=["x"]).coincidencia(ahora=ahora),
     }
