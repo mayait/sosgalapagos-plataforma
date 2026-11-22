@@ -285,6 +285,17 @@ def manifiesto_app(request):
     )
 
 
+def app_cargador(request):
+    """/riesgos/app.js: lo que enlazan las páginas. Es un cargador mínimo que casi nunca cambia.
+
+    Cloudflare le pone cuatro horas de caché en el navegador a todo lo que termina en .js,
+    diga lo que diga el servidor. Por eso el componente de verdad se sirve en /riesgos/app/,
+    sin extensión, y este archivo solo lo llama: así un cambio llega al instante.
+    """
+    codigo = "(function(){if(window.__sosCargador)return;window.__sosCargador=true;var s=document.createElement('script');s.src='%s';s.defer=true;document.head.appendChild(s);})();" % reverse("reportes:app_js")
+    return HttpResponse(codigo, content_type="text/javascript")
+
+
 def app_js(request):
     """Componente «Instalar la app» y «Recibir avisos», para cualquier página del sitio."""
     from clima import alertas
