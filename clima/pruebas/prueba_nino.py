@@ -1,6 +1,7 @@
 # SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
 # Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """Pruebas de los lectores de El Niño (archivos del CPC, ERDDAP, MJO) y de la ZCIT del NHC. No usan red ni base de datos."""
+import json
 from pathlib import Path
 
 from clima import nino, zcit
@@ -85,3 +86,14 @@ def prueba_zcit_julio_con_ondas():
 
 def prueba_coordenadas():
     assert zcit.coordenadas("from EQ95W to 03.4S100W and 06.5N120.5W") == [[0.0, -95.0], [-3.4, -100.0], [6.5, -120.5]]
+
+
+def prueba_la_api_sirve_los_archivos_de_el_nino(client, settings, tmp_path):
+    settings.CLIMA_SALIDA = str(tmp_path)
+    assert client.get("/riesgos/api/clima/nino.json").status_code == 404  # todavía no hay archivo
+    zcit.exportar(tmp_path, texto=(DATOS / "twd_ep_2026-11-22.txt").read_text(), con_ia=False)
+    (tmp_path / "nino.json").write_text('{"aviso": "contexto"}')
+    leer = lambda r: json.loads(b"".join(r.streaming_content))  # noqa: E731  (FileResponse va por partes)
+    assert leer(client.get("/riesgos/api/clima/nino.json")) == {"aviso": "contexto"}
+    r = client.get("/riesgos/api/clima/zcit.json")
+    assert r.status_code == 200 and leer(r)["galapagos"]["al"] == "encima"

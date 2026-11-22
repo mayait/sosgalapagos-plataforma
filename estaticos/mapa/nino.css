@@ -1,0 +1,95 @@
+/* SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+ * Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
+ * Único original: el panel de /clima/ (repositorio de datos) carga este mismo archivo. */
+/* El Niño en el panel de clima (nino.js). Usa las variables del panel y trae valores por defecto
+   para funcionar también suelto (demo-nino.html). Fondo blanco siempre, como el resto del panel. */
+.nino{--n-ink:var(--ink,#1D1D1B);--n-ink2:var(--ink2,#3D3D3D);--n-mut:var(--mut,#666);--n-line:var(--line,#E3E3E3);--n-soft:var(--soft,#F5F5F5);
+  --n-red:var(--red,#E11B22);--n-red2:var(--red2,#B5161C);--n-titulo:var(--titulo,"Helvetica Neue",Helvetica,Arial,sans-serif);
+  --n-c12:#B5161C;--n-c3:#E0702A;--n-c34:#7A4FB5;--n-c4:#8A8A8A;--n-mar:#1F6FB2;
+  color:var(--n-ink);font-variant-numeric:tabular-nums}
+.nino *{box-sizing:border-box}
+.nino .n-card{background:#fff;border:1px solid var(--n-line);border-radius:16px;padding:18px;margin-top:14px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.nino .n-kick{font:800 11px/1 var(--n-titulo);letter-spacing:.08em;text-transform:uppercase;color:var(--n-mut)}
+.nino h2{font:800 21px/1.2 var(--n-titulo);margin:6px 0 2px}
+.nino .n-sub{font-size:13.5px;color:var(--n-mut);margin:0}
+.nino .n-cab{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px}
+
+/* Voz oficial: ERFEN */
+.nino .n-of{margin-top:14px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start;padding:16px;border-radius:14px;border:1.5px solid var(--n-ink);box-shadow:0 2px 0 var(--n-ink);background:#fff}
+.nino .n-of .ico{width:46px;height:46px;border-radius:12px;background:var(--n-ink);color:#fff;display:grid;place-items:center}
+.nino .n-of .inst{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.nino .n-of .inst b{font:800 10.5px/1 var(--n-titulo);letter-spacing:.06em;padding:5px 7px 4px;background:var(--n-ink);color:#fff;border-radius:4px}
+.nino .n-of .inst span{font-size:12.5px;color:var(--n-mut)}
+.nino .n-of .niv{font:800 11px/1 inherit;letter-spacing:.03em;text-transform:uppercase;padding:5px 9px;border-radius:999px;background:var(--redsoft,#FDECEC);color:var(--n-red2)}
+.nino .n-of p{margin:8px 0 0;font-size:15.5px;line-height:1.45;text-wrap:pretty}
+.nino .n-of a{font-weight:700;color:var(--n-ink);font-size:13px}
+.nino .n-of.vacio{border-style:dashed;box-shadow:none}
+
+/* Cifras grandes con mini gráfico */
+.nino .n-cifras{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:14px}
+.nino .n-cif{position:relative;padding:14px 14px 10px;border-radius:14px;background:var(--n-soft);overflow:hidden;min-height:150px;display:flex;flex-direction:column}
+.nino .n-cif .t{display:flex;align-items:center;gap:7px;padding-right:84px;font-size:12.5px;font-weight:700;color:var(--n-ink2)}
+.nino .n-cif .t svg{flex:none}
+.nino .n-cif .v{font:900 34px/1 var(--n-titulo);letter-spacing:-.02em;margin-top:8px}
+.nino .n-cif .v small{font-size:15px;font-weight:700;letter-spacing:0;margin-left:2px}
+.nino .n-cif .d{font-size:12.5px;color:var(--n-mut);margin-top:4px;text-wrap:pretty}
+.nino .n-cif .g{margin-top:auto;padding-top:8px}
+.nino .n-cif .g svg{display:block;width:100%;height:46px;overflow:visible}
+.nino .n-cif .chip{position:absolute;top:12px;right:12px;font:800 10px/1 inherit;letter-spacing:.04em;text-transform:uppercase;padding:4px 7px;border-radius:999px;background:#fff;color:var(--n-ink2)}
+.nino .n-cif.caliente{background:linear-gradient(160deg,#FFF1EA 0%,#FDE0D5 100%)}
+.nino .n-cif.mar{background:linear-gradient(160deg,#EEF5FC 0%,#DCEBF8 100%)}
+
+/* Estado de la NOAA */
+.nino .n-estado{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.nino .n-pill{display:inline-block;padding:7px 12px;border-radius:999px;border:1px solid var(--n-line);font-size:13px;background:#fff}
+.nino .n-pill b{font-weight:800}
+.nino .n-pill .pt{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--n-red);margin-right:7px;vertical-align:0}
+
+/* Gráfico de índices */
+.nino .n-graf{margin-top:16px}
+.nino .n-graf h3,.nino .n-sec h3{font:800 15px/1.2 var(--n-titulo);margin:0 0 4px}
+.nino .n-ley{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--n-ink2);margin:4px 0 6px}
+.nino .n-ley i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:3px;margin-right:5px}
+.nino .n-graf svg{display:block;width:100%;height:auto}
+.nino .n-graf text{font:11px -apple-system,"Helvetica Neue",Arial,sans-serif;fill:var(--n-mut)}
+
+/* Boyas y MJO */
+.nino .n-dos{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:16px}
+.nino .n-sec{border:1px solid var(--n-line);border-radius:14px;padding:14px}
+.nino .n-sec p{margin:4px 0 0;font-size:13.5px;color:var(--n-ink2);text-wrap:pretty}
+.nino .n-boyas{display:flex;gap:10px;margin-top:10px;align-items:flex-end}
+.nino .n-boya{flex:1;text-align:center;font-size:12px;color:var(--n-mut)}
+.nino .n-boya .col{position:relative;height:150px;border-radius:8px;background:linear-gradient(#F7B79A,#D9E7F4 40%,#1F4F82);overflow:hidden}
+.nino .n-boya .col .nor{position:absolute;left:0;right:0;border-top:2px dashed #fff}
+.nino .n-boya .col .act{position:absolute;left:0;right:0;border-top:3px solid var(--n-ink)}
+.nino .n-boya .col span{position:absolute;right:4px;font-size:10.5px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.nino .n-boya b{display:block;margin-top:6px;font:900 17px/1 var(--n-titulo);color:var(--n-ink)}
+.nino .n-mjo{display:flex;gap:12px;align-items:center;margin-top:8px}
+.nino .n-mjo svg{flex:none;width:140px;height:140px}
+.nino .n-mjo text{font:700 10px -apple-system,Arial,sans-serif;fill:var(--n-mut)}
+
+/* Mapa */
+.nino .n-mapa-cab{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.nino .n-capas{display:inline-flex;border:1px solid var(--n-line);border-radius:999px;padding:3px;gap:2px}
+.nino .n-capas button{border:0;background:transparent;border-radius:999px;padding:6px 13px;font:600 13px/1 inherit;color:var(--n-mut);min-height:36px;cursor:pointer}
+.nino .n-capas button.on{background:#000;color:#fff}
+.nino .n-mapa{position:relative;margin-top:12px;height:min(70vh,520px);border-radius:14px;overflow:hidden;border:1px solid var(--n-line);background:#fff}
+.nino .n-mapa .leaflet-container{height:100%;font:inherit;background:#fff}
+.nino .n-lee{position:absolute;z-index:500;left:10px;bottom:10px;background:rgba(255,255,255,.94);border-radius:10px;padding:8px 10px;box-shadow:0 1px 4px rgba(0,0,0,.15);font-size:12px;max-width:calc(100% - 20px)}
+.nino .n-lee .barra{height:10px;width:220px;max-width:100%;border-radius:5px;margin:5px 0 3px}
+.nino .n-lee .esc{display:flex;justify-content:space-between;width:220px;max-width:100%;font-size:10.5px;color:var(--n-mut)}
+.nino .n-cursor{position:absolute;z-index:500;right:10px;top:10px;background:rgba(0,0,0,.82);color:#fff;border-radius:8px;padding:6px 9px;font-size:12.5px;font-weight:700;pointer-events:none}
+.nino .n-cursor:empty{display:none}
+.nino .n-etq{background:none;border:0;box-shadow:none;font:800 11px/1.1 var(--n-titulo);color:#1D1D1B;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 2px #fff;white-space:nowrap}
+.nino .n-etq.zc{color:#0B4F8A}
+.nino .n-zcit{display:grid;gap:8px;margin-top:12px}
+.nino .n-zcit .f{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;line-height:1.4}
+.nino .n-zcit .f svg{flex:none;margin-top:1px}
+.nino .n-zcit .ia{font-size:13.5px;color:var(--n-ink2);background:var(--n-soft);border-radius:10px;padding:10px 12px}
+
+/* Avisos y fuentes */
+.nino .n-aviso{margin-top:14px;display:flex;gap:10px;align-items:flex-start;background:var(--n-soft);border-left:4px solid var(--hatch,#9A9A9A);padding:9px 12px;border-radius:0 8px 8px 0;font-size:13px;color:var(--n-ink2)}
+.nino .n-aviso svg{flex:none;margin-top:1px}
+.nino .n-fuentes{margin-top:8px;font-size:12px;color:var(--n-mut)}
+.nino .n-error{font-size:13px;color:var(--warn,#9A5B00)}
+@media (max-width:560px){.nino .n-card{padding:14px}.nino .n-cif .v{font-size:30px}.nino .n-mjo svg{width:116px;height:116px}}
