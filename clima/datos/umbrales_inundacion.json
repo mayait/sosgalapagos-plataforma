@@ -1,0 +1,254 @@
+{
+ "version": "0.2-preliminar",
+ "fecha": "2026-11-02",
+ "advertencia": "Nivel preliminar y no oficial, calculado por SOS Galápagos con la lluvia medida y un estudio técnico preliminar que tiene dos eventos de referencia (30-oct y 21-nov de 2026). No es una alerta oficial: siga siempre las indicaciones del COE, la SNGR y el ECU 911.",
+ "niveles": [
+  {
+   "nivel": "muy alto",
+   "color": "#7f1d1d",
+   "si_alguno": {
+    "R1h": 45,
+    "R3h": 90,
+    "R24h": 150
+   },
+   "probabilidad": "muy probable"
+  },
+  {
+   "nivel": "alto",
+   "color": "#dc2626",
+   "si_alguno": {
+    "R1h": 30,
+    "R3h": 60,
+    "R24h": 100
+   },
+   "probabilidad": "probable"
+  },
+  {
+   "nivel": "medio",
+   "color": "#d97706",
+   "si_alguno": {
+    "R1h": 15,
+    "R3h": 30,
+    "R24h": 50
+   },
+   "probabilidad": "posible"
+  },
+  {
+   "nivel": "bajo",
+   "color": "#16a34a",
+   "probabilidad": "poco probable"
+  }
+ ],
+ "humedad_antecedente": {
+  "seco": {
+   "max": 36,
+   "factor": 1.0
+  },
+  "normal": {
+   "factor": 1.0
+  },
+  "humedo": {
+   "min": 53,
+   "factor": 0.8
+  }
+ },
+ "persistencia_horas": 8,
+ "cobertura_minima": 0.8,
+ "excluir_cero_si_otra_mm_3h": 10,
+ "zonas": [
+  {
+   "id": "la-cascada",
+   "zona": "La Cascada (Puerto Ayora)",
+   "isla": "Santa Cruz",
+   "calibrada": true,
+   "nota": "calibrada con dos eventos (30-oct y 21-nov de 2026)",
+   "estaciones": [
+    [
+     "ierse/n_glps05",
+     1.0
+    ],
+    [
+     "ierse/n_glps09",
+     0.75
+    ],
+    [
+     "inamhi/M0191",
+     1.0
+    ],
+    [
+     "weatherlink/pa_weatherlink",
+     1.0
+    ],
+    [
+     "ambient/evolucion",
+     1.0
+    ],
+    [
+     "wunderground/casa_marina",
+     1.0
+    ]
+   ],
+   "calibracion": {
+    "fecha": "2026-11-21",
+    "eventos": {
+     "2026-10-30": {
+      "impacto": "desbordamiento 21:20 (informe de La Cascada)",
+      "lluvia": "sobre todo en la parte alta: Santa Rosa R3h 136, Miconia 164; Evolución 32"
+     },
+     "2026-11-21": {
+      "impacto": "desbordamiento ~05:00 (reporte de campo), más fuerte que la del 30-oct según los reportes",
+      "lluvia": "sobre todo en la parte baja: Evolución R3h 110, Casa Marina 100, Erna 74; Miconia 100, Santa Rosa 55; suelo saturado (Miconia 191 mm en los 5 días previos)"
+     }
+    },
+    "criterio": "Se añaden Evolución y Casa Marina (Puerto Ayora) con peso 1: el 21-nov la lluvia fuerte cayó en la parte baja y la zona solo tenía a Erna (Los Guayabillos dañada, Charles Darwin en 0). Con ellas la regla da «muy alto» 2,2 h antes del desbordamiento del 21-nov y no cambia el 30-oct. En la historia de Evolución (ago-2024 a nov-2026) «muy alto» solo sale el 30/31-oct y el 21-nov; «alto» sale además el 25–27-mar-2025, el 24-feb-2026, el 2-nov y el 14-nov (sin inundación confirmada). Umbrales sin cambio."
+   }
+  },
+  {
+   "id": "santa-cruz-alta",
+   "zona": "Parte alta de Santa Cruz (Bellavista, Santa Rosa)",
+   "isla": "Santa Cruz",
+   "calibrada": false,
+   "nota": "sin calibrar en 1–24 h (umbrales de La Cascada); en 72 h, umbral de saturación según el 14/15-nov-2026: inundaciones fuertes en Bellavista y Santa Rosa un día después de 210 mm en Miconia, casi sin lluvia ese día",
+   "estaciones": [
+    [
+     "ierse/n_glps09",
+     1.0
+    ],
+    [
+     "ambient/miconia",
+     1.0
+    ],
+    [
+     "ierse/n_glps05",
+     1.0
+    ]
+   ],
+   "umbrales": {
+    "muy alto": {
+     "R1h": 45,
+     "R3h": 90,
+     "R24h": 150,
+     "R72h": 320
+    },
+    "alto": {
+     "R1h": 30,
+     "R3h": 60,
+     "R24h": 100,
+     "R72h": 200
+    },
+    "medio": {
+     "R1h": 15,
+     "R3h": 30,
+     "R24h": 50,
+     "R72h": 120
+    }
+   },
+   "calibracion": {
+    "fecha": "2026-11-15",
+    "eventos": {
+     "2026-11-15": {
+      "impacto": "alto (reporte de la coordinación)",
+      "R24h_14nov": {
+       "miconia": 210.3,
+       "santa_rosa": 120.4
+      },
+      "R72h_15nov_20h": {
+       "miconia": 244.9,
+       "santa_rosa": 141.0
+      },
+      "lluvia_15nov": {
+       "miconia": 11.2,
+       "santa_rosa": 5.0
+      }
+     }
+    },
+    "criterio": "Inundación por saturación del suelo y agua subterránea, con retraso de ~1 día. R72h ≥ 200 → alto (el 11–13-nov sumó ≈160 en Miconia y no se reportaron inundaciones: queda en medio). Muy alto = 1,6 × alto. Sin rebaja por suelo húmedo en 72 h."
+   }
+  },
+  {
+   "id": "san-cristobal",
+   "zona": "San Cristóbal",
+   "isla": "San Cristóbal",
+   "calibrada": true,
+   "nota": "calibrada con dos eventos de nivel medio: 31-oct-2026 (desborde de las cañadas Barrio Frío y Divino Niño; sin viviendas afectadas) y 12-nov-2026 (unos 15 cm de agua frente a la USFQ y agua en algunas casas cerca del malecón)",
+   "estaciones": [
+    [
+     "gsc/junco",
+     1.0
+    ],
+    [
+     "gsc/cerro_alto",
+     1.0
+    ],
+    [
+     "gsc/mirador",
+     1.0
+    ],
+    [
+     "gsc/merceditas",
+     1.0
+    ],
+    [
+     "inamhi/M0221",
+     1.0
+    ]
+   ],
+   "ajuste_humedad": false,
+   "umbrales": {
+    "muy alto": {
+     "R1h": 80,
+     "R3h": 140,
+     "R24h": 330
+    },
+    "alto": {
+     "R1h": 55,
+     "R3h": 95,
+     "R24h": 230
+    },
+    "medio": {
+     "R1h": 20,
+     "R3h": 35,
+     "R24h": 80
+    }
+   },
+   "calibracion": {
+    "fecha": "2026-11-12",
+    "eventos": {
+     "2026-10-31": {
+      "impacto": "medio",
+      "R1h": 39.1,
+      "R3h": 79.5,
+      "R24h": 204.2,
+      "fuente": "INAMHI horario (USFQ M5300–M5303); M0221 sin datos"
+     },
+     "2026-11-12": {
+      "impacto": "medio",
+      "R1h": 44.0,
+      "R3h": 68.7,
+      "R24h": 144.5,
+      "fuente": "GSC-USFQ e INAMHI M0221, cada 5 min"
+     }
+    },
+    "criterio": "«alto» queda por encima de los dos eventos (margen de 25 %, 19 % y 13 %); «medio» se alcanza 2–3 h antes del pico del 12-nov; «muy alto» = 1,5 × «alto», como en La Cascada. Sin ajuste por suelo húmedo: los dos eventos ya ocurrieron con el suelo húmedo."
+   }
+  },
+  {
+   "id": "isabela",
+   "zona": "Isabela (Puerto Villamil)",
+   "isla": "Isabela",
+   "calibrada": false,
+   "nota": "no hay estaciones con datos en tiempo real",
+   "estaciones": []
+  }
+ ],
+ "revision": "2-nov-2026: revisión del especialista en gestión de riesgos del comité de estudios (silencio en alerta = alarma, cobertura solo en ventanas cortas, persistencia 8 h, sin ajuste en seco, probabilidad cualitativa)",
+ "cobertura_ventanas": [
+  "R1h",
+  "R3h"
+ ],
+ "silencio_en_alerta": {
+  "desde_nivel": "alto",
+  "nivel": "muy alto",
+  "horas": 8
+ }
+}

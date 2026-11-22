@@ -229,3 +229,13 @@ def clima_alertas(request):
         "ultimos": [{"tema": a.tema, "zona": a.zona, "titulo": a.titulo, "cuerpo": a.cuerpo, "enlace": a.enlace, "creado": a.creado} for a in AvisoEnviado.objects.all()[:10]],
     }
 
+
+@api.get("/clima/nivel", summary="Nivel de lluvia peligrosa por zona (cálculo en Django, en prueba)", tags=["clima"])
+def clima_nivel(request):
+    """El nivel calculado en esta base, y cuánto coincide con el del recolector anterior. Preliminar, no oficial."""
+    from clima import niveles
+    from clima.models import Estado
+
+    e = Estado.objects.filter(clave="inundacion").first()
+    return {"en_prueba": True, "coincidencia_con_el_anterior": niveles.coincidencia(), **(e.datos if e else {"zonas": []})}
+

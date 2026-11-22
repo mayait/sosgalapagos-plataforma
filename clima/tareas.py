@@ -7,7 +7,15 @@ def sincronizar_clima():
     from .sincronizar import sincronizar
 
     s = sincronizar()
-    return {"leidas": s.leidas, "cambiadas": s.cambiadas, "borradas": s.borradas, "segundos": s.segundos, "error": s.error}
+    r = {"leidas": s.leidas, "cambiadas": s.cambiadas, "borradas": s.borradas, "segundos": s.segundos, "error": s.error}
+    if not s.error:  # con los datos frescos se recalcula el nivel de cada zona
+        from . import niveles
+
+        try:
+            r["nivel"] = niveles.actualizar()
+        except Exception as e:  # el cálculo nuevo está en prueba: un fallo no debe frenar la copia
+            r["nivel"] = f"{type(e).__name__}: {e}"
+    return r
 
 
 @task
