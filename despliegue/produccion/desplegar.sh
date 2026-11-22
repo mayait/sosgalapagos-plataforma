@@ -18,8 +18,22 @@ fi
 echo "→ Actualizando el código"
 git -C "$REPO" pull --ff-only
 
-echo "→ Construyendo y levantando (las migraciones corren antes que la web)"
-docker compose up -d --build
+echo "→ Construyendo"
+docker compose build
+
+# Llaves que se crean una sola vez y nunca van a git.
+if ! grep -q '^PUSH_PRIVADA=.\+' .env; then
+  echo "→ Creando las llaves de los avisos del navegador"
+  sed -i '/^PUSH_PUBLICA=/d;/^PUSH_PRIVADA=/d' .env
+  docker compose run --rm --no-deps -T plataforma python manage.py llaves_push >> .env
+fi
+if ! grep -q '^WHATSAPP_SECRETO=.\+' .env; then
+  sed -i '/^WHATSAPP_SECRETO=/d' .env
+  echo "WHATSAPP_SECRETO=$(openssl rand -hex 24)" >> .env
+fi
+
+echo "→ Levantando (las migraciones corren antes que la web)"
+docker compose up -d
 
 echo "→ Esperando al mapa"
 for i in $(seq 1 40); do

@@ -20,7 +20,7 @@ from django.contrib.gis.measure import D
 from django.db import transaction
 from django.utils import timezone
 
-from .models import Confirmacion, Estado, Fuente, MotivoCierre, Reporte, TipoConfirmacion
+from .models import Colaborador, Confirmacion, Estado, Fuente, MotivoCierre, Reporte, TipoConfirmacion
 
 
 def calcular_vence(visto_en, plazo_horas):
@@ -40,6 +40,44 @@ def huella_de(identificador):
 class Resultado:
     reporte: Reporte
     duplicado: bool = False  # True si se guardó como confirmación de uno existente
+    puntos: int = 0  # los que ganó quien reporta con este aviso
+    colaborador: Colaborador | None = None
+
+
+# ── Puntos: publicar suma ────────────────────────────────────────────────────
+def colaborador_de(huella):
+    return Colaborador.objects.filter(huella=huella).first() if huella else None
+
+
+def sumar_puntos(huella, puntos, nombre="", aviso=False):
+    """Suma puntos a quien reporta y, si dio un nombre o apodo, lo guarda. Devuelve los puntos sumados."""
+    if not huella:
+        return 0
+    from django.db.models import F
+
+    colaborador, _ = Colaborador.objects.get_or_create(huella=huella)
+    nombre = limpiar_nombre(nombre)
+    cambios = {"puntos": F("puntos") + puntos}
+    if aviso:
+        cambios["avisos"] = F("avisos") + 1
+    if nombre:
+        cambios["nombre"] = nombre
+    Colaborador.objects.filter(pk=colaborador.pk).update(**cambios)
+    return puntos
+
+
+def limpiar_nombre(nombre):
+    """Un nombre o apodo corto, sin teléfonos ni correos: es lo único que se ve en la tabla."""
+    import re
+
+    nombre = re.sub(r"\s+", " ", (nombre or "").strip())[:40]
+    if re.search(r"\d{6,}|@|https?:", nombre):
+        return ""
+    return nombre
+
+
+def tabla_de_puntos(limite=50):
+    return Colaborador.objects.filter(visible=True, puntos__gt=0).exclude(nombre="")[:limite]
 
 
 def buscar_duplicado(tipo, punto, ahora=None):
@@ -52,7 +90,7 @@ def buscar_duplicado(tipo, punto, ahora=None):
 
 
 @transaction.atomic
-def crear_reporte(*, tipo, punto, huella, fuente=Fuente.VECINO, visto_en=None, ahora=None, vence_en=None, **campos):
+def crear_reporte(*, tipo, punto, huella, fuente=Fuente.VECINO, visto_en=None, ahora=None, vence_en=None, nombre_autor="", **campos):
     """Crea un reporte o, si ya hay uno igual muy cerca, lo confirma.
 
     Los reportes de vecinos y de WhatsApp entran «por verificar» y con la foto y
@@ -63,12 +101,13 @@ def crear_reporte(*, tipo, punto, huella, fuente=Fuente.VECINO, visto_en=None, a
     existente = buscar_duplicado(tipo, punto, ahora)
     if existente:
         confirmar(existente, TipoConfirmacion.SIGUE_AHI, huella, ahora=ahora)
+        puntos = sumar_puntos(huella, settings.PUNTOS["confirmacion"], nombre=nombre_autor)
         foto = campos.get("foto")
         if foto and not existente.foto:
             # La foto nueva completa al reporte original; sigue oculta hasta que la vean.
             existente.foto = foto
             existente.save(update_fields=["foto"])
-        return Resultado(existente, duplicado=True)
+        return Resultado(existente, duplicado=True, puntos=puntos, colaborador=colaborador_de(huella))
 
     de_confianza = fuente in (Fuente.COORDINADOR, Fuente.INSTITUCION)
     reporte = Reporte(
@@ -83,8 +122,15 @@ def crear_reporte(*, tipo, punto, huella, fuente=Fuente.VECINO, visto_en=None, a
         contenido_visible=de_confianza,
         **campos,
     )
+    puntos = settings.PUNTOS["reporte"] + (settings.PUNTOS["foto"] if campos.get("foto") else 0)
+    sumar_puntos(huella, puntos, nombre=nombre_autor, aviso=True)
+    reporte.autor = colaborador_de(huella)
     reporte.save()
-    return Resultado(reporte)
+    if de_confianza and tipo.clase == "riesgo":
+        from .tareas import avisar_reporte  # aquí, para no importar en círculo
+
+        transaction.on_commit(lambda: avisar_reporte.enqueue(reporte.pk))
+    return Resultado(reporte, puntos=puntos, colaborador=reporte.autor)
 
 
 @transaction.atomic

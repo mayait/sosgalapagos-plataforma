@@ -22,11 +22,12 @@
     {% else %}<li><span>Cerrado</span> {{ r.cerrado_en|date:"j M, H:i" }} · {{ r.get_motivo_cierre_display|lower }}</li>{% endif %}
     {% if r.profundidad != "sin_dato" %}<li><span>Agua</span> {{ r.get_profundidad_display|lower }}</li>{% endif %}
     {% if r.zona %}<li><span>Zona</span> {{ r.zona.nombre }}</li>{% endif %}
-    <li><span>Fuente</span> {{ r.get_fuente_display }}</li>
+    <li><span>Fuente</span> {{ r.get_fuente_display }}{% if r.autor and r.autor.nombre and r.autor.visible %} · {{ r.autor.nombre }}{% endif %}</li>
     <li><span>Avisos</span> {{ sigue }} «sigue ahí» · {{ bajo }} «{% if r.tipo.clase == "riesgo" %}ya bajó{% else %}ya no está{% endif %}»</li>
   </ul>
 
   {% if r.nota and r.contenido_visible %}<p class="ficha-nota">{{ r.nota }}</p>{% endif %}
+  {% if r.contacto and r.contenido_visible %}<p class="ficha-contacto"><span>Contacto del lugar</span> <a href="tel:{{ r.contacto|cut:' ' }}">{{ r.contacto }}</a></p>{% endif %}
   {% if not r.contenido_visible %}{% if r.foto or r.nota %}<p class="ficha-oculto">Este reporte trae {% if r.foto %}una foto{% endif %}{% if r.foto and r.nota %} y {% endif %}{% if r.nota %}una nota{% endif %}. Se publica cuando coordinación la revise.</p>{% endif %}{% endif %}
 
   {% if r.estado != "cerrado" %}

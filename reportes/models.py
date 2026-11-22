@@ -33,6 +33,8 @@ class TipoRiesgo(models.Model):
     plazo_horas = models.PositiveIntegerField("plazo de vida (horas)")
     orden = models.PositiveSmallIntegerField(default=0)
     activo = models.BooleanField(default=True)
+    # Un lugar que recibe donaciones necesita un teléfono al que llamar antes de ir.
+    pide_contacto = models.BooleanField("pide un teléfono de contacto", default=False)
 
     class Meta:
         verbose_name = "tipo de aviso"
@@ -78,6 +80,48 @@ class MotivoCierre(models.TextChoices):
     FUSIONADO = "fusionado", "Se fusionó con otro reporte"
 
 
+class Colaborador(models.Model):
+    """Quien reporta y quiere sumar puntos. Solo guarda el nombre o apodo que la persona eligió.
+
+    Se le reconoce por la huella anónima de su teléfono (la del formulario) o por el resumen
+    con clave de su número de WhatsApp. Nunca se guarda el número.
+    """
+
+    nombre = models.CharField(max_length=40, blank=True)
+    huella = models.CharField(max_length=64, unique=True, editable=False)
+    puntos = models.PositiveIntegerField(default=0, db_index=True)
+    avisos = models.PositiveIntegerField("avisos publicados", default=0)
+    # Coordinación puede ocultar de la tabla un nombre impropio o el de un menor.
+    visible = models.BooleanField("aparece en la tabla de puntos", default=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "colaborador"
+        verbose_name_plural = "colaboradores"
+        ordering = ["-puntos", "creado_en"]
+
+    def __str__(self):
+        return f"{self.nombre or 'Sin nombre'} · {self.puntos} puntos"
+
+
+class SuscripcionPush(models.Model):
+    """Un navegador o una app instalada que pidió recibir avisos."""
+
+    direccion = models.TextField("dirección de entrega", unique=True)
+    p256dh = models.CharField(max_length=200)
+    auth = models.CharField(max_length=80)
+    huella = models.CharField(max_length=64, blank=True, editable=False)
+    creada_en = models.DateTimeField(auto_now_add=True)
+    ultimo_envio = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "suscripción a avisos"
+        verbose_name_plural = "suscripciones a avisos"
+
+    def __str__(self):
+        return f"Suscripción del {self.creada_en:%d-%m %H:%M}"
+
+
 class OrigenAgua(models.TextChoices):
     # Lo pide el issue 80 del repo de datos para validar los modelos.
     CANADA = "canada", "Cañada o quebrada que se desborda"
@@ -117,6 +161,10 @@ class Reporte(models.Model):
     # La foto y la nota de un vecino no se publican hasta que coordinación las ve:
     # así un nombre, una cédula o la cara de un menor no llegan al mapa sin revisión.
     contenido_visible = models.BooleanField("foto y nota públicas", default=False)
+    # Teléfono de un lugar que recibe donaciones o de una institución. Se publica con la nota,
+    # cuando coordinación lo revisa. Nunca el teléfono de quien reporta.
+    contacto = models.CharField("teléfono de contacto del lugar", max_length=40, blank=True)
+    autor = models.ForeignKey("Colaborador", null=True, blank=True, on_delete=models.SET_NULL, related_name="reportes")
     zona = models.ForeignKey("zonas.Zona", null=True, blank=True, on_delete=models.SET_NULL, related_name="reportes")
 
     cerrado_en = models.DateTimeField(null=True, blank=True)

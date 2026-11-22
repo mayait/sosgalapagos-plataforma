@@ -75,9 +75,11 @@
       <div id="lista">
         <nav class="atajos" aria-label="Más">
           <a href="{% url 'reportes:informe' %}">Ver como lista</a>
+          <a href="{% url 'reportes:puntos' %}">Puntos</a>
         </nav>
         <div id="cerca" hx-get="{% url 'reportes:cerca' %}" hx-trigger="load" hx-swap="innerHTML"></div>
         <section id="mis-puntos" class="mis-puntos" aria-label="Mis puntos"></section>
+        <section id="app-caja" class="app-caja" aria-label="La app en tu teléfono" hidden></section>
         {% include "parciales/firma.html" %}
       </div>
     </div>
@@ -96,4 +98,5 @@
 <script src="{% propio 'mapa/capas.js' %}"></script>
 <script src="{% propio 'mapa/buscar.js' %}"></script>
 <script src="{% propio 'mapa/mapa.js' %}"></script>
+<script src="{% propio 'mapa/app.js' %}"></script>
 {% endblock %}

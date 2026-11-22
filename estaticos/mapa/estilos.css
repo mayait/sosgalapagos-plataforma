@@ -677,3 +677,38 @@ textarea.nota { width: 100%; min-height: 64px; padding: 10px 12px; border: 2px s
 .fila .hito.clase-lluvia::before { left: 8px; top: 12px; }
 @media (min-width: 700px) { .fila { grid-template-columns: 52px minmax(0, 1fr); } }
 .hito-zona { font-size: 11px; font-weight: 600; color: var(--gris); }
+
+/* ── Formulario: ubicación del teléfono, contacto y nombre ────────────────── */
+.boton.ubicar { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; margin: 0 0 8px; }
+.boton.ubicar svg { width: 20px; height: 20px; flex: none; }
+.boton.ubicar:disabled { opacity: 0.6; }
+.gps-aviso { display: grid; gap: 4px; margin: 0 0 14px; padding: 10px 12px; border-radius: 10px; background: var(--fondo-suave); font-size: 13px; line-height: 1.4; }
+.gps-aviso b { font-size: 13.5px; }
+.gps-aviso.gps-denegado, .gps-aviso.gps-apagado, .gps-aviso.gps-tardo, .gps-aviso.gps-inseguro, .gps-aviso.gps-sin_soporte { background: #fdeeee; color: var(--rojo-oscuro); }
+.campo-titulo small { font: 400 11px/1 var(--texto); text-transform: none; letter-spacing: 0; color: var(--gris); }
+.campo-texto { width: 100%; height: 46px; padding: 0 12px; border: 2px solid var(--linea); border-radius: 12px; background: var(--blanco); color: var(--tinta); font: 16px/1 var(--texto); }
+.puntos-ganados { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 14px 0; padding: 10px 12px; border-radius: 10px; background: var(--fondo-suave); font-size: 13.5px; font-weight: 600; }
+.puntos-ganados svg { width: 18px; height: 18px; color: #f2b400; flex: none; }
+.ficha-contacto { margin: 10px 0; padding: 10px 12px; border: 1.5px solid var(--negro); border-radius: 10px; font-size: 14px; }
+.ficha-contacto span { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gris); }
+.ficha-contacto a { font-weight: 700; font-size: 16px; }
+
+/* ── Tabla de puntos ─────────────────────────────────────────────────────── */
+.mis-puntos { margin: 0 0 16px; }
+.tabla-puntos { list-style: none; margin: 0 0 22px; padding: 0; }
+.tabla-puntos li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 8px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--linea); font-size: 14.5px; }
+.tabla-puntos .puesto { font: 900 15px/1 var(--titulo); color: var(--gris); }
+.tabla-puntos li:nth-child(-n+3) .puesto { color: var(--rojo); }
+.tabla-puntos .quien { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tabla-puntos .cuantos { font-size: 12px; color: var(--gris); white-space: nowrap; }
+.tabla-puntos .cuantos b { font-size: 14.5px; color: var(--tinta); }
+.tabla-puntos li.yo { background: var(--fondo-suave); margin: 0 -8px; padding: 10px 8px; border-radius: 8px; }
+.tabla-puntos li.vacio { display: block; color: var(--gris); }
+
+/* ── App: instalar y recibir avisos ──────────────────────────────────────── */
+.app-caja { display: grid; gap: 8px; margin: 18px 0 0; }
+.app-caja button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 12px; border: 1.5px solid var(--linea); border-radius: 12px; background: var(--blanco); text-align: left; font: 600 13.5px/1.25 var(--texto); color: var(--tinta); }
+.app-caja button svg { width: 20px; height: 20px; flex: none; }
+.app-caja button small { display: block; font-weight: 400; font-size: 11.5px; color: var(--gris); }
+.app-caja button[aria-pressed="true"] { border-color: var(--negro); }
+.app-nota { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--fondo-suave); font-size: 12.5px; line-height: 1.45; }
