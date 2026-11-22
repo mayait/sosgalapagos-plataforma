@@ -122,8 +122,10 @@ def prueba_la_lluvia_medida_dispara_un_aviso_por_zona(enviados, monkeypatch):
 
     suscribir("a")
     monkeypatch.setattr(panel, "estado", lambda: {"inundacion": {"zonas": [
+        {"id": "santa-cruz-alta", "zona": "Parte alta", "nivel": "alto", "R": {"R24h": 120}},
         {"id": "la-cascada", "zona": "La Cascada", "nivel": "muy alto", "R": {"R24h": 233.4}}, {"id": "san-cristobal", "zona": "San Cristóbal", "nivel": "medio"}]}})
     emitidos = alertas.revisar()
+    # Dos zonas de la misma isla en alerta: un solo aviso, con la peor.
     assert len(emitidos) == 1 and "muy alto" in emitidos[0].titulo and "233 mm" in emitidos[0].cuerpo and emitidos[0].zona == "santa-cruz"
     assert alertas.revisar() == []  # cinco minutos después no se repite
 
