@@ -17,3 +17,10 @@ def guardar_pronostico():
     leidos, nuevas = pronostico.guardar_archivo()
     return {"archivos": leidos, "modelos": nuevas, "publicados": pronostico.guardar_emitido()}
 
+
+@task
+def recalibrar_pronostico():
+    from . import pronostico
+
+    return [{k: str(v) for k, v in r.items()} for r in pronostico.recalibrar()]
+

@@ -170,3 +170,29 @@ class PronosticoEmitido(models.Model):
         constraints = [models.UniqueConstraint(fields=["punto", "emitido", "fecha"], name="pronostico_emitido_unico")]
         indexes = [models.Index(fields=["punto", "fecha"], name="pronostico_emitido_dia")]
 
+
+class Calibracion(models.Model):
+    """Una recalibración del pronóstico con lo medido en las últimas semanas, y cómo validó.
+
+    Convierte los milímetros que dan los modelos en una probabilidad de lluvia fuerte.
+    No reemplaza al pronóstico publicado: se guarda al lado para compararlos.
+    """
+
+    creada = models.DateTimeField(auto_now_add=True)
+    grupo = models.CharField(max_length=10)            # alta o costa
+    plazo = models.CharField(max_length=6)             # «0-1», «2-3» o «4-5» días de anticipación
+    a = models.FloatField()
+    b = models.FloatField()
+    dias = models.PositiveIntegerField()               # pares pronóstico-observación usados
+    eventos = models.PositiveIntegerField()            # de ellos, con lluvia fuerte
+    brier = models.FloatField(null=True)               # validación dejando fuera un día cada vez
+    brier_base = models.FloatField(null=True)          # el de decir siempre la frecuencia observada
+    habilidad = models.FloatField(null=True)           # 1 − brier / brier_base
+    desde = models.DateField()
+    hasta = models.DateField()
+
+    class Meta:
+        verbose_name = "calibración"
+        verbose_name_plural = "calibraciones"
+        ordering = ["-creada", "grupo", "plazo"]
+

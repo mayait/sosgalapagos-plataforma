@@ -14,8 +14,13 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--verificar", action="store_true")
         parser.add_argument("--dias", type=int, default=45)
+        parser.add_argument("--recalibrar", action="store_true", help="ajusta y valida la curva propia con lo medido")
 
-    def handle(self, verificar, dias, **opciones):
+    def handle(self, verificar, dias, recalibrar=False, **opciones):
+        if recalibrar:
+            for r in pronostico.recalibrar():
+                self.stdout.write(f"{r['grupo']:6} plazo {r['plazo']} · {r['dias']} días ({r['eventos']} de lluvia fuerte) · a={r['a']} b={r['b']} · brier {r['brier']} frente a {r['brier_base']} · habilidad {r['habilidad']}")
+            return
         if not verificar:
             leidos, nuevas = pronostico.guardar_archivo()
             self.stdout.write(f"archivos leídos {leidos} · filas nuevas de modelos {nuevas} · publicados nuevos {pronostico.guardar_emitido()}")

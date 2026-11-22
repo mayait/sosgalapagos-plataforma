@@ -1,6 +1,6 @@
 from django.contrib.gis import admin
 
-from .models import Corrida, Estacion, EstacionDanada, Sincronizacion
+from .models import Calibracion, Corrida, Estacion, EstacionDanada, Sincronizacion
 
 
 class SoloLectura(admin.ModelAdmin):
@@ -37,4 +37,10 @@ class SincronizacionAdmin(SoloLectura):
 class EstacionDanadaAdmin(admin.ModelAdmin):
     list_display = ("estacion", "variable", "desde", "hasta", "motivo")
     autocomplete_fields = ("estacion",)
+
+
+@admin.register(Calibracion)
+class CalibracionAdmin(SoloLectura):
+    list_display = ("creada", "grupo", "plazo", "dias", "eventos", "brier", "brier_base", "habilidad")
+    list_filter = ("grupo", "plazo")
 
