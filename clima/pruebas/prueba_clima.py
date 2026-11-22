@@ -1,163 +1,133 @@
-"""Pruebas del clima: la copia desde la base del recolector, los resúmenes por hora y la API."""
-import sqlite3
+"""Pruebas del clima: guardar mediciones, resúmenes por hora, fuentes, panel, pronóstico y API."""
 from datetime import datetime, timedelta, timezone
 
 import pytest
 
 from clima import consultas
-from clima.models import Corrida, Estacion, Horaria, Observacion, Sincronizacion
-from clima.sincronizar import sincronizar
+from clima.fuentes import base
+from clima.models import Corrida, Estacion, Horaria, Observacion
 
-pytestmark = pytest.mark.django_db(transaction=True)  # la copia usa COPY y tablas temporales
+pytestmark = pytest.mark.django_db(transaction=True)  # guardar usa COPY y tablas temporales
 AHORA = datetime.now(timezone.utc).replace(minute=20, second=0, microsecond=0)
 iso = lambda t: t.strftime("%Y-%m-%dT%H:%M:%SZ")  # noqa: E731
+HORA = AHORA.replace(minute=0) - timedelta(hours=1)
 
 
 @pytest.fixture
-def origen(tmp_path):
-    ruta = tmp_path / "clima.db"
-    con = sqlite3.connect(ruta)
-    con.executescript("""
-      CREATE TABLE obs (fuente TEXT NOT NULL, estacion TEXT NOT NULL, variable TEXT NOT NULL, ts TEXT NOT NULL, valor REAL,
-        PRIMARY KEY (fuente, estacion, variable, ts)) WITHOUT ROWID;
-      CREATE TABLE estaciones (fuente TEXT NOT NULL, estacion TEXT NOT NULL, nombre TEXT, isla TEXT, lat REAL, lon REAL,
-        altitud_m REAL, operador TEXT, url TEXT, meta TEXT, PRIMARY KEY (fuente, estacion));
-      CREATE TABLE corridas (ts TEXT NOT NULL, fuente TEXT NOT NULL, ok INTEGER, registros INTEGER, segundos REAL, error TEXT);
-    """)
-    con.execute("INSERT INTO estaciones VALUES ('ierse','n1','Los Guayabillos','Santa Cruz',-0.6991,-90.342,178,'IERSE',NULL,NULL)")
-    hora = AHORA.replace(minute=0)
-    filas = [("ierse", "n1", "lluvia_mm", iso(hora - timedelta(hours=1) + timedelta(minutes=5 * i)), 0.5) for i in range(12)]
-    filas += [("ierse", "n1", "temp_c", iso(hora - timedelta(hours=1) + timedelta(minutes=30 * i)), 20 + 2 * i) for i in range(2)]
-    filas += [("goes", "la-cascada", "frio_pct", iso(hora - timedelta(hours=1)), 12.0)]
-    con.executemany("INSERT INTO obs VALUES (?,?,?,?,?)", filas)
-    con.executemany("INSERT INTO corridas VALUES (?,?,?,?,?,?)", [
-        (iso(AHORA - timedelta(minutes=10)), "ierse", 1, 12, 1.5, None), (iso(AHORA - timedelta(minutes=5)), "ierse", 0, 0, 30.0, "sin respuesta"),
-        (iso(AHORA - timedelta(minutes=5)), "gsc", 1, 40, 6.0, None)])
-    con.commit()
-    con.close()
-    return ruta
+def cargada():
+    """Una estación de IERSE con una hora de lluvia y temperatura, una zona del satélite y tres corridas."""
+    base.estacion("ierse", "n1", "Los Guayabillos", "Santa Cruz", -0.6991, -90.342, 178, "IERSE")
+    filas = [("n1", "lluvia_mm", HORA + timedelta(minutes=5 * i), 0.5) for i in range(12)]
+    filas += [("n1", "temp_c", HORA + timedelta(minutes=30 * i), 20 + 2 * i) for i in range(2)]
+    assert base.guardar("ierse", filas) == 14
+    assert base.guardar("goes", [("la-cascada", "frio_pct", HORA, 12.0)]) == 1
+    base.resumir()
+    Corrida.objects.create(ts=AHORA - timedelta(minutes=10), fuente="ierse", ok=True, registros=12, segundos=1.5)
+    Corrida.objects.create(ts=AHORA - timedelta(minutes=5), fuente="ierse", ok=False, registros=0, segundos=30.0, error="sin respuesta")
+    Corrida.objects.create(ts=AHORA - timedelta(minutes=5), fuente="gsc", ok=True, registros=40, segundos=6.0)
 
 
-def prueba_copia_estaciones_mediciones_y_corridas(origen):
-    s = sincronizar(completa=True, ruta=origen)
-    assert not s.error and s.leidas == 15 and s.cambiadas == 15
+def prueba_guarda_estaciones_y_mediciones_sin_duplicar(cargada):
     e = Estacion.objects.get(fuente="ierse", codigo="n1")
-    assert e.nombre == "Los Guayabillos" and abs(e.punto.x + 90.342) < 1e-6 and e.ultima is not None
+    assert e.nombre == "Los Guayabillos" and abs(e.punto.x + 90.342) < 1e-6 and e.ultima == HORA + timedelta(minutes=55) and e.primera == HORA
     assert Estacion.objects.filter(fuente="goes", codigo="la-cascada").exists()  # las zonas del satélite se crean solas
-    assert Observacion.objects.count() == 15 and Corrida.objects.count() == 3
-    # Repetir no duplica nada.
-    s2 = sincronizar(ruta=origen)
-    assert s2.cambiadas == 0 and s2.borradas == 0 and Observacion.objects.count() == 15 and Corrida.objects.count() == 3
+    assert Observacion.objects.count() == 15
+    # Repetir no duplica; un valor distinto reemplaza al anterior; un NaN se guarda como vacío.
+    base.guardar("ierse", [("n1", "lluvia_mm", HORA, 2.5), ("n1", "lluvia_mm", HORA + timedelta(minutes=5), float("nan"))])
+    assert Observacion.objects.count() == 15
+    assert Observacion.objects.get(estacion=e, variable="lluvia_mm", ts=HORA).valor == 2.5
+    assert Observacion.objects.get(estacion=e, variable="lluvia_mm", ts=HORA + timedelta(minutes=5)).valor is None
+    base.resumir(HORA)
+    assert Horaria.objects.get(estacion=e, variable="lluvia_mm", hora=HORA).suma == pytest.approx(7.5)
 
 
-def prueba_resume_por_hora(origen):
-    sincronizar(completa=True, ruta=origen)
-    hora = AHORA.replace(minute=0) - timedelta(hours=1)
-    lluvia = Horaria.objects.get(estacion__codigo="n1", variable="lluvia_mm", hora=hora)
+def prueba_resume_por_hora(cargada):
+    lluvia = Horaria.objects.get(estacion__codigo="n1", variable="lluvia_mm", hora=HORA)
     assert lluvia.suma == pytest.approx(6.0) and lluvia.n == 12
-    temperatura = Horaria.objects.get(estacion__codigo="n1", variable="temp_c", hora=hora)
+    temperatura = Horaria.objects.get(estacion__codigo="n1", variable="temp_c", hora=HORA)
     assert temperatura.media == pytest.approx(21.0) and temperatura.maximo == 22
 
 
-def prueba_las_correcciones_y_los_borrados_del_recolector_llegan(origen):
-    sincronizar(completa=True, ruta=origen)
-    con = sqlite3.connect(origen)
-    hora = AHORA.replace(minute=0) - timedelta(hours=1)
-    con.execute("UPDATE obs SET valor = 2.5 WHERE variable = 'lluvia_mm' AND ts = ?", [iso(hora)])
-    con.execute("DELETE FROM obs WHERE variable = 'lluvia_mm' AND ts = ?", [iso(hora + timedelta(minutes=5))])
-    con.commit()
-    con.close()
-    s = sincronizar(ruta=origen)
-    assert s.cambiadas == 1 and s.borradas == 1 and Observacion.objects.count() == 14
-    assert Horaria.objects.get(estacion__codigo="n1", variable="lluvia_mm", hora=hora).suma == pytest.approx(7.5)
+def prueba_preguntar_y_borrar_distingue_las_filas_de_respaldo(cargada):
+    respaldo = HORA + timedelta(hours=1, minutes=30, seconds=30)
+    base.guardar("ierse", [("n1", "lluvia_mm", respaldo, 4.0)])
+    assert base.ultimo("ierse", "n1", "lluvia_mm") == respaldo and base.ultimo("ierse", "n1", "lluvia_mm", de_cinco_min=True) == HORA + timedelta(minutes=55)
+    assert base.existe("ierse", "n1", en=HORA) and not base.existe("ierse", "n1", en=HORA + timedelta(seconds=1))
+    assert base.serie("ierse", "n1", "lluvia_mm", antes_de=HORA + timedelta(minutes=5), orden="DESC", limite=1) == [(HORA, 0.5)]
+    assert base.borrar("ierse", "n1", "lluvia_mm", desde=HORA, de_respaldo=True) == 1
+    assert Observacion.objects.filter(variable="lluvia_mm").count() == 12
+    assert base.ultimo("nadie") is None
 
 
-def prueba_una_lectura_corta_no_borra_nada(origen):
-    sincronizar(completa=True, ruta=origen)
-    con = sqlite3.connect(origen)
-    con.execute("DELETE FROM obs WHERE variable = 'lluvia_mm'")  # como si el origen se leyera a medias
-    con.commit()
-    con.close()
-    s = sincronizar(ruta=origen)
-    assert s.borradas == 0 and Observacion.objects.count() == 15
-
-
-def prueba_si_falta_la_base_de_origen_queda_anotado(tmp_path):
-    s = sincronizar(ruta=tmp_path / "no-existe.db")
-    assert s.error and Sincronizacion.objects.count() == 1 and Observacion.objects.count() == 0
-
-
-def prueba_la_api_da_series_estaciones_y_salud(origen, client):
-    sincronizar(completa=True, ruta=origen)
-    hora = AHORA.replace(minute=0) - timedelta(hours=1)
+def prueba_la_api_da_series_estaciones_y_salud(cargada, client):
     estaciones = client.get("/riesgos/api/clima/estaciones").json()["estaciones"]
     assert [e["id"] for e in estaciones] == ["ierse/n1"]  # las zonas del satélite no son estaciones
     assert estaciones[0]["lluvia_mm"]["24h"] == 6.0
-    serie = client.get("/riesgos/api/clima/serie", {"estacion": "ierse/n1", "desde": iso(hora - timedelta(hours=1)), "hasta": iso(hora + timedelta(hours=1))}).json()
+    serie = client.get("/riesgos/api/clima/serie", {"estacion": "ierse/n1", "desde": iso(HORA - timedelta(hours=1)), "hasta": iso(HORA + timedelta(hours=1))}).json()
     assert serie["valores"] == [None, 6.0]
-    dia = client.get("/riesgos/api/clima/serie", {"estacion": "ierse/n1", "paso": "dia", "desde": iso(hora - timedelta(days=1)), "hasta": iso(hora + timedelta(hours=1))}).json()
+    dia = client.get("/riesgos/api/clima/serie", {"estacion": "ierse/n1", "paso": "dia", "desde": iso(HORA - timedelta(days=1)), "hasta": iso(HORA + timedelta(hours=1))}).json()
     assert sum(v or 0 for v in dia["valores"]) == 6.0
     assert client.get("/riesgos/api/clima/serie", {"estacion": "no/existe"}).status_code == 404
     assert client.get("/riesgos/api/clima/serie", {"estacion": "ierse/n1", "variable": "otra"}).status_code == 400
     salud = client.get("/riesgos/api/clima/salud").json()
     ierse = next(f for f in salud["fuentes"] if f["fuente"] == "ierse")
     assert ierse["corridas"] == 2 and ierse["bien"] == 1 and ierse["acierto_pct"] == 50
-    assert salud["observaciones"] == 15 and salud["copia"]["con_error"] == 0
+    assert salud["observaciones"] == 15 and "copia" not in salud
 
 
-# ── Pronóstico: guardar y verificar ──────────────────────────────────────────
-def _respuesta(base_utc, mm_por_hora):
-    """Una respuesta como la de los modelos: 7 puntos, 72 horas, dos modelos."""
-    horas = [(base_utc + timedelta(hours=i)).strftime("%Y-%m-%dT%H:%M") for i in range(72)]
-    return [{"hourly": {"time": horas, "precipitation_gfs_seamless": [mm_por_hora] * 72, "precipitation_icon_seamless": [0.0] * 72}} for _ in range(7)]
+# ── Pronóstico: bajar, guardar, publicar y verificar ─────────────────────────
+def _respuesta(base_utc, mm_por_hora, horas=72):
+    """Una respuesta como la de los modelos deterministas: 7 puntos, dos modelos."""
+    tiempos = [(base_utc + timedelta(hours=i)).strftime("%Y-%m-%dT%H:%M") for i in range(horas)]
+    return [{"hourly": {"time": tiempos, "precipitation_gfs_seamless": [mm_por_hora] * horas, "precipitation_icon_seamless": [0.0] * horas}} for _ in range(7)]
 
 
 def prueba_el_dia_del_modelo_es_el_de_galapagos():
-    from clima import pronostico
+    from clima.fuentes import modelos
 
     # 24 horas que terminan entre las 07:00 y las 06:00 UTC del día siguiente = el día de Galápagos.
-    base = datetime(2026, 11, 10, 7, 0, tzinfo=timezone.utc)
-    horas = [(base + timedelta(hours=i)).strftime("%Y-%m-%dT%H:%M") for i in range(30)]
-    totales = pronostico.totales_por_dia(horas, [1.0] * 30)
-    assert totales == {datetime(2026, 11, 10).date(): 24.0}  # el día incompleto no se cuenta
+    inicio = datetime(2026, 11, 10, 7, 0, tzinfo=timezone.utc)
+    horas = [(inicio + timedelta(hours=i)).strftime("%Y-%m-%dT%H:%M") for i in range(30)]
+    dias, bloques = modelos.sumar(horas, [[1.0, 2.0]] * 30)
+    assert dias == {"2026-11-10": [24.0, 48.0]}  # el día incompleto no se cuenta
+    assert bloques["2026-11-10T00"] == [6.0, 12.0] and "2026-11-11T06" not in bloques
 
 
-def prueba_guarda_solo_lo_que_cambia_y_verifica(tmp_path, origen, settings):
-    import gzip
-    import json
-
+def prueba_guarda_solo_lo_que_cambia_y_verifica(cargada):
     from clima import pronostico
-    from clima.models import EstacionDanada, PronosticoEmitido, PronosticoModelo
+    from clima.fuentes import modelos
+    from clima.models import EstacionDanada, PronosticoCorrida, PronosticoEmitido, PronosticoModelo
 
-    carpeta = tmp_path / "pronostico" / "archivo" / "2026-11"
-    carpeta.mkdir(parents=True)
     dia = (AHORA.astimezone(consultas.GALAPAGOS) - timedelta(days=1)).date()  # ayer en Galápagos
-    base = datetime.combine(dia - timedelta(days=1), datetime.min.time(), timezone.utc) + timedelta(hours=7)
+    inicio = datetime.combine(dia - timedelta(days=1), datetime.min.time(), timezone.utc) + timedelta(hours=7)
     obtenido = datetime.combine(dia - timedelta(days=1), datetime.min.time(), timezone.utc) + timedelta(hours=12)
-    for hora in (0, 1):  # dos archivos con lo mismo: el segundo no añade filas
-        with gzip.open(carpeta / f"{obtenido + timedelta(hours=hora):%Y%m%dT%H}_deterministas.json.gz", "wt") as f:
-            json.dump(_respuesta(base, 1.0), f)
-    leidos, nuevas = pronostico.guardar_archivo(tmp_path / "pronostico")
-    assert leidos == 2 and nuevas == PronosticoModelo.objects.count() and nuevas > 0
+    respuesta = _respuesta(inicio, 1.0)
+    for hora, modelo in ((0, "gfs_seamless"), (0, "icon_seamless"), (1, "gfs_seamless")):  # la segunda del GFS dice lo mismo: no añade filas
+        modelos._guardar(modelo, "determinista", obtenido + timedelta(hours=hora - 6), None, obtenido + timedelta(hours=hora), modelos.resumen_determinista(modelo, respuesta))
+    assert PronosticoCorrida.objects.count() == 3
+    leidas, nuevas = pronostico.guardar_modelos()
+    assert leidas == 3 and nuevas == PronosticoModelo.objects.count() and nuevas > 0
     fila = PronosticoModelo.objects.get(punto="puerto-ayora", modelo="gfs_seamless", fecha=dia)
     assert fila.mm == 24.0 and fila.anticipacion == 1
-    assert pronostico.guardar_archivo(tmp_path / "pronostico")[1] == 0  # repetir no duplica
+    assert pronostico.guardar_modelos()[1] == 0  # repetir no duplica
+
+    # Un conjunto: se guarda la mediana, el percentil 90 y la fracción de miembros con lluvia fuerte.
+    conjunto = PronosticoCorrida.objects.create(modelo="gfs025", tipo="conjunto", referencia=obtenido, recibido=obtenido + timedelta(hours=2),
+                                                datos={"puerto-ayora": {"dias": {str(dia): [0.0, 10.0, 30.0, 40.0]}, "bloques6h": {}}})
+    f = pronostico.filas_de_corrida(conjunto)[0]
+    assert (f.modelo, f.mm, f.miembros, f.prob20) == ("conjunto:gfs025", 20.0, 4, 0.5)
 
     # Lo publicado.
-    publicado = tmp_path / "pronostico.json"
-    publicado.write_text(json.dumps({"generado": (obtenido).strftime("%Y-%m-%dT%H:%M:%SZ"), "hoy_local": str(dia - timedelta(days=1)), "zonas": {"la-cascada": {"puntos": [
-        {"id": "puerto-ayora", "dias": [{"fecha": str(dia), "prob": {"10": 0.9, "20": 0.8, "50": 0.1}, "consenso": 0.9, "n_modelos": 7, "mm_modelos_mediana": 22.0, "nivel": "alta", "calibrado": True}]}]}}}))
+    publicado = {"generado": iso(obtenido), "hoy_local": str(dia - timedelta(days=1)), "zonas": {"la-cascada": {"puntos": [
+        {"id": "puerto-ayora", "dias": [{"fecha": str(dia), "prob": {"10": 0.9, "20": 0.8, "50": 0.1}, "consenso": 0.9, "n_modelos": 7, "mm_modelos_mediana": 22.0, "nivel": "alta", "calibrado": True}]}]}}}
     assert pronostico.guardar_emitido(publicado) == 1 and pronostico.guardar_emitido(publicado) == 0
     assert PronosticoEmitido.objects.get().anticipacion == 1
 
     # Lo que llovió: una estación de Puerto Ayora con el día completo y 30 mm.
-    con = sqlite3.connect(origen)
-    con.execute("INSERT INTO estaciones VALUES ('inamhi','M0191','Puerto Ayora','Santa Cruz',-0.74,-90.31,6,'INAMHI',NULL,NULL)")
-    inicio = datetime.combine(dia, datetime.min.time(), timezone.utc) + timedelta(hours=6)
-    con.executemany("INSERT INTO obs VALUES ('inamhi','M0191','lluvia_mm',?,?)", [(iso(inicio + timedelta(hours=h)), 1.25) for h in range(24)])
-    con.commit()
-    con.close()
-    sincronizar(completa=True, ruta=origen)
+    base.estacion("inamhi", "M0191", "Puerto Ayora", "Santa Cruz", -0.74, -90.31, 6, "INAMHI")
+    amanecer = datetime.combine(dia, datetime.min.time(), timezone.utc) + timedelta(hours=6)
+    base.guardar("inamhi", [("M0191", "lluvia_mm", amanecer + timedelta(hours=h), 1.25) for h in range(24)])
+    base.resumir()
     v = pronostico.verificar(dias=10)
     assert v["dias_observados"] == 1 and v["dias_de_lluvia_fuerte"] == 1
     gfs = next(m for m in v["por_modelo"] if m["modelo"] == "gfs_seamless" and m["anticipacion"] == 1)
@@ -167,14 +137,60 @@ def prueba_guarda_solo_lo_que_cambia_y_verifica(tmp_path, origen, settings):
     assert v["publicado"][0]["brier"] == pytest.approx(0.04) and v["publicado"][0]["punto"] == "puerto-ayora"
 
     # Un sensor marcado como dañado no cuenta como observación.
-    EstacionDanada.objects.create(estacion=Estacion.objects.get(codigo="M0191"), variable="lluvia_mm", desde=inicio - timedelta(days=2), motivo="prueba")
+    EstacionDanada.objects.create(estacion=Estacion.objects.get(codigo="M0191"), variable="lluvia_mm", desde=amanecer - timedelta(days=2), motivo="prueba")
     assert pronostico.verificar(dias=10)["dias_observados"] == 0
 
 
-def prueba_la_lluvia_de_un_sensor_danado_no_se_publica(origen, client):
+def prueba_baja_los_modelos_a_la_base_y_publica_la_senal(monkeypatch):
+    """Una hora de pronóstico de punta a punta, con la red simulada: corridas guardadas y pronóstico con la forma que lee el panel."""
+    from clima import senal
+    from clima.fuentes import modelos
+    from clima.models import PronosticoCorrida
+
+    ahora = datetime(2026, 11, 22, 15, 0, tzinfo=timezone.utc)   # las 9 de la mañana en Galápagos
+    monkeypatch.setenv("CLIMA_OPENMETEO_FORECAST_API", "https://modelos.test/v1/forecast")
+    monkeypatch.setenv("CLIMA_OPENMETEO_ENSEMBLE_API", "https://conjuntos.test/v1/ensemble")
+    inicio = datetime(2026, 11, 21, 0, 0, tzinfo=timezone.utc)
+    tiempos = [(inicio + timedelta(hours=i)).strftime("%Y-%m-%dT%H:%M") for i in range(168)]
+    corrida = int((ahora - timedelta(hours=9)).timestamp())
+
+    def red(url, cuerpo=None, **k):
+        if url.endswith("/meta.json"):
+            if "dwd_icon_eps" in url:
+                raise TimeoutError  # metadatos caídos: la hora de la corrida no se conoce
+            return {"last_run_initialisation_time": corrida, "last_run_availability_time": corrida + 6 * 3600}
+        if "modelos.test" in url:
+            return [{"hourly": {"time": tiempos, **{f"precipitation_{m}": [2.0] * 168 for m in modelos.DETERMINISTAS}}} for _ in range(7)]
+        return [{"hourly": {"time": tiempos, "precipitation": [1.0] * 168, "precipitation_member01": [3.0] * 168}} for _ in range(7)]
+
+    monkeypatch.setattr(modelos.base, "http_json", red)
+    assert modelos.recoger(ahora) == 13                    # 8 deterministas y 5 conjuntos, todos nuevos
+    assert modelos.recoger(ahora + timedelta(minutes=30)) == 0   # una vez por hora basta
+    assert modelos.recoger(ahora + timedelta(hours=1)) == 0      # misma corrida: nada nuevo, y no se repiten filas
+    assert PronosticoCorrida.objects.count() == 13
+    icon = PronosticoCorrida.objects.get(modelo="icon_global")
+    assert icon.corrida is None and icon.referencia == ahora.replace(hour=12)
+    ifs = PronosticoCorrida.objects.get(modelo="ecmwf_ifs")
+    assert ifs.corrida == ahora - timedelta(hours=9) and ifs.datos["puerto-ayora"]["dias"]["2026-11-22"] == 48.0 and len(ifs.datos["puerto-ayora"]["horario"]["mm"]) == 168
+    assert PronosticoCorrida.objects.get(modelo="gfs025").datos["el-junco"]["bloques6h"]["2026-11-22T06"] == [6.0, 18.0]
+
+    p = senal.publicado(ahora + timedelta(hours=1))
+    assert set(p) == {"generado", "generado_local", "hoy_local", "modelos", "zonas", "reglas"} and p["hoy_local"] == "2026-11-22"
+    assert len(p["modelos"]) == 13 and all(m["vigente"] for m in p["modelos"])
+    assert next(m for m in p["modelos"] if m["id"] == "gfs_seamless")["corrida_local"] == "2026-11-22T00:00"
+    punto = p["zonas"]["la-cascada"]["puntos"][1]
+    assert punto["id"] == "puerto-ayora" and [d["fecha"] for d in punto["dias"]][:2] == ["2026-11-22", "2026-11-23"]
+    assert punto["dias"][0]["n_modelos"] >= 4 and punto["dias"][0]["mm_modelos_mediana"] == 48.0 and "20" in punto["dias"][0]["prob"]
+    assert punto["bloques6h"][0] == {"inicio": "2026-11-22T06:00", "n_conjuntos": 5, "mediana": 12.0, "p90": 16.8}
+    assert punto["detalle"]["modelo"] == "ECMWF IFS 9 km" and punto["detalle"]["hora_local_fin"][0] == "2026-11-22T11:00"
+    # Con corridas viejas no se publica ninguna cifra: mejor nada que un pronóstico caducado.
+    viejo = senal.publicado(ahora + timedelta(days=3))
+    assert not any(m["vigente"] for m in viejo["modelos"]) and viejo["zonas"]["la-cascada"]["puntos"][1]["dias"] == []
+
+
+def prueba_la_lluvia_de_un_sensor_danado_no_se_publica(cargada, client):
     from clima.models import EstacionDanada
 
-    sincronizar(completa=True, ruta=origen)
     EstacionDanada.objects.create(estacion=Estacion.objects.get(codigo="n1"), desde=AHORA - timedelta(days=5), motivo="marca lluvias imposibles")
     e = client.get("/riesgos/api/clima/estaciones").json()["estaciones"][0]
     assert e["lluvia_mm"] is None and e["danada"]["motivo"] == "marca lluvias imposibles"
@@ -197,108 +213,14 @@ def prueba_el_pronostico_de_los_proximos_dias_responde_vacio(client):
     assert "no oficial" in datos["aviso"]
 
 
-# ── Etapa 5: las fuentes las recoge esta aplicación, con el código del recolector anterior ──
-@pytest.fixture
-def metar(monkeypatch, settings):
-    """La fuente de los aeropuertos, con la red simulada."""
-    from clima.compat import modulos
-
-    modulos()
-    import fuentes_extra
-
-    monkeypatch.setenv("CLIMA_METAR_API", "https://metar.test/api")
-    settings.CLIMA_FUENTES_NATIVAS = ["metar"]
-    t = int((AHORA - timedelta(minutes=20)).timestamp())
-    respuesta = [{"icaoId": "SEGS", "obsTime": t, "temp": 27, "altim": 1012.5, "wspd": 10, "wxString": "+TSRA"}, {"icaoId": "KJFK", "obsTime": t, "temp": 5}]
-    monkeypatch.setattr(fuentes_extra, "http_json", lambda url, **k: respuesta)
-    return fuentes_extra
-
-
-def prueba_una_fuente_nativa_se_recoge_aqui_y_deja_de_copiarse(origen, metar):
-    from clima import fuentes
-
-    con = sqlite3.connect(origen)
-    con.execute("INSERT INTO obs VALUES ('metar','SEGS','temp_c',?,?)", [iso(AHORA - timedelta(hours=1)), 99.0])  # lo que trae el recolector anterior
-    con.execute("INSERT INTO corridas VALUES (?,?,?,?,?,?)", [iso(AHORA - timedelta(minutes=3)), "metar", 1, 1, 1.0, None])
-    con.commit()
-    con.close()
-    assert fuentes.recolectar() == {"metar": 4}
-    assert Observacion.objects.filter(estacion__fuente="metar").count() == 4
-    valores = {o.variable: o.valor for o in Observacion.objects.filter(estacion__fuente="metar")}
-    assert valores == {"temp_c": 27.0, "presion_hpa": 1012.5, "viento_ms": 5.1, "lluvia_codigo": 3.0}  # nudos a m/s; tormenta = 3
-    e = Estacion.objects.get(fuente="metar", codigo="SEGS")
-    assert e.nombre.startswith("Aeropuerto Seymour") and abs(e.punto.y + 0.4539) < 1e-6
-    assert Corrida.objects.filter(fuente="metar", ok=True).count() == 1
-    assert Horaria.objects.filter(estacion=e, variable="temp_c").exists()  # los resúmenes por hora se rehacen
-    # La copia no trae el 99 del recolector anterior ni borra lo recogido aquí.
-    s = sincronizar(ruta=origen)
-    assert not s.error and Observacion.objects.filter(estacion__fuente="metar").count() == 4
-    assert not Observacion.objects.filter(valor=99.0).exists() and Corrida.objects.filter(fuente="metar").count() == 1
-    assert Observacion.objects.filter(estacion__fuente="ierse").count() == 14  # las demás fuentes sí se copian
-
-
-def prueba_si_una_fuente_nativa_falla_queda_anotado_y_siguen_las_demas(metar, monkeypatch, settings):
-    from clima import fuentes
-
-    def roto(url, **k):
-        raise TimeoutError("sin respuesta")
-
-    monkeypatch.setattr(metar, "http_json", roto)
-    settings.CLIMA_FUENTES_NATIVAS = ["metar", "inventada"]
-    assert fuentes.recolectar() == {"metar": "error: TimeoutError"}
-    c = Corrida.objects.get(fuente="metar")
-    assert not c.ok and "sin respuesta" in c.error
-
-
-def prueba_una_fuente_sin_nada_nuevo_no_es_un_fallo(metar, monkeypatch):
-    import io
-
-    from clima import fuentes
-    from clima.compat import modulos
-
-    recolector = modulos()
-    monkeypatch.setattr(metar, "http_json", recolector.http_json)  # la función de verdad, con la red simulada
-
-    class SinContenido(io.BytesIO):  # como responde la fuente de noche: 204 y cuerpo vacío
-        status = 204
-
-    monkeypatch.setattr(recolector.urllib.request, "urlopen", lambda pedido, timeout=0: SinContenido(b""))
-    assert fuentes.recolectar() == {"metar": 0}
-    assert Corrida.objects.get(fuente="metar").ok is True
-
-
-def prueba_la_conexion_de_compatibilidad_lee_y_escribe_como_sqlite(origen):
-    """El código del recolector anterior usa «?», INSERT OR REPLACE y horas en texto: todo eso llega a los modelos."""
-    from clima.compat import Conexion
-
-    sincronizar(completa=True, ruta=origen)
-    con = Conexion()
-    hora = AHORA.replace(minute=0) - timedelta(hours=1)
-    assert con.execute("SELECT MAX(ts) FROM obs WHERE fuente=? AND estacion=?", ("ierse", "n1")).fetchone()[0] == iso(hora + timedelta(minutes=55))
-    con.executemany("INSERT OR REPLACE INTO obs VALUES (?,?,?,?,?)", [("ierse", "n1", "lluvia_mm", iso(hora), 9.5), ("nueva", "x1", "temp_c", iso(hora), 20.0)])
-    assert Observacion.objects.get(estacion__codigo="n1", variable="lluvia_mm", ts=hora).valor == 9.5      # reemplaza
-    assert Estacion.objects.filter(fuente="nueva", codigo="x1").exists()                                    # crea la estación si falta
-    con.execute("DELETE FROM obs WHERE fuente='ierse' AND estacion=? AND substr(ts,1,13)=? AND variable='temp_c'", ("n1", iso(hora)[:13]))
-    assert not Observacion.objects.filter(estacion__codigo="n1", variable="temp_c").exists()
-    con.execute("INSERT OR REPLACE INTO estaciones VALUES (?,?,?,?,?,?,?,?,?,?)", ("nueva", "x1", "Nueva", "Isabela", -0.95, -90.97, 12, "Prueba", None, "{}"))
-    e = Estacion.objects.get(fuente="nueva")
-    assert e.nombre == "Nueva" and abs(e.punto.x + 90.97) < 1e-6
-    con.execute("INSERT INTO corridas VALUES (?,?,?,?,?,?)", (iso(AHORA), "nueva", 1, 2, 0.5, None))
-    assert Corrida.objects.get(fuente="nueva").ok is True
-    assert con.execute("SELECT date(?, '-6 hours')", ("2026-11-21T03:00:00Z",)).fetchone()[0] == "2026-11-20"
-    assert [r[0] for r in con.execute("SELECT estacion FROM estaciones WHERE fuente='goes'")] == []     # las zonas del satélite no son estaciones
-
-
-def prueba_el_panel_se_genera_desde_esta_base_con_la_forma_de_siempre(origen, tmp_path, settings):
+def prueba_el_panel_se_genera_desde_esta_base(cargada, tmp_path, settings):
     import json
 
     from clima import panel
-    from clima.models import EstacionDanada
+    from clima.models import EstacionDanada, Estado
 
-    sincronizar(completa=True, ruta=origen)
     settings.CLIMA_SALIDA = str(tmp_path / "datos")
-    (tmp_path / "datos").mkdir()
-    (tmp_path / "datos" / "satelite.json").write_text(json.dumps({"generado": "x"}))
+    Estado.objects.create(clave="satelite", datos={"generado": "x"}, generado=AHORA)
     r = panel.publicar()
     assert r["total_s"] < 20
     est = json.loads((tmp_path / "datos" / "estado.json").read_text())
@@ -322,11 +244,9 @@ def prueba_el_panel_se_genera_desde_esta_base_con_la_forma_de_siempre(origen, tm
     assert set(json.loads((tmp_path / "datos" / "horario.json").read_text())["series"]["ierse/n1"]["lluvia_mm"]) == {None}
 
 
-def prueba_la_linea_del_tiempo_lee_la_lluvia_de_esta_base(origen):
+def prueba_la_linea_del_tiempo_lee_la_lluvia_de_esta_base(cargada):
     from reportes import clima as panel
 
-    sincronizar(completa=True, ruta=origen)
     assert panel.estaciones_con_lluvia() == [{"id": "ierse/n1", "nombre": "Los Guayabillos", "isla": "Santa Cruz"}]
-    hora = AHORA.replace(minute=0, second=0, microsecond=0) - timedelta(hours=1)
-    inicio, valores = panel.lluvia_por_hora("ierse/n1", hora - timedelta(hours=1), hora + timedelta(hours=1))
-    assert inicio == hora - timedelta(hours=1) and valores == [None, 6.0]
+    inicio, valores = panel.lluvia_por_hora("ierse/n1", HORA - timedelta(hours=1), HORA + timedelta(hours=1))
+    assert inicio == HORA - timedelta(hours=1) and valores == [None, 6.0]

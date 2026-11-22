@@ -136,10 +136,9 @@ CAPAS_SIEMPRE_GRUPOS = ["lluvia", "hidrografia"]
 # pines de los reportes. Se encienden desde el panel Capas como cualquier otra.
 CAPAS_APAGADAS_AL_ABRIR = ["puntos_criticos"]
 
-# Lluvia: el JSON que publica /clima. Ruta de archivo en el servidor o URL en la Mac.
+# Solo para desarrollo local, donde no se recoge clima: los archivos públicos del sitio.
 CLIMA_ESTADO = entorno("CLIMA_ESTADO", "https://sosgalapagos.org/clima/datos/estado.json")
 CLIMA_MAX_EDAD_MIN = 20  # con datos más viejos no se muestra nivel
-# Lluvia por hora de cada estación (para el informe): el otro JSON que publica /clima.
 CLIMA_HORARIO = entorno("CLIMA_HORARIO", "https://sosgalapagos.org/clima/datos/horario.json")
 
 # Relieve propio para la vista 3D: teselas de cota que genera sosgalapagos-datos
@@ -194,17 +193,15 @@ PUSH_PRIVADA = entorno("PUSH_PRIVADA", "")
 PUSH_CONTACTO = entorno("PUSH_CONTACTO", "mailto:sosgalapagos@usfq.edu.ec")
 
 # ── Clima ────────────────────────────────────────────────────────────────────
-# Base SQLite del recolector anterior. Mientras dure la migración (docs/plan-clima.md) se
-# copia de ahí a esta base cada cinco minutos. Vacío: no se copia nada.
-CLIMA_SQLITE = entorno("CLIMA_SQLITE", "")
-# Fuentes que ya recoge esta aplicación (etapa 5): dejan de copiarse de la base anterior. Separadas por comas.
-CLIMA_FUENTES_NATIVAS = [f.strip() for f in entorno("CLIMA_FUENTES_NATIVAS", "").split(",") if f.strip()]
-# Carpeta que lee el panel de /clima/. Con CLIMA_PUBLICAR_PANEL=1 esta aplicación escribe ahí estado, horario y diario.
+# Todo el clima corre aquí: las fuentes (clima/fuentes/) escriben en esta base cada cinco minutos.
+# Las direcciones y llaves de cada fuente van en el entorno, nunca en el repositorio (ver env.ejemplo).
+# CLIMA_RECOGER=1 enciende la recolección (en producción). En la Mac queda apagada.
+CLIMA_RECOGER = entorno("CLIMA_RECOGER", "0") == "1"
+# Carpeta que lee el panel de /clima/: aquí se escriben estado, horario, diario, pronóstico y las descargas.
 CLIMA_SALIDA = entorno("CLIMA_SALIDA", "")
-CLIMA_PUBLICAR_PANEL = entorno("CLIMA_PUBLICAR_PANEL", "0") == "1"
-# Carpeta donde el recolector guarda las respuestas de los modelos, y el pronóstico que publica.
-CLIMA_PRONOSTICO_DIR = entorno("CLIMA_PRONOSTICO_DIR", "")
-CLIMA_PRONOSTICO_JSON = entorno("CLIMA_PRONOSTICO_JSON", "")
+# IERSE solo responde desde Ecuador: una máquina allá hace de relevo (despliegue/relevo/) y se
+# identifica con esta llave. Vacía: el relevo está cerrado.
+CLIMA_RELEVO_LLAVE = entorno("CLIMA_RELEVO_LLAVE", "")
 # Fuentes oficiales y del mar. Las direcciones van en el entorno, nunca aquí. Vacío: esa fuente no se consulta.
 CLIMA_INOCAR_MAREAS_URL = entorno("CLIMA_INOCAR_MAREAS_URL", "")      # con {cp} y {fecha}
 CLIMA_INOCAR_OLEAJE_RSS = entorno("CLIMA_INOCAR_OLEAJE_RSS", "")

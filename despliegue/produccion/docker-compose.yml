@@ -21,29 +21,16 @@ x-plataforma: &plataforma
     - BD_NOMBRE=${POSTGRES_DB:-plataforma}
     - BD_USUARIO=${POSTGRES_USER:-plataforma}
     - BD_CLAVE=${POSTGRES_PASSWORD}
-    # Lluvia: el JSON que escribe el recolector de /clima cada 5 minutos. Solo lectura.
-    - CLIMA_ESTADO=/srv/clima/datos/estado.json
-    - CLIMA_HORARIO=/srv/clima/datos/horario.json
-    - CLIMA_SQLITE=/var/lib/clima/clima.db
-    # Lo que esperan los módulos del recolector anterior (clima/anterior/):
+    # Clima: esta aplicación recoge todas las fuentes y escribe en su base. Las direcciones y llaves
+    # de cada fuente (CLIMA_…) están en el .env del servidor, nunca en el repositorio.
+    - CLIMA_RECOGER=1
     - CLIMA_SALIDA=/srv/clima/datos
-    - CLIMA_DB=/var/lib/clima/clima.db
-    - CLIMA_FCD_DIR=/var/lib/clima/fcd
-    - CLIMA_PRIVADO=/var/lib/clima-privado
-    - CLIMA_FUENTES_ENV=/dev/null
-    - CLIMA_PRONOSTICO_DIR=/var/lib/clima/pronostico
-    - CLIMA_PRONOSTICO_JSON=/srv/clima/datos/pronostico.json
     - MEDIOS_DIR=/medios
     - RELIEVE_DIR=/relieve
   volumes:
     - medios:/medios
-    # La carpeta que lee el panel de /clima/: esta aplicación escribe ahí estado, horario, diario y las descargas.
+    # La carpeta que publica el servidor en /clima/: aquí se escriben los datos del panel y las descargas.
     - /srv/sosgalapagos-clima:/srv/clima
-    # Copia completa privada de los datos (para investigadores). La ruta real está en el .env del servidor.
-    - ${CLIMA_PRIVADO_HOST:-/var/lib/sosgalapagos-clima/privado}:/var/lib/clima-privado
-    # Base del recolector de clima, para copiarla a esta base (se abre en solo lectura; el montaje
-    # admite escritura porque SQLite necesita su archivo de memoria compartida). Ver docs/plan-clima.md.
-    - /var/lib/sosgalapagos-clima:/var/lib/clima
     # Relieve propio del 3D (teselas de cota). Se sube con rsync; ver despliegue/servidor.md.
     - /srv/sosgalapagos-relieve3d:/relieve:ro
   depends_on:
@@ -76,6 +63,13 @@ services:
   reloj:
     <<: *plataforma
     command: python manage.py reloj
+
+  # Satélite GOES-19: una pasada cada 5 minutos. Va aparte porque cada pasada tarda hasta 3 minutos
+  # y no debe frenar la cola de tareas. Con poca prioridad y memoria acotada.
+  satelite:
+    <<: *plataforma
+    command: nice -n 10 python manage.py clima_satelite --bucle
+    mem_limit: 768m
 
 volumes:
   bd:

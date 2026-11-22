@@ -102,7 +102,7 @@ def _mar(ahora):
 
     salida = []
     for puerto, p in PUERTOS.items():
-        pico = MarHora.objects.filter(puerto=puerto, hora__gte=ahora, hora__lte=ahora + timedelta(hours=36), ola_m__gte=OLA_FUERTE_M).order_by("-ola_m").first()
+        pico = MarHora.objects.filter(puerto=puerto, fuente="stormglass", hora__gte=ahora, hora__lte=ahora + timedelta(hours=36), ola_m__gte=OLA_FUERTE_M).order_by("-ola_m").first()
         if pico:
             cuando = pico.hora.astimezone(GALAPAGOS)
             salida.append(emitir("mar", p["zona"], f"mar:{puerto}:{cuando:%Y-%m-%d}", f"Oleaje fuerte en {p['nombre']}",

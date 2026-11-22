@@ -32,6 +32,12 @@ if ! grep -q '^WHATSAPP_SECRETO=.\+' .env; then
   echo "WHATSAPP_SECRETO=$(openssl rand -hex 24)" >> .env
 fi
 
+if ! grep -q '^CLIMA_RELEVO_LLAVE=.\+' .env; then
+  # La llave con que se identifica la máquina de relevo de IERSE (despliegue/relevo/).
+  sed -i '/^CLIMA_RELEVO_LLAVE=/d' .env
+  echo "CLIMA_RELEVO_LLAVE=$(openssl rand -hex 32)" >> .env
+fi
+
 echo "→ Levantando (las migraciones corren antes que la web)"
 docker compose up -d
 

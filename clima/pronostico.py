@@ -1,16 +1,13 @@
 """Pronóstico: guardar lo que dijo cada modelo y lo que se publicó, y medirlo contra lo que llovió.
 
-El pronóstico lo sigue calculando el recolector anterior (etapa 5 del plan). Aquí se guarda
-cada emisión en la base, cosa que antes no se hacía, y se verifica sola: sin eso no hay forma
-de saber si un cambio lo mejora o lo empeora.
-"""
-import gzip
-import json
-import re
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
+Las corridas las baja clima/fuentes/modelos.py y la señal que se publica la calcula clima/senal.py.
+Aquí se guarda, día por día, lo que dijo cada modelo y lo que se publicó, y se verifica solo: sin
+eso no hay forma de saber si un cambio lo mejora o lo empeora.
 
-from django.conf import settings
+Todo esto son modelos y estadísticas propias, NO datos oficiales. El pronóstico oficial es del INAMHI.
+"""
+from datetime import datetime, timedelta, timezone
+
 from django.db import connection
 
 from .consultas import GALAPAGOS
@@ -18,7 +15,7 @@ from .models import PronosticoEmitido, PronosticoModelo
 
 UMBRAL_MM = 20  # «lluvia fuerte»: 20 mm o más en el día
 
-# Puntos del pronóstico, en el orden en que vienen en los archivos, con las estaciones que
+# Puntos del pronóstico (los mismos de datos/zonas_geo.json), con las estaciones que
 # sirven para verificar cada uno. Lo observado es el máximo entre las estaciones con el día completo.
 PUNTOS = [
     {"id": "cascada-alta", "nombre": "Cuenca alta de La Cascada", "zona": "la-cascada", "tipo": "alta",
@@ -34,100 +31,63 @@ PUNTOS = [
 HORAS_MINIMAS = 20  # un día de estación cuenta si transmitió al menos 20 de sus 24 horas
 
 
-def _dia_local(t_iso):
-    """La lluvia de una hora del modelo es la suma de la hora que TERMINA en t: cuenta para el día
-    de Galápagos en que EMPIEZA esa hora. (La misma regla del recolector.)"""
-    return (datetime.fromisoformat(t_iso).replace(tzinfo=timezone.utc) - timedelta(hours=1)).astimezone(GALAPAGOS).date()
-
-
-def totales_por_dia(horas, valores):
-    """{día: mm} solo de los días completos (24 horas) y sin huecos."""
-    dias = {}
-    for t, v in zip(horas, valores):
-        d = dias.setdefault(_dia_local(t), [0, 0.0, False])
-        d[0] += 1
-        if v is None:
-            d[2] = True
-        else:
-            d[1] += v
-    return {dia: round(mm, 2) for dia, (n, mm, hueco) in dias.items() if n >= 24 and not hueco}
-
-
 def _percentil(ordenados, q):
     i = q * (len(ordenados) - 1)
     a, b = int(i), min(int(i) + 1, len(ordenados) - 1)
     return ordenados[a] + (ordenados[b] - ordenados[a]) * (i - a)
 
 
-def filas_de_archivo(nombre, contenido):
-    """Convierte una respuesta guardada de los modelos en filas de PronosticoModelo (sin guardar)."""
-    m = re.match(r"(\d{8}T\d{2})_(.+)\.json(\.gz)?$", nombre)
-    if not m:
-        return []
-    obtenido = datetime.strptime(m.group(1), "%Y%m%dT%H").replace(tzinfo=timezone.utc)
+def filas_de_corrida(corrida):
+    """Convierte una corrida guardada en filas de PronosticoModelo (sin guardar): un valor por punto y día."""
+    obtenido = corrida.recibido.replace(minute=0, second=0, microsecond=0)
     hoy = obtenido.astimezone(GALAPAGOS).date()
-    puntos = contenido if isinstance(contenido, list) else [contenido]
     filas = []
-    for punto, datos in zip(PUNTOS, puntos):
-        h = datos.get("hourly") or {}
-        horas = h.get("time") or []
-        if m.group(2) == "deterministas":
-            for clave, valores in h.items():
-                if not clave.startswith("precipitation_"):
-                    continue
-                for dia, mm in totales_por_dia(horas, valores).items():
-                    filas.append(PronosticoModelo(punto=punto["id"], modelo=clave[len("precipitation_"):], obtenido=obtenido, fecha=dia,
-                                                  anticipacion=(dia - hoy).days, mm=mm))
-        else:  # un conjunto: una serie por miembro
-            miembros = [totales_por_dia(horas, v) for k, v in h.items() if k.startswith("precipitation")]
-            for dia in sorted(set().union(*miembros) if miembros else []):
-                mm = sorted(x[dia] for x in miembros if dia in x)
-                if len(mm) < 0.8 * len(miembros):
-                    continue
-                filas.append(PronosticoModelo(punto=punto["id"], modelo="conjunto:" + m.group(2), obtenido=obtenido, fecha=dia, anticipacion=(dia - hoy).days,
+    for punto, datos in corrida.datos.items():
+        for dia, valor in (datos.get("dias") or {}).items():
+            fecha = datetime.fromisoformat(dia).date()
+            if corrida.tipo == "determinista":
+                filas.append(PronosticoModelo(punto=punto, modelo=corrida.modelo, obtenido=obtenido, fecha=fecha, anticipacion=(fecha - hoy).days, mm=valor))
+            elif valor:  # un conjunto: la lista con el valor de cada miembro
+                mm = sorted(valor)
+                filas.append(PronosticoModelo(punto=punto, modelo="conjunto:" + corrida.modelo, obtenido=obtenido, fecha=fecha, anticipacion=(fecha - hoy).days,
                                               mm=round(_percentil(mm, 0.5), 2), p90=round(_percentil(mm, 0.9), 2), miembros=len(mm),
                                               prob20=round(sum(1 for x in mm if x >= UMBRAL_MM) / len(mm), 3)))
     return [f for f in filas if 0 <= f.anticipacion <= 7]
 
 
-def guardar_archivo(carpeta=None, limite=None):
-    """Lee las respuestas guardadas que aún no están en la base. Devuelve (archivos leídos, filas nuevas)."""
-    carpeta = Path(carpeta or settings.CLIMA_PRONOSTICO_DIR) / "archivo"
+def guardar_modelos():
+    """Pasa a PronosticoModelo lo que dicen las corridas recibidas desde la última vez. Devuelve (corridas leídas, filas nuevas).
+
+    Solo se guarda lo que cambió respecto de lo último que se sabía de ese punto, modelo y día.
+    """
+    from .models import PronosticoCorrida
+
     ultimo = {(p, mo, f): mm for p, mo, f, mm in PronosticoModelo.objects.order_by("obtenido").values_list("punto", "modelo", "fecha", "mm")}
-    # Como solo se guardan los cambios, hay horas sin ninguna fila: se relee desde 18 horas antes de lo
-    # último guardado (los modelos cambian cada 6 o 12 horas), que alcanza para no saltarse nada.
     mas_reciente = PronosticoModelo.objects.order_by("-obtenido").values_list("obtenido", flat=True).first()
-    corte = mas_reciente - timedelta(hours=18) if mas_reciente else None
-    leidos = nuevas = 0
-    for ruta in sorted(carpeta.glob("*/*.json*")):
-        m = re.match(r"(\d{8}T\d{2})_", ruta.name)
-        if not m:
-            continue
-        cuando = datetime.strptime(m.group(1), "%Y%m%dT%H").replace(tzinfo=timezone.utc)
-        if corte and cuando < corte:
-            continue
-        try:
-            contenido = json.load(gzip.open(ruta) if ruta.suffix == ".gz" else open(ruta))
-        except (OSError, ValueError):
-            continue
-        leidos += 1
-        # Solo se guarda lo que cambió respecto de lo último que se sabía de ese punto, modelo y día.
-        filas = [f for f in filas_de_archivo(ruta.name, contenido) if ultimo.get((f.punto, f.modelo, f.fecha)) != f.mm]
+    corridas = PronosticoCorrida.objects.order_by("recibido")
+    if mas_reciente:
+        corridas = corridas.filter(recibido__gte=mas_reciente - timedelta(hours=2))
+    leidas = nuevas = 0
+    for corrida in corridas:
+        leidas += 1
+        filas = [f for f in filas_de_corrida(corrida) if ultimo.get((f.punto, f.modelo, f.fecha)) != f.mm]
         for f in filas:
             ultimo[(f.punto, f.modelo, f.fecha)] = f.mm
         nuevas += len(PronosticoModelo.objects.bulk_create(filas, ignore_conflicts=True))
-        if limite and leidos >= limite:
-            break
-    return leidos, nuevas
+    return leidas, nuevas
 
 
-def guardar_emitido(ruta=None):
+def guardar_emitido(publicado=None):
     """Guarda lo que el panel está publicando ahora, si cambió desde la última vez. Devuelve filas nuevas."""
+    if publicado is None:
+        from . import senal
+
+        publicado = senal.publicado()
+    p = publicado
     try:
-        p = json.loads(Path(ruta or settings.CLIMA_PRONOSTICO_JSON).read_text())
         emitido = datetime.fromisoformat(p["generado"].replace("Z", "+00:00")).replace(minute=0, second=0, microsecond=0)
         hoy = datetime.fromisoformat(p["hoy_local"]).date()
-    except (OSError, ValueError, KeyError):
+    except (ValueError, KeyError):
         return 0
     filas = []
     for zona in (p.get("zonas") or {}).values():

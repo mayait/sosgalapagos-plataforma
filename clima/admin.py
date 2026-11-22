@@ -1,6 +1,6 @@
 from django.contrib.gis import admin
 
-from .models import NivelManual, NivelZona, AvisoEnviado, Boletin, Calibracion, Corrida, Estacion, EstacionDanada, MareaExtremo, PronosticoOficial, Sincronizacion
+from .models import NivelManual, NivelZona, AvisoEnviado, Boletin, Calibracion, Corrida, Estacion, EstacionDanada, MareaExtremo, PronosticoCorrida, PronosticoOficial
 
 
 class SoloLectura(admin.ModelAdmin):
@@ -28,9 +28,11 @@ class CorridaAdmin(SoloLectura):
     date_hierarchy = "ts"
 
 
-@admin.register(Sincronizacion)
-class SincronizacionAdmin(SoloLectura):
-    list_display = ("inicio", "completa", "leidas", "cambiadas", "borradas", "segundos", "error")
+@admin.register(PronosticoCorrida)
+class PronosticoCorridaAdmin(SoloLectura):
+    list_display = ("recibido", "modelo", "tipo", "corrida", "disponible")
+    list_filter = ("tipo", "modelo")
+    exclude = ("datos",)
 
 
 @admin.register(EstacionDanada)
@@ -81,6 +83,6 @@ class NivelManualAdmin(admin.ModelAdmin):
 
 @admin.register(NivelZona)
 class NivelZonaAdmin(SoloLectura):
-    list_display = ("calculado", "zona", "nivel", "instantaneo", "anterior", "coincide", "silencio")
-    list_filter = ("zona", "coincide", "nivel")
+    list_display = ("calculado", "zona", "nivel", "instantaneo", "silencio")
+    list_filter = ("zona", "nivel")
 

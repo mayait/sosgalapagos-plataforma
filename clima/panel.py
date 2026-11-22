@@ -1,12 +1,14 @@
-"""Los datos que lee el panel de /clima/: estado.json, horario.json y diario.json, generados desde PostgreSQL.
+"""Los datos que lee el panel de /clima/: estado.json, horario.json, diario.json y pronostico.json.
 
-Tienen exactamente la forma que generaba el recolector anterior (`exportar()`), para que el
-panel no tenga que cambiar. La diferencia es de dónde salen: de los resúmenes por hora y de
-consultas acotadas, no de recorrer toda la historia cada cinco minutos.
+Todo sale de PostgreSQL: de los resúmenes por hora y de consultas acotadas, no de recorrer toda
+la historia cada cinco minutos.
 
-- Las mareas, el pronóstico y la estacionalidad usan los módulos del recolector anterior.
-- El nivel de lluvia peligrosa es clima/nivel.py.
-- El satélite lo sigue escribiendo su propio colector (satelite.json).
+- Nivel de lluvia peligrosa: clima/nivel.py.    - Mareas: clima/mareas.py.
+- Pronóstico de modelos: clima/senal.py.        - Estacionalidad: clima/estacionalidad.py.
+- Satélite: lo que deja el colector (clima/satelite/) en la tabla Estado.
+
+Recordatorio para quien lo toque: el nivel, el pronóstico, las mareas predichas, la estacionalidad
+y el satélite son modelos o estimaciones propias, NO datos oficiales. El panel lo dice en cada bloque.
 """
 import datetime as dt
 import json
@@ -18,7 +20,8 @@ from pathlib import Path
 from django.conf import settings
 from django.db import connection
 
-from .compat import Conexion, modulos
+from . import danadas as marcas_de_dano
+from .fuentes import OPERADOR
 from .models import Estado
 
 registro = logging.getLogger(__name__)
@@ -35,11 +38,35 @@ def _seguro(nombre, funcion):
         return {"error": str(e)[:200]}
 
 
-def _estaciones(ahora, rec, danadas):
+EVENTOS = [  # momentos de referencia para comparar (horas UTC)
+    {"id": "inundacion-2026-10-30", "nombre": "Inundación La Cascada (30–31 oct 2026)", "desde": "2026-10-30T06:00:00Z", "hasta": "2026-11-01T06:00:00Z"},
+]
+# Red DARWIN-Rain (Philipps-Universität Marburg, con la Fundación Charles Darwin y la Universidad de
+# Cuenca): estaciones automáticas con pluviómetro, sin transmisión en tiempo real (los datos se suben
+# con semanas de retraso y su descarga requiere un acuerdo). Se publican nombre, ubicación y cita
+# (autorizado por Julián el 12-nov-2026) para que se sepa que existen; no hay serie. La fecha es el
+# último dato publicado que vimos en sus metadatos (12-nov-2026). Cerro Crocker, Santa Rosa y
+# Militar no se repiten: son los mismos sitios que transmiten en vivo por IERSE-WSN.
+DARWIN_RAIN = [  # (código, nombre, isla, lat, lon, altitud, datos hasta, nota)
+    ("puerto_baquerizo", "Puerto Baquerizo Moreno (DARWIN)", "San Cristóbal", -0.9031, -89.612, 25, "2026-10-29", None),
+    ("galapaguera", "La Galapaguera", "San Cristóbal", -0.914, -89.437, 165, "2026-10-10", None),
+    ("el_junco", "El Junco (DARWIN)", "San Cristóbal", -0.8938, -89.480, 684, "2026-05-25", None),
+    ("sierra_negra", "Sierra Negra", "Isabela", -0.8484, -91.131, 1145, "2026-10-28", None),
+    ("cueva_sucre", "Cueva de Sucre", "Isabela", -0.8431, -91.028, 382, "2026-10-19", None),
+    ("puerto_villamil", "Puerto Villamil (El Chapín)", "Isabela", -0.9462, -90.974, 22, "2026-01-14", None),
+    ("wittmer", "Wittmer (Puerto Velasco Ibarra)", "Floreana", -1.2757, -90.4875, None, "2026-10-01", "ubicación aproximada: la red no publica coordenadas"),
+    ("minas_rojas", "Minas Rojas", "Santa Cruz", -0.6186, -90.367, 619, "2026-05-20", None),
+    ("puerto_ayora_fcd", "Puerto Ayora (FCD)", "Santa Cruz", -0.7438, -90.302, 4, "2026-01-12", None),
+]
+# Fuentes que no son estaciones del panel: el satélite (zonas) y las series históricas diarias de la FCD.
+SIN_PANEL = ("goes", "fcd")
+
+
+def _estaciones(ahora, marcas):
     hace = lambda **k: ahora - dt.timedelta(**k)  # noqa: E731
     with connection.cursor() as c:
         c.execute("""SELECT id, fuente, codigo, nombre, isla, ST_Y(punto), ST_X(punto), altitud_m FROM clima_estacion
-                     WHERE fuente <> 'goes' ORDER BY isla, altitud_m DESC NULLS LAST""")
+                     WHERE NOT (fuente = ANY(%s)) ORDER BY isla, altitud_m DESC NULLS LAST""", [list(SIN_PANEL)])
         filas = c.fetchall()
         c.execute("SELECT estacion_id, max(ts) FROM clima_observacion WHERE variable <> 'lluvia_dia_mm' GROUP BY 1")
         ultimo = dict(c.fetchall())
@@ -56,9 +83,9 @@ def _estaciones(ahora, rec, danadas):
     ests = []
     for pk, fuente, codigo, nombre, isla, lat, lon, altitud in filas:
         e = {"fuente": fuente, "estacion": codigo, "nombre": nombre, "isla": isla, "lat": lat, "lon": lon, "altitud_m": altitud,
-             "operador": rec.OPERADOR.get(fuente, fuente), "ultimo": iso(ultimo[pk]) if pk in ultimo else None,
+             "operador": OPERADOR.get(fuente, fuente), "ultimo": iso(ultimo[pk]) if pk in ultimo else None,
              "actual": dict(actual.get(pk, {})), "lluvia": {}}
-        marca = danadas.publica(f"{fuente}/{codigo}")
+        marca = marcas_de_dano.publica(marcas, f"{fuente}/{codigo}")
         if marca:  # sensor dañado: no se publica su lluvia (los crudos siguen en la base)
             e["danada"] = marca
             for v in marca["variables"]:
@@ -72,42 +99,33 @@ def _estaciones(ahora, rec, danadas):
         ests.append(e)
     ests += [{"fuente": "darwin", "estacion": c_, "nombre": n, "isla": i, "lat": la, "lon": lo, "altitud_m": a, "operador": "DARWIN-Rain",
               "ultimo": None, "actual": {}, "lluvia": {}, "en_vivo": False, "datos_hasta": h, **({"nota": nota} if nota else {})}
-             for c_, n, i, la, lo, a, h, nota in rec.DARWIN_RAIN]
+             for c_, n, i, la, lo, a, h, nota in DARWIN_RAIN]
     return ests
 
 
-def _fuentes(rec):
+def _fuentes():
     with connection.cursor() as c:
         c.execute("SELECT DISTINCT ON (fuente) fuente, ts, ok, registros, segundos FROM clima_corrida ORDER BY fuente, ts DESC")
-        return {rec.OPERADOR.get(f, f): {"ts": iso(ts), "ok": int(ok), "registros": n, "segundos": s} for f, ts, ok, n, s in c.fetchall()}
+        return {OPERADOR.get(f, f): {"ts": iso(ts), "ok": int(ok), "registros": n, "segundos": s} for f, ts, ok, n, s in c.fetchall()}
 
 
 def estado(ahora=None):
-    from . import nivel
+    from . import mareas, nivel, senal
 
     ahora = ahora or dt.datetime.now(UTC)
-    rec = modulos()
-    import danadas
-    import mareas
-    import pronostico
-
-    con = Conexion()
-    pron = _seguro("el pronóstico", lambda: pronostico.exportar(ahora))
-    try:
-        sat = json.loads((Path(settings.CLIMA_SALIDA) / "satelite.json").read_text())
-    except (OSError, ValueError):
-        sat = None
-    return {"generado": iso(ahora), "estaciones": _estaciones(ahora, rec, danadas), "fuentes": _fuentes(rec), "eventos": rec.EVENTOS,
+    marcas = marcas_de_dano.vigentes(ahora)
+    pron = _seguro("el pronóstico", lambda: senal.publicado(ahora))
+    satelite = Estado.objects.filter(clave="satelite").first()
+    return {"generado": iso(ahora), "estaciones": _estaciones(ahora, marcas), "fuentes": _fuentes(), "eventos": EVENTOS,
             "inundacion": _seguro("el nivel de lluvia", lambda: nivel.calcular(ahora)),
-            "mareas": _seguro("las mareas", lambda: mareas.calcular(con, ahora)), "pronostico": pron, "satelite": sat}, pron
+            "mareas": _seguro("las mareas", lambda: mareas.calcular(ahora)), "pronostico": pron,
+            "satelite": satelite.datos if satelite else None}, pron
 
 
 def horario(ahora=None):
     """Historia horaria completa en un eje común (horas UTC): lluvia (suma), temperatura y nivel del mar (media)."""
     ahora = ahora or dt.datetime.now(UTC)
-    modulos()
-    import danadas
-
+    marcas = marcas_de_dano.vigentes(ahora)
     with connection.cursor() as c:
         c.execute("""SELECT min(h.hora) FROM clima_horaria h JOIN clima_estacion e ON e.id = h.estacion_id
                      WHERE h.variable IN ('lluvia_mm', 'temp_c') AND e.fuente IN ('ierse', 'gsc')""")
@@ -123,7 +141,7 @@ def horario(ahora=None):
                 if not 0 <= i < n:
                     continue
                 s = series.setdefault(f"{f}/{e}", {}).setdefault(v, [None] * n)
-                if danadas.danada(f"{f}/{e}", v, h + dt.timedelta(minutes=59, seconds=59)):
+                if marcas_de_dano.danada(marcas, f"{f}/{e}", v, h + dt.timedelta(minutes=59, seconds=59)):
                     continue  # hora con datos de un sensor dañado: queda en null
                 s[i] = None if x is None else round(x, 1)
     return {"generado": iso(ahora), "inicio": iso(h0) if h0 else None, "horas": n, "series": series}
@@ -133,24 +151,24 @@ def diario(ahora=None):
     """Lluvia por día de Galápagos (UTC−6): la suma de lo medido si la estación transmitió 20 horas o más;
     si no, el diario histórico de la fuente. Más la estacionalidad."""
     ahora = ahora or dt.datetime.now(UTC)
-    modulos()
-    import danadas
-
+    marcas = marcas_de_dano.vigentes(ahora)
     dia = {}
     with connection.cursor() as c:
         c.execute("""SELECT e.fuente, e.codigo, (h.hora - interval '6 hours')::date, sum(h.suma), count(*)
-                     FROM clima_horaria h JOIN clima_estacion e ON e.id = h.estacion_id WHERE h.variable = 'lluvia_mm' GROUP BY 1, 2, 3""")
+                     FROM clima_horaria h JOIN clima_estacion e ON e.id = h.estacion_id
+                     WHERE h.variable = 'lluvia_mm' AND NOT (e.fuente = ANY(%s)) GROUP BY 1, 2, 3""", [list(SIN_PANEL)])
         for f, e, d, ll, hs in c.fetchall():
             dia.setdefault(f"{f}/{e}", {})[d.isoformat()] = (round(ll, 1), hs)
         c.execute("""SELECT e.fuente, e.codigo, (o.ts - interval '5 hours')::date, o.valor
-                     FROM clima_observacion o JOIN clima_estacion e ON e.id = o.estacion_id WHERE o.variable = 'lluvia_dia_mm'""")
+                     FROM clima_observacion o JOIN clima_estacion e ON e.id = o.estacion_id
+                     WHERE o.variable = 'lluvia_dia_mm' AND NOT (e.fuente = ANY(%s))""", [list(SIN_PANEL)])
         for f, e, d, ll in c.fetchall():
             s = dia.setdefault(f"{f}/{e}", {})
             d = d.isoformat()
             if ll is not None and (d not in s or s[d][1] < 20):
                 s[d] = (round(ll, 1), 24)
     for k, s in dia.items():  # sensores dañados: sin lluvia diaria desde el día en que empezó la falla
-        x = danadas.danada(k, "lluvia_mm")
+        x = marcas_de_dano.danada(marcas, k, "lluvia_mm")
         if x:
             d0 = (x["desde_dt"] - dt.timedelta(hours=6)).date().isoformat()
             for d in [d for d in s if d >= d0]:
@@ -173,9 +191,9 @@ def _estacionalidad(ahora):
     guardada = Estado.objects.filter(clave="estacionalidad").first()
     if guardada and ahora - guardada.generado < dt.timedelta(hours=6):
         return guardada.datos
-    import estacionalidad
+    from . import estacionalidad
 
-    datos = _seguro("la estacionalidad", lambda: estacionalidad.calcular(Conexion()))
+    datos = _seguro("la estacionalidad", estacionalidad.calcular)
     if "error" not in datos:
         Estado.objects.update_or_create(clave="estacionalidad", defaults={"datos": datos, "generado": ahora})
     return datos
@@ -208,10 +226,3 @@ def publicar(carpeta=None, ahora=None):
     r["total_s"] = round(time.monotonic() - t0, 2)
     r["errores"] = [k for k in ("inundacion", "mareas", "pronostico") if isinstance(est.get(k), dict) and "error" in est[k]]
     return r
-
-
-def descargas():
-    """Las descargas públicas (un ZIP por mes) y la copia completa privada, con las funciones del recolector."""
-    rec = modulos()
-    rec.exportar_csv(Conexion())  # escribe en CLIMA_PRIVADO/csv y en CLIMA_SALIDA/descargas
-    return len(list((Path(settings.CLIMA_SALIDA) / "descargas").glob("*.zip")))

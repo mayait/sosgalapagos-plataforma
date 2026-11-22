@@ -35,8 +35,8 @@ Cada etapa deja el clima funcionando. El recolector anterior no se apaga hasta l
 | **2. Lo nuevo, nativo** | Guardar y verificar cada pronóstico; recalibración propia (en evaluación); boletines del INAMHI y del INOCAR; mareas y oleaje; alertas por tema | Cada boletín nuevo aparece sin intervención; el error del pronóstico se mide solo | **Hecha el 22-nov** |
 | **3. Cálculos en Django** | Nivel de lluvia peligrosa, mareas y estacionalidad desde PostgreSQL | Dan lo mismo que el recolector anterior | **Hecha el 22-nov.** Comparado valor por valor antes del relevo |
 | **4. Panel desde Django** | Los datos que lee `/clima/` los genera la plataforma | Mismo contenido, misma dirección | **Hecha el 22-nov.** `horario.json` y `diario.json`: cero diferencias en 238 000 valores |
-| **5. Recolectores en Django** | Cada fuente la recoge una tarea de esta aplicación | Traen las mismas filas | **Hecha el 22-nov** para 10 de 12. Faltan IERSE (entra por un puente) y el satélite (colector aparte) |
-| **6. Apagar lo anterior** | Se detienen los timers de systemd (no se borran) | — | **Hecha el 22-nov** para el recolector principal y el de las descargas |
+| **5. Recolectores en Django** | Cada fuente la recoge un módulo de esta aplicación (`clima/fuentes/`) | Traen las mismas filas | **Hecha el 22-nov**: las 12, nativas. IERSE entra por un relevo mínimo; el satélite corre en su propio servicio |
+| **6. Apagar lo anterior** | Se detienen los timers de systemd y se deja de usar SQLite (nada se borra) | No queda nada fuera de esta aplicación | **Hecha el 22-nov** |
 
 **Por qué en este orden.** Portar primero los recolectores sería lo más arriesgado en plena emergencia: varias fuentes son frágiles (una se lee simulando un navegador, otra raspando una página) y un fallo dejaría sin datos la alerta. Copiando la base se tiene todo en Django desde el primer día, sin tocar lo que recoge los datos.
 
@@ -100,70 +100,34 @@ Por defecto se encienden peligros, lluvia y oficiales. Cada aviso lleva una clav
 
 **Lo que falta de esta parte:** avisar de pleamares muy altas (hace falta un umbral por puerto), usar el residuo del nivel del mar (con El Niño el mar está unos 50 cm más alto que la tabla), meter el pronóstico por horas del INAMHI en el nivel de lluvia, y que la tabla del INOCAR de 2027 exista (sale en diciembre).
 
-## 3d. Etapas 3 y 5: cómo se hace el relevo (22-nov-2026)
+## 3d. Un solo stack (22-nov-2026)
 
-**Nivel de lluvia peligrosa (etapa 3).** `clima/nivel.py` es la regla v0.2 del recolector copiada sin cambiar la lógica; solo cambia de dónde lee. Corre después de cada copia, para el mismo instante que el recolector anterior, y guarda en `NivelZona` el nivel de cada zona junto al del anterior y si coinciden.
+Julián pidió cerrar la migración sin dejar deuda: todo en Python dentro de esta aplicación, escribiendo en PostgreSQL, sin SQLite y sin correr el recolector anterior «tal cual». Quedó así:
 
-- Primera pasada: las 4 zonas iguales. Tarda **0,44 s**; la exportación del recolector anterior, donde va este cálculo, gasta unos 2,5 min de CPU.
-- La coincidencia acumulada está en `/riesgos/api/clima/nivel` y en `/riesgos/api/clima/salud`.
-- **Cuándo se cambia:** con 7 días de comparación y más del 99 % de coincidencia, el panel, la franja del mapa y los avisos pasan a leer el nivel de Django. Hasta entonces mandan los del recolector anterior.
-- Los niveles puestos a mano y los sensores dañados ya son registros del admin. **Mientras convivan los dos, hay que ponerlos en los dos sitios** (el admin y los archivos JSON del repo de datos), o dejarán de coincidir.
-
-**Recolectores nativos (etapa 5).** Cada fuente de `CLIMA_FUENTES_NATIVAS` la recoge `clima/fuentes.py` y deja de copiarse de la base anterior. El recolector anterior la sigue recogiendo por su lado, así que `manage.py clima_sincronizar --comparar` muestra las dos cuentas una junto a la otra.
-
-Orden previsto, de la más estable a la más frágil: METAR (hecha), IOC, INAMHI, Open-Meteo (mar y pronóstico), Tempest, Ambient, WeatherLink, GOES, Weather Underground y GSC. IERSE entra por el puente desde una Mac en Ecuador: su relevo es cambiar a dónde envía el puente.
-
-**Lo que la plataforma ya no lee de archivos:** la lluvia de la línea del tiempo sale de esta base.
-
-## 3e. El relevo (22-nov-2026)
-
-Julián pidió seguir con todo el plan aprovechando un día de sol. Se hizo así:
-
-**Cómo.** En vez de reescribir a mano los recolectores (4 200 líneas con conversiones de unidades y de horas ya probadas), corren **tal cual** dentro de Django (`clima/anterior/`), escribiendo en PostgreSQL por una conexión de compatibilidad (`clima/compat.py`): tres vistas con la forma de las tablas de SQLite. Lo que sí es nuevo y nativo es todo lo caro: los resúmenes por hora, el nivel de lluvia y la generación de los datos del panel (`clima/panel.py`).
-
-**Validación antes de cambiar** (`manage.py clima_panel --comparar`):
-
-| Archivo del panel | Valores comparados | Distintos |
+| Qué | Dónde | Antes |
 |---|---|---|
-| `horario.json` | 199 019 | 0 |
-| `diario.json` (con la estacionalidad) | 39 394 | 0 |
-| `estado.json` | 4 638 | Solo los que dependen de la hora (se generó 8 min después) y un reporte de campo que venció a las 12:30 |
+| Cada fuente de mediciones | `clima/fuentes/<fuente>.py`, con `recoger()`; lo común en `base.py` | 1 400 líneas en dos archivos escritos para SQLite, detrás de una capa de compatibilidad |
+| IERSE | `clima/fuentes/ierse.py` + `clima/relevo.py`. Una máquina en Ecuador corre `despliegue/relevo/relevo.py` (90 líneas, sin dependencias), que pide lo que la plataforma le indica y devuelve las respuestas tal cual | Un «puente» con su propio recolector, su base SQLite y SSH al servidor |
+| Satélite GOES-19 | `clima/satelite/`, servicio `satelite` del Compose; guarda en PostgreSQL y deja el resumen en `Estado` | Programa aparte con su entorno, su timer y archivos de estado |
+| Corridas de los modelos de pronóstico | Tabla `PronosticoCorrida` (queda la historia) | Archivos JSON en una carpeta |
+| Modelo del mar (Open-Meteo) | Tabla `MarHora`, junto a Stormglass, con la fuente de cada fila | Un archivo `mar_modelo.json` |
+| Señal del pronóstico, mareas, estacionalidad, descargas | `clima/senal.py`, `mareas.py`, `estacionalidad.py`, `descargas.py` | Módulos del recolector anterior |
+| Series históricas de la FCD | En la base (fuente `fcd`), cargadas con `manage.py clima_importar fcd` | Archivos CSV en una carpeta del servidor |
+| Nivel de lluvia para el mapa | Se lee de la tabla `Estado` | Se leía de `estado.json` |
 
-**Costo.** Generar los tres archivos: **1,2 s** en Django. El recolector anterior gastaba unos 2,5 min de CPU por corrida, cada 5 minutos.
+**Lo que se retiró** (movido a `Archivo/clima-recolector-anterior/`, sin uso): el recolector anterior, la capa de compatibilidad (`compat.py` y las vistas de la migración 0007) y la copia desde SQLite. La tabla del registro de copias se conserva como `archivo_clima_sincronizacion`.
 
-**Qué quedó corriendo dónde:**
+**En el servidor quedan sin uso, sin borrar:** la base `/var/lib/sosgalapagos-clima/clima.db`, `/opt/sosgalapagos-clima/` y los timers `sosgalapagos-clima*.timer` (detenidos y deshabilitados).
 
-| Qué | Dónde |
-|---|---|
-| GSC, INAMHI, IOC, METAR, WeatherLink, Tempest, Ambient, Weather Underground, mar y pronóstico | Django, cada 5 min |
-| Nivel de lluvia peligrosa, mareas, estacionalidad, datos del panel | Django |
-| Descargas públicas y copia privada para investigadores | Django, cada hora |
-| IERSE | Sigue entrando por el puente a la base SQLite; Django la copia cada 5 min |
-| Satélite GOES-19 | Su colector y su timer, sin cambios; Django copia sus mediciones |
-| Niveles puestos a mano y sensores dañados | Solo en el admin de la plataforma |
+**Por qué IERSE necesita un relevo.** Su servidor solo responde a conexiones desde Ecuador; desde el de sosgalapagos.org la conexión se agota (comprobado otra vez el 22-nov). Se deja de depender de una máquina cuando IERSE autorice la IP del servidor (`CLIMA_IERSE_DIRECTO=1`) o cuando el relevo corra en una máquina siempre encendida en Ecuador. Detalle en `despliegue/relevo/LEEME.md`.
 
-**Dos cosas que aparecieron al mover las fuentes:**
-- METAR «fallaba» un tercio de las veces: de noche la fuente responde «204, sin contenido» y el recolector lo contaba como error. Ya no.
-- Weather Underground rechazaba (403) las peticiones desde el contenedor: no le gusta la lista de cifrados TLS del Python de la imagen. Con la de OpenSSL por defecto responde.
+**La copia privada en CSV se dejó de generar.** Todo está en PostgreSQL, con respaldo diario; quien necesite los datos completos los saca de ahí o de la API.
 
-**Cómo volver atrás** (minutos, sin perder datos):
+**Dos cosas que aparecieron al mover las fuentes** (siguen valiendo):
+- Los aeropuertos responden «204, sin contenido» de noche: no es un fallo.
+- Weather Underground rechaza (403) la lista de cifrados TLS del Python de la imagen; con la de OpenSSL por defecto responde.
 
-```bash
-# en el servidor
-cd /opt/sosgalapagos-plataforma/despliegue/produccion
-sed -i 's/^CLIMA_PUBLICAR_PANEL=.*/CLIMA_PUBLICAR_PANEL=0/; s/^CLIMA_FUENTES_NATIVAS=.*/CLIMA_FUENTES_NATIVAS=/' .env && docker compose up -d
-cp /root/respaldo-clima-relevo/recolector.py /root/respaldo-clima-relevo/recibir.sh /opt/sosgalapagos-clima/
-systemctl enable --now sosgalapagos-clima.timer sosgalapagos-clima-csv.timer
-```
-
-La base SQLite sigue en su sitio, pero **desde el relevo solo recibe IERSE y el satélite**: si se vuelve atrás, el recolector anterior rellena por sí solo los últimos 3 días de las demás fuentes.
-
-**Lo que falta para terminar del todo:**
-- IERSE directo a PostgreSQL: cambiar a dónde envía el puente de la Mac en Ecuador.
-- El satélite dentro de la plataforma: necesita `numpy` y `h5py` en la imagen.
-- Sacar cada fuente de `clima/anterior/` a un módulo propio, sin la capa de compatibilidad, cuando haya que tocarla.
-- Guardar el pronóstico y el mar del modelo en tablas, no en archivos sueltos.
-- Vigilar unos días que ninguna fuente se degrade (`/riesgos/api/clima/salud`).
+**Si algo sale mal.** No hay vuelta al recolector anterior: su base dejó de recibir datos. Se vuelve a la versión anterior de esta aplicación (`git checkout` de la etiqueta previa y `desplegar.sh`); las tablas nuevas no estorban, y lo recogido mientras tanto se recupera solo (las fuentes rellenan 3 días; IERSE, 10).
 
 ## 4. Lo que se gana con Django detrás
 
@@ -175,10 +139,7 @@ La base SQLite sigue en su sitio, pero **desde el relevo solo recibe IERSE y el 
 
 ## 5. Riesgos y cosas que hay que decidir
 
-- **Licencias sin resolver** (vienen de antes; no las crea esta migración):
-  - IERSE es CC BY-NC-ND (sin obras derivadas), y hoy se publican agregados y sus crudos.
-  - USFQ GSC no publica licencia, y sus crudos están en las descargas públicas desde el 12-nov.
-  - Las series de la FCD (CC BY-NC-SA) se tratan como privadas, pero están en el repositorio público.
+- **Licencias de los datos: resuelto el 22-nov-2026.** Julián confirmó que hay permiso de IERSE, del GSC, de la Fundación Charles Darwin y del INAMHI para publicar sus datos. Cada fuente conserva su licencia, que se nombra en las descargas (`clima/descargas.py`), en el panel y en `LICENCIA-DATOS.md`.
 - **La predicción de mareas se acaba el 30-dic-2027** y hoy no avisa. Se añade un aviso (etapa 2).
 - **IERSE depende de una Mac encendida en Ecuador.** No cambia con la migración.
 - **Los endpoints de las fuentes siguen siendo privados**: van en variables de entorno, nunca en este repositorio.
@@ -187,9 +148,10 @@ La base SQLite sigue en su sitio, pero **desde el relevo solo recibe IERSE y el 
 ## 6. Cómo se usa la etapa 1
 
 ```bash
-manage.py clima_sincronizar --completa   # toda la historia (la primera vez)
-manage.py clima_sincronizar              # los últimos 3 días (corre solo cada 5 min)
-manage.py clima_sincronizar --comparar   # cuenta filas en los dos lados, por fuente
+manage.py clima_panel --recoger          # corre una vez todas las fuentes configuradas
+manage.py clima_panel --publicar         # escribe los datos del panel
+manage.py clima_satelite                 # una pasada del satélite
+manage.py clima_importar …               # cargas históricas puntuales
 ```
 
 - `/riesgos/api/clima/estaciones` · `/riesgos/api/clima/serie?estacion=…&variable=lluvia_mm&paso=hora|dia` · `/riesgos/api/clima/salud`

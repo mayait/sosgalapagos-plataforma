@@ -171,7 +171,7 @@ def clima_serie(request, estacion: str, variable: str = "lluvia_mm", desde: date
 
 @api.get("/clima/salud", summary="Salud de las fuentes de clima", tags=["clima"])
 def clima_salud(request):
-    """Qué fuentes responden, cuánto tardan y cuánto retraso lleva la copia a esta base."""
+    """Qué fuentes responden, cuánto tardan y hace cuánto llegó la última medición."""
     from clima import consultas
 
     return consultas.salud()
@@ -230,12 +230,30 @@ def clima_alertas(request):
     }
 
 
-@api.get("/clima/nivel", summary="Nivel de lluvia peligrosa por zona (cálculo en Django, en prueba)", tags=["clima"])
+@api.get("/clima/nivel", summary="Nivel de lluvia peligrosa por zona", tags=["clima"])
 def clima_nivel(request):
-    """El nivel calculado en esta base, y cuánto coincide con el del recolector anterior. Preliminar, no oficial."""
-    from clima import niveles
+    """El nivel vigente de cada zona. Es una estimación propia y preliminar, no una alerta oficial."""
     from clima.models import Estado
 
     e = Estado.objects.filter(clave="inundacion").first()
-    return {"en_prueba": True, "coincidencia_con_el_anterior": niveles.coincidencia(), **(e.datos if e else {"zonas": []})}
+    return {"aviso": "Estimación propia y preliminar a partir de la lluvia medida. No es una alerta oficial: sigue las indicaciones del COE, la SNGR y el ECU 911.",
+            **(e.datos if e else {"zonas": []})}
 
+
+@api.get("/clima/relevo/ierse", summary="Relevo de IERSE: qué pedir", tags=["clima"], include_in_schema=False)
+def clima_relevo_pedidos(request):
+    """Para la máquina de relevo en Ecuador: la lista de pedidos que debe hacerle a IERSE ahora."""
+    from clima import relevo
+
+    if not relevo.autorizado(request):
+        return api.create_response(request, {"error": "no autorizado"}, status=403)
+    return relevo.pedidos()
+
+
+@api.post("/clima/relevo/ierse", summary="Relevo de IERSE: entregar respuestas", tags=["clima"], include_in_schema=False)
+def clima_relevo_entrega(request):
+    from clima import relevo
+
+    if not relevo.autorizado(request):
+        return api.create_response(request, {"error": "no autorizado"}, status=403)
+    return relevo.recibir(request.body)

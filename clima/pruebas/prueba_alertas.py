@@ -208,23 +208,18 @@ def prueba_un_sensor_danado_no_cuenta_y_un_reporte_de_campo_solo_sube():
     assert zonas["san-cristobal"]["nivel_instantaneo"] == "bajo"   # lo medido sigue a la vista
 
 
-def prueba_cada_pasada_se_compara_con_el_recolector_anterior(monkeypatch, client):
+def prueba_cada_pasada_guarda_el_nivel_y_su_historia(monkeypatch, client):
     from clima import nivel, niveles
     from clima.models import NivelZona
-    from reportes import clima as panel
+    from reportes import clima as mapa
 
     ahora = datetime.now(timezone.utc).replace(second=0, microsecond=0)
     _lluvia("inamhi/M0191", ahora, 5.0)
     monkeypatch.setattr(nivel, "_recoleccion_viva", lambda desde: {"inamhi": {(ahora - timedelta(minutes=m)).strftime("%Y-%m-%dT%H") for m in range(0, 6000, 30)}})
-    monkeypatch.setattr(panel, "_leer", lambda: {"inundacion": {"calculado": ahora.strftime("%Y-%m-%dT%H:%M:%SZ"), "zonas": [
-        {"id": "la-cascada", "nivel": "muy alto"}, {"id": "isabela", "nivel": "bajo"}]}})
-    r = niveles.actualizar()
-    assert r["zonas"] == 4 and r["comparadas"] == 2 and r["coinciden"] == 1
-    assert NivelZona.objects.get(zona="la-cascada").coincide is True
-    distinta = NivelZona.objects.get(zona="isabela")
-    assert distinta.coincide is False and distinta.nivel == "sin datos" and distinta.anterior == "bajo"
-    assert NivelZona.objects.get(zona="san-cristobal").coincide is None   # el anterior no la traía
-    c = niveles.coincidencia()
-    assert c["comparaciones"] == 2 and c["coincidencia_pct"] == 50.0 and c["ultimas_diferencias"][0]["zona"] == "isabela"
+    r = niveles.actualizar(ahora)
+    assert r["zonas"] == 4 and NivelZona.objects.count() == 4
+    assert NivelZona.objects.get(zona="la-cascada").nivel == "muy alto" and NivelZona.objects.get(zona="isabela").nivel == "sin datos"
     datos = client.get("/riesgos/api/clima/nivel").json()
-    assert datos["en_prueba"] and len(datos["zonas"]) == 4 and datos["coincidencia_con_el_anterior"]["comparaciones"] == 2
+    assert len(datos["zonas"]) == 4 and "no es una alerta oficial" in datos["aviso"].lower()
+    # La franja del mapa lee el nivel de esta misma base, no de un archivo.
+    assert mapa.nivel("la-cascada")["nivel"] == "muy alto"
