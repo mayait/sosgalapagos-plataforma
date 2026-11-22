@@ -18,7 +18,7 @@ MARCADORES = {"reporte", "corazon"}  # formas de marcador que el mapa sabe dibuj
 CLAVES = {
     "capa": {"id", "titulo", "tipo", "archivo", "visible", "visible_movil", "fuente", "descripcion", "elementos", "estilo",
              "clasificar", "estilo_si", "filtro", "patron", "borde", "rotulo", "popup", "leyenda", "zoom_min", "opacidad",
-             "raster", "teselas", "solo_rotulo", "marcador", "fotos_base",
+             "raster", "teselas", "solo_rotulo", "marcador", "fotos_base", "extrusion",
              # se aceptan y no cambian el dibujo: «pane» (el apilado va por tipo) y «corto» (nombre breve del buscador)
              "pane", "corto"},
     "estilo": {"color", "weight", "opacity", "fill", "fillColor", "fillOpacity", "dashArray", "radius"},
@@ -29,6 +29,7 @@ CLAVES = {
     "borde": {"color", "weight", "opacity", "fill"},
     "patron": {"id", "color", "separacion", "grosor", "fondo", "opacidad", "opacidad_fondo"},
     "filtro": {"propiedad", "en"},
+    "extrusion": {"altura", "auto_3d"},  # volumen en la vista 3D: propiedad con la altura (m) y si se enciende sola
     "grupo": {"id", "titulo", "capas", "descripcion", "enlace"},
 }
 
@@ -64,7 +65,7 @@ class Command(BaseCommand):
                 if capa.get("marcador") and capa["marcador"] not in MARCADORES:
                     nuevo.append(f"{donde}: marcador «{capa['marcador']}»")
                 revisar("capa", donde, capa)
-                for parte in ("estilo", "rotulo", "popup", "borde", "patron", "filtro"):
+                for parte in ("estilo", "rotulo", "popup", "borde", "patron", "filtro", "extrusion"):
                     revisar(parte, donde, capa.get(parte))
                 clasificar = capa.get("clasificar") or {}
                 revisar("clasificar", donde, clasificar)
