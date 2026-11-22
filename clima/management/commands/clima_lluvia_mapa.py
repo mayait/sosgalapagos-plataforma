@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """Escribe el mapa de lluvia y viento de los modelos (lluvia-mapa.json) para el panel de /clima/.
 
   manage.py clima_lluvia_mapa                    solo si hay corrida nueva del IFS y pasaron 5 h (si no, no gasta nada)
