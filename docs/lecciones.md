@@ -176,3 +176,14 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 - **El componente vive en `/riesgos/app.js`** (`plantillas/reportes/app.js`) y no depende del mapa: cualquier página del sitio lo usa con `<div data-sos-app></div>` y la etiqueta del script. Lo usan la portada, `/riesgos/` y `/clima/`.
 - **Un solo manifiesto, con alcance `/`**: portada, riesgos y clima se abren dentro de la misma app instalada. El identificador sigue siendo `/riesgos/`, para que quien ya la instaló no tenga dos.
 - **La suscripción a los avisos no pide la cookie del formulario** (se llama también desde la portada y desde clima), pero solo se acepta desde páginas del propio sitio (cabecera `Origin`).
+
+## Clima en Django (22-nov-2026)
+
+- **Migrar copiando la base, no portando primero los recolectores.** El recolector anterior sigue recogiendo; Django copia su base cada 5 minutos. Así todo el dato está en PostgreSQL desde el primer día sin tocar lo frágil. Plan por etapas en `docs/plan-clima.md`.
+- **Lo caro del clima anterior no es recoger, es exportar.** Cada fuente tarda segundos; los 2,5 minutos de CPU por corrida son de rehacer toda la historia cada vez. En Django los resúmenes por hora se mantienen al día solo para lo que cambió.
+- **Sin guardar lo pronosticado no se puede mejorar un pronóstico.** Al guardarlo y verificarlo salió que todos los modelos globales se quedan cortos por 35–45 mm al día en este evento.
+- **Una API gratuita puede devolver datos falsos a propósito.** Windy Point Forecast, en su versión de prueba, mezcla y altera los datos, y lo dice en un campo `warning` de la respuesta. *Qué se hace:* leer la respuesta entera de una fuente nueva antes de usarla, no solo los números.
+- **Cupos pequeños se administran contando.** Stormglass da 10 llamadas al día por llave: cada llamada deja una corrida en la base y antes de llamar se cuentan las del día.
+- **Un boletín en imagen se detecta por su huella y lo lee el modelo.** El resumen se guarda con el enlace al original y una marca de «revisado por una persona». En la primera corrida, los boletines que ya existían se marcaron como avisados para no mandar avisos de documentos viejos.
+- **`get_or_create` y no `create` + capturar el error** para la clave única de un aviso: dentro de una transacción, el error deja la transacción rota.
+

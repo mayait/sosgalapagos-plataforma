@@ -72,7 +72,7 @@ class Extraido(BaseModel):
     vigente_desde: str | None = Field(default=None, description="Inicio de la vigencia, ISO 8601 con zona (-05:00 si es hora de Ecuador continental).")
     vigente_hasta: str | None = Field(default=None, description="Fin de la vigencia, ISO 8601 con zona.")
     afecta_galapagos: bool = Field(description="True solo si el documento nombra a Galápagos, la región Insular o alguna de sus islas como zona afectada.")
-    nivel_galapagos: str | None = Field(default=None, description="Nivel que el documento da para Galápagos (por ejemplo «muy alto», «alto», «medio», «moderado», «agitado»). None si no lo da.")
+    nivel_galapagos: str | None = Field(default=None, description="Nivel que el documento da para Galápagos, en una a tres palabras tal como lo nombra la leyenda (por ejemplo «muy alto», «alto», «medio», «moderado a agitado»). Si hay varios, el más alto. None si no lo da.")
     fenomeno: str | None = Field(default=None, description="Fenómeno: lluvias, tormentas, oleaje, aguaje, El Niño…")
     ola_min_m: float | None = Field(default=None, description="Altura mínima de ola prevista para Galápagos, en metros, si el documento la da.")
     ola_max_m: float | None = Field(default=None, description="Altura máxima de ola prevista para Galápagos, en metros.")
@@ -122,7 +122,7 @@ def registrar(fuente, tipo, contenido, tipo_mime, enlace, que_es, titulo=""):
     if e:
         campos.update(
             numero=(e.numero or "")[:30], titulo=(e.titulo or titulo)[:200], emitido=_fecha(e.emitido), vigente_desde=_fecha(e.vigente_desde),
-            vigente_hasta=_fecha(e.vigente_hasta), afecta_galapagos=e.afecta_galapagos, nivel=(e.nivel_galapagos or "")[:20], resumen=e.resumen[:600],
+            vigente_hasta=_fecha(e.vigente_hasta), afecta_galapagos=e.afecta_galapagos, nivel=(e.nivel_galapagos or "")[:80], resumen=e.resumen[:600],
             datos={k: v for k, v in {"fenomeno": e.fenomeno, "ola_min_m": e.ola_min_m, "ola_max_m": e.ola_max_m, "periodo_s": e.periodo_s}.items() if v is not None},
             extraido_con=str(settings.IA_MODELO)[:60],
         )

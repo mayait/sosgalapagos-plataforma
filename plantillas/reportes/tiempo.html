@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load static reportes_extras %}
+{% block titulo %}Mapa del tiempo{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css">{% endblock %}
+{% block contenido %}
+{# Prototipo: mapa animado de Windy (lluvia, viento, olas). Es un servicio externo; no forma parte de la app sin señal. #}
+<main class="pagina ancha">
+  <nav class="migas"><a href="/clima/">← Clima en vivo</a><a href="{% url 'reportes:mapa' %}">Mapa de riesgos</a></nav>
+  <h1 class="form-titulo">Mapa del tiempo</h1>
+  <p class="form-ayuda">Lluvia, viento y olas pronosticados por modelos globales, animados sobre el mapa. Es una vista de <b>Windy</b>, no una medición ni un pronóstico oficial: en islas pequeñas los modelos globales se quedan cortos con la lluvia.</p>
+  {% if llave %}<div id="windy" class="windy-caja"></div>
+  <p class="ficha-pie">Cambia de capa (lluvia, viento, olas) con el menú del mapa. Para lo que está midiendo cada estación, ve a <a href="/clima/">Clima en vivo</a>.</p>
+  {% else %}<p class="vacio"><b>Mapa no disponible.</b> Falta configurar la llave.</p>{% endif %}
+  {% include "parciales/firma.html" %}
+</main>
+{% endblock %}
+{% block guiones %}
+{% if llave %}
+<script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"></script>
+<script src="https://api.windy.com/assets/map-forecast/libBoot.js"></script>
+<script>
+  windyInit({ key: '{{ llave }}', lat: -0.74, lon: -90.4, zoom: 8, overlay: 'rain' }, function (windy) { window.__windy = windy; });
+</script>
+{% endif %}
+{% endblock %}

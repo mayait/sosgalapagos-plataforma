@@ -208,5 +208,7 @@ CLIMA_INAMHI_ADVERTENCIA_URL = entorno("CLIMA_INAMHI_ADVERTENCIA_URL", "")
 CLIMA_INAMHI_PRONOSTICO_URL = entorno("CLIMA_INAMHI_PRONOSTICO_URL", "")
 CLIMA_INAMHI_LLUVIA_HORAS_URL = entorno("CLIMA_INAMHI_LLUVIA_HORAS_URL", "")
 CLIMA_STORMGLASS_API = entorno("CLIMA_STORMGLASS_API", "")
-CLIMA_STORMGLASS_LLAVES = entorno("CLIMA_STORMGLASS_LLAVES", "")       # separadas por comas; 10 llamadas al día cada una
+CLIMA_STORMGLASS_LLAVES = entorno("CLIMA_STORMGLASS_LLAVES", "")
+# Mapa animado de Windy (prototipo). La llave se ve en la página: Windy la limita por dominio.
+WINDY_MAPA_LLAVE = entorno("WINDY_MAPA_LLAVE", "")       # separadas por comas; 10 llamadas al día cada una
 
