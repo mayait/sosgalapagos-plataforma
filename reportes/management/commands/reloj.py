@@ -10,7 +10,7 @@ import time
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from clima.tareas import actualizar_mar, actualizar_oficiales, ciclo_clima, guardar_pronostico, publicar_descargas, recalibrar_pronostico, revisar_alertas
+from clima.tareas import actualizar_lluvia_mapa, actualizar_mar, actualizar_oficiales, ciclo_clima, guardar_pronostico, publicar_descargas, recalibrar_pronostico, revisar_alertas
 from entradas.tareas import purgar
 from reportes.tareas import cerrar_vencidos
 
@@ -36,6 +36,8 @@ class Command(BaseCommand):
                 actualizar_oficiales.enqueue()
             if vuelta % 720 == 20:    # dos veces al día: mareas y oleaje (Stormglass da 10 llamadas diarias por llave)
                 actualizar_mar.enqueue()
+            if settings.CLIMA_RECOGER and settings.CLIMA_SALIDA and vuelta % 60 == 41:  # cada hora: mapa de lluvia, si hay corrida nueva
+                actualizar_lluvia_mapa.enqueue()
             if vuelta % 360 == 0:  # cada seis horas: borra el texto viejo de WhatsApp
                 purgar.enqueue()
             vuelta += 1

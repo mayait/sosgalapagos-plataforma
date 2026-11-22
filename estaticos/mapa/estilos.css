@@ -721,4 +721,4 @@ textarea.nota { width: 100%; min-height: 64px; padding: 10px 12px; border: 2px s
 .hoja .app-en-firma { display: none; } /* en el mapa ya está arriba, junto a los atajos */
 
 /* Prototipo del mapa de Windy */
-.windy-caja { width: 100%; height: min(70vh, 620px); border-radius: 14px; overflow: hidden; border: 1px solid var(--linea); }
+.lluvia-mapa-caja { width: 100%; margin: 6px 0 10px; border-radius: 14px; overflow: hidden; }

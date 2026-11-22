@@ -81,7 +81,7 @@ Antes no se podía saber si el pronóstico acertaba: las respuestas de los model
 | **INOCAR, boletín de oleaje** | Una imagen cada 3–4 días | **Se usa**, igual |
 | **ERFEN (El Niño)** | PDF quincenal | **Se usa**, igual |
 | **Windy Point Forecast** (gratis) | GFS e ICON por punto | **No se usa.** La respuesta avisa: «This data is randomly shuffled and slightly modified». Son datos alterados a propósito, y además esos modelos ya se tienen |
-| **Windy Map Forecast** | Mapa animado para incrustar | **Prototipo** en `/riesgos/mapa-del-tiempo/`. La llave está limitada por dominio: hay que autorizar `sosgalapagos.org` en la consola de Windy |
+| **Windy Map Forecast** | Mapa animado para incrustar | **No se usa.** La llave gratis es «Development purpose only, not intended for production», solo trae GFS y no tiene capa de lluvia; la de pago cuesta 990 €/año y su ECMWF es «for internal use only». En su lugar, `/riesgos/mapa-del-tiempo/` y `/clima/` muestran un mapa propio de lluvia y viento con Open-Meteo (`clima/lluvia_mapa.py`) |
 | **Windy Plugins** | Para publicar complementos dentro de Windy | No aplica |
 
 **Lectura de boletines con el modelo de lenguaje.** En la primera corrida leyó bien los tres documentos reales (número, vigencia, nivel para Galápagos, altura de ola y período). Aun así es un resumen automático: en el admin una persona puede corregirlo y marcarlo como revisado, y siempre se muestra el enlace al documento oficial. La página del INAMHI iba atrasada ese día (tenía la advertencia n.º 88 cuando ya circulaba la 89 por redes).
