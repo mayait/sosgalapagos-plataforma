@@ -6,8 +6,10 @@
    reportes se juntan en una sola fila, así que semanas sin novedades no alargan la página.
    Arriba, un navegador con todo el periodo lleva a cualquier día con un toque.
 
-   Reúne los reportes hechos en este mapa (también los cerrados) y los reportes de campo
-   que publica /mapas (capas con «marcador: reporte» o «corazon»).
+   Reúne los reportes hechos en este mapa (también los cerrados), los reportes de campo
+   que publica /mapas (capas con «marcador: reporte» o «corazon») y los sucesos que no tienen
+   un punto en el mapa: avisos mandados a los teléfonos (o retenidos de noche), boletines
+   oficiales, noticias e informes. Un suceso puede ser de una zona o de todo Galápagos.
 
    La lluvia no se dibuja (decisión de Julián, 21-nov-2026): solo deja un hito, «Llovió X mm»,
    los días de lluvia fuerte, con la serie por hora que publica /clima para la estación de la isla. */
@@ -17,7 +19,9 @@
   const HORA = 3600000, DIA = 24 * HORA;
   const UTC_GALAPAGOS = -6; // Galápagos no cambia de hora
   const COLOR = { lluvia: '#2f6fb3', reportes: '#c8151b' }; // par validado (daltonismo y contraste)
-  const CLASES = { campo: 'Reporte de campo', buena: 'Buena noticia o ayuda (de campo)', riesgo: 'Peligro', bueno: 'Algo bueno', ayuda: 'Donar o colaborar' };
+  const CLASES = { campo: 'Reporte de campo', buena: 'Buena noticia o ayuda (de campo)', riesgo: 'Peligro', bueno: 'Algo bueno', ayuda: 'Donar o colaborar', observa: 'Observación para el mapa',
+    aviso: 'Aviso a los teléfonos', oficial: 'Oficial', noticia: 'Noticia', informe: 'Informe', nota: 'Nota de coordinación' };
+  const SUCESOS = ['aviso', 'oficial', 'noticia', 'informe', 'nota']; // sin punto en el mapa
   const ESTACION_POR_ISLA = { 'Santa Cruz': 'ambient/evolucion', 'San Cristóbal': 'gsc/mirador', Isabela: 'darwin/puerto_villamil' };
 
   const $ = (id) => document.getElementById(id);
@@ -103,6 +107,15 @@
     return lista;
   }
 
+  // Sucesos: lo que pasó y no es un punto del mapa. `zonas` vacío: todo Galápagos (sale con cualquier filtro de zona).
+  async function cargarSucesos() {
+    const d = await fetch(cfg.sucesos, { cache: 'no-store' }).then((r) => r.json());
+    return (d.sucesos || []).map((s) => ({
+      t: Date.parse(s.t), clase: s.clase, titulo: s.titulo, lugar: s.fuente || '', zonas: s.zonas || [], zona: (s.zonas || [])[0] || '', isla: '',
+      detalle: s.detalle || '', texto: s.texto || '', foto: '', nFotos: 0, enlace: s.enlace || '', retenido: Boolean(s.retenido), suceso: true,
+    }));
+  }
+
   async function cargarLluvia() {
     const f = estado.filtros;
     const q = `?desde=${new Date(f.desde).toISOString()}&hasta=${new Date(f.hasta).toISOString()}&estacion=${encodeURIComponent(f.estacion)}`;
@@ -117,7 +130,7 @@
   function filtrados() {
     const f = estado.filtros;
     return estado.reportes.filter((r) => r.t >= f.desde && r.t < f.hasta
-      && (!f.zona || r.zona === f.zona) && (!f.clase || r.clase === f.clase))
+      && (!f.zona || (r.suceso ? !r.zonas.length || r.zonas.includes(f.zona) : r.zona === f.zona)) && (!f.clase || r.clase === f.clase))
       .sort((a, b) => b.t - a.t);
   }
   function opciones(select, valores, todas, elegido) {
@@ -248,11 +261,13 @@
   // ── La línea del tiempo, vertical ─────────────────────────────────────────
   function tarjeta(r) {
     const sub = [r.lugar, r.detalle].filter(Boolean).join(' · ');
-    return `<a class="hito clase-${r.clase}" href="${x(r.enlace)}">
+    const donde = r.suceso ? (r.zonas.length ? r.zonas.map(nombreZona).join(' y ') : 'Todo Galápagos') : nombreZona(r.zona);
+    const etiqueta = r.enlace ? 'a' : 'div', destino = r.enlace ? ` href="${x(r.enlace)}"${/^https?:/.test(r.enlace) ? ' rel="noopener" target="_blank"' : ''}` : '';
+    return `<${etiqueta} class="hito clase-${r.clase}${r.retenido ? ' retenido' : ''}"${destino}>
       ${r.foto ? `<img src="${x(r.foto)}" alt="" loading="lazy">` : ''}
       <span class="hito-texto"><span class="hito-clase">${horaDe(r.t)} · ${x(CLASES[r.clase] || '')}${r.nFotos > 1 ? ` · ${r.nFotos} fotos` : ''}</span>
-      ${estado.filtros.zona ? '' : `<span class="hito-zona">${x(nombreZona(r.zona))}</span>`}
-      <b>${x(r.titulo)}</b>${sub ? `<span class="hito-sub">${x(sub)}</span>` : ''}${r.texto ? `<span class="hito-desc">${x(r.texto)}</span>` : ''}</span></a>`;
+      ${estado.filtros.zona && !r.suceso ? '' : `<span class="hito-zona">${x(donde)}</span>`}
+      <b>${x(r.titulo)}</b>${sub ? `<span class="hito-sub">${x(sub)}</span>` : ''}${r.texto ? `<span class="hito-desc">${x(r.texto)}</span>` : ''}</span></${etiqueta}>`;
   }
   // Hito de lluvia: un dato de contexto, no un reporte. Va en la hora en que más llovió.
   function hitoLluvia(d) {
@@ -266,7 +281,7 @@
     // grupo: días seguidos sin nada que contar, del más reciente al más antiguo
     const nuevo = grupo[0], viejo = grupo[grupo.length - 1], n = grupo.length;
     const cuando = n === 1 ? diaLargo(nuevo.t) : `del ${diaCorto(viejo.t)} al ${diaCorto(nuevo.t)}`;
-    return `<div class="calma" data-desde="${viejo.clave}" data-hasta="${nuevo.clave}"><span><b>${n === 1 ? 'Un día' : n + ' días'} sin reportes</b> · ${x(cuando)}</span></div>`;
+    return `<div class="calma" data-desde="${viejo.clave}" data-hasta="${nuevo.clave}"><span><b>${n === 1 ? 'Un día' : n + ' días'} sin novedades</b> · ${x(cuando)}</span></div>`;
   }
   function linea(dias, hayFiltro) {
     if (!dias.length) return '<p class="vacio"><b>Sin datos</b> en estas fechas.</p>';
@@ -292,8 +307,9 @@
   function pintar() {
     const f = estado.filtros, lista = filtrados(), dias = porDias(lista);
     const conReportes = dias.filter((d) => d.reportes.length);
-    $('cifra-reportes').textContent = lista.length.toLocaleString('es');
-    $('cifra-reportes-sub').textContent = lista.length ? `con fotos: ${lista.filter((r) => r.nFotos).length}` : 'en el periodo';
+    const deGente = lista.filter((r) => !r.suceso), otros = lista.length - deGente.length;
+    $('cifra-reportes').textContent = deGente.length.toLocaleString('es');
+    $('cifra-reportes-sub').textContent = [deGente.length ? `con fotos: ${deGente.filter((r) => r.nFotos).length}` : 'en el periodo', otros ? `más ${otros} ${otros === 1 ? 'suceso' : 'sucesos'} (avisos, oficiales, noticias)` : ''].filter(Boolean).join(' · ');
     $('cifra-dias').textContent = conReportes.length.toLocaleString('es');
     $('cifra-dias-sub').textContent = `de ${dias.length} días${conReportes.length ? ' · el último, ' + diaCorto(conReportes[conReportes.length - 1].t) : ''}`;
     navegador(dias);
@@ -317,8 +333,8 @@
   }
 
   async function iniciar() {
-    const [propios, campo] = await Promise.all([cargarPropios().catch(() => []), cargarDeCampo().catch(() => [])]);
-    estado.reportes = propios.concat(campo);
+    const [propios, campo, sucesos] = await Promise.all([cargarPropios().catch(() => []), cargarDeCampo().catch(() => []), cargarSucesos().catch(() => [])]);
+    estado.reportes = propios.concat(campo, sucesos);
     rango(0); // todo el evento: los días en calma se juntan, así que cabe
     await cargarLluvia();
     const f = estado.filtros;

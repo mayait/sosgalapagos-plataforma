@@ -40,7 +40,7 @@
     <div class="campo-titulo">{{ grupo.grouper }}</div>
     <div class="rejilla">
       {% for t in grupo.list %}
-      <button type="button" class="opcion clase-{{ t.clase }}" :aria-pressed="tipo === '{{ t.codigo }}'" @click="elegirTipo('{{ t.codigo }}', '{{ t.clase }}', {{ t.pide_contacto|yesno:'true,false' }})">
+      <button type="button" class="opcion clase-{{ t.clase }}" :aria-pressed="tipo === '{{ t.codigo }}'" @click="elegirTipo('{{ t.codigo }}', '{{ t.clase }}', {{ t.pide_contacto|yesno:'true,false' }}, {{ t.pide_duracion|yesno:'true,false' }})">
         <svg><use href="#i-{{ t.icono }}"/></svg>{{ t.nombre }}
       </button>
       {% endfor %}
@@ -97,6 +97,21 @@
       <button type="button" :aria-pressed="gravedad === '{{ valor }}'" @click="gravedad = '{{ valor }}'">{{ nombre }}</button>
       {% endfor %}
     </div>
+
+    <div x-show="pideDuracion">
+      <div class="campo-titulo">¿Cuánto tiempo va a estar así?</div>
+      <div class="chips">
+        <button type="button" :aria-pressed="duraDias === 3" @click="duraDias = 3">Unos días</button>
+        <button type="button" :aria-pressed="duraDias === 7" @click="duraDias = 7">Una semana</button>
+        <button type="button" :aria-pressed="duraDias === 14" @click="duraDias = 14">Dos semanas</button>
+        <button type="button" :aria-pressed="duraDias === 30" @click="duraDias = 30">Un mes</button>
+        <button type="button" :aria-pressed="duraDias === 90" @click="duraDias = 90">Más de un mes</button>
+        <button type="button" :aria-pressed="duraDias === 0" @click="duraDias = 0">No sé</button>
+      </div>
+      <p class="nota-ayuda">El aviso se queda en el mapa ese tiempo. Si lo arreglan antes, cualquiera puede marcar «ya no está».</p>
+    </div>
+
+    <p class="nota-ayuda" x-show="clase === 'observa'">Esto no es una emergencia: es lo que viste, y sirve para corregir el mapa de riesgo. Una foto ayuda mucho.</p>
 
     <div class="campo-titulo" x-text="clase === 'riesgo' ? 'Nota (opcional)' : 'Cuéntalo en una línea'"></div>
     <textarea class="nota" maxlength="280" x-model="nota" :placeholder="ejemploDeNota"></textarea>

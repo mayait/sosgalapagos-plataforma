@@ -19,7 +19,8 @@
 
   <ul class="ficha-datos">
     <li><span>Visto</span> {{ r.visto_en|hace:ahora }} <small>({{ r.visto_en|date:"j M, H:i" }})</small></li>
-    {% if r.estado != "cerrado" %}<li><span>Se retira</span> {{ r.vence_en|falta:ahora }} si nadie lo renueva</li>
+    {% if r.estado != "cerrado" and r.tipo.pide_duracion %}<li><span>Durará</span> hasta el {{ r.vence_en|date:"j \d\e F" }}, según quien avisó <small>(se retira {{ r.vence_en|falta:ahora }} si nadie lo renueva)</small></li>
+    {% elif r.estado != "cerrado" %}<li><span>Se retira</span> {{ r.vence_en|falta:ahora }} si nadie lo renueva</li>
     {% else %}<li><span>Cerrado</span> {{ r.cerrado_en|date:"j M, H:i" }} · {{ r.get_motivo_cierre_display|lower }}</li>{% endif %}
     {% if r.profundidad != "sin_dato" %}<li><span>Agua</span> {{ r.get_profundidad_display|lower }}</li>{% endif %}
     {% if r.zona %}<li><span>Zona</span> {{ r.zona.nombre }}</li>{% endif %}

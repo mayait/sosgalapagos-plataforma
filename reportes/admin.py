@@ -3,13 +3,13 @@
 from django.contrib.gis import admin
 
 from . import reglas
-from .models import Colaborador, Confirmacion, Estado, FotoReporte, MotivoCierre, Reporte, SuscripcionPush, TipoRiesgo
+from .models import Colaborador, Confirmacion, Estado, FotoReporte, MotivoCierre, Reporte, Suceso, SuscripcionPush, TipoRiesgo
 
 
 @admin.register(TipoRiesgo)
 class TipoRiesgoAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "codigo", "clase", "plazo_horas", "pide_contacto", "orden", "activo")
-    list_editable = ("plazo_horas", "pide_contacto", "orden", "activo")
+    list_display = ("nombre", "codigo", "clase", "plazo_horas", "pide_contacto", "pide_duracion", "orden", "activo")
+    list_editable = ("plazo_horas", "pide_contacto", "pide_duracion", "orden", "activo")
 
 
 class ConfirmacionEnLinea(admin.TabularInline):
@@ -76,3 +76,18 @@ class ColaboradorAdmin(admin.ModelAdmin):
 class SuscripcionPushAdmin(admin.ModelAdmin):
     list_display = ("creada_en", "ultimo_envio")
     readonly_fields = ("direccion", "p256dh", "auth", "huella", "creada_en", "ultimo_envio")
+
+
+@admin.register(Suceso)
+class SucesoAdmin(admin.ModelAdmin):
+    """Lo que debe quedar en la línea del tiempo y no es un punto del mapa: comunicados, noticias, informes, notas.
+
+    Sin nombres de personas afectadas, cédulas ni teléfonos personales.
+    """
+
+    list_display = ("ocurrido", "clase", "titulo", "fuente", "zona", "hasta", "visible")
+    list_filter = ("clase", "zona", "visible")
+    list_editable = ("visible",)
+    search_fields = ("titulo", "texto", "fuente")
+    date_hierarchy = "ocurrido"
+

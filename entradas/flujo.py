@@ -180,6 +180,8 @@ def procesar(mensaje_id, foto=None):
     respondiendo = conversacion.espera in ("ubicacion", "contacto") and b.get("tipo") in codigos
     if e.tipo in codigos and not respondiendo:
         b["tipo"] = e.tipo
+    if getattr(e, "duracion_dias", None):
+        b["duracion_dias"] = e.duracion_dias
     for campo in ("titulo", "descripcion", "direccion", "gravedad", "profundidad"):
         valor = getattr(e, campo)
         if valor:
@@ -288,6 +290,8 @@ def _publicar(conversacion, mensaje, tipo, b):
         profundidad=b.get("profundidad") if b.get("profundidad") in Profundidad.values else Profundidad.SIN_DATO,
         precision_m=500 if aproximado else None,
         zona=zona_de(punto),
+        # Un daño en infraestructura dura lo que la persona dijo; si no lo dijo, el plazo del tipo.
+        vence_en=timezone.now() + timedelta(days=int(b["duracion_dias"])) if tipo.pide_duracion and b.get("duracion_dias") else None,
     )
     r = resultado.reporte
     mensaje.reporte, mensaje.estado_cola = r, EstadoCola.PUBLICADO

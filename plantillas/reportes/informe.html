@@ -6,7 +6,7 @@
 <main class="pagina ancha" id="informe" aria-busy="true">
   <nav class="migas"><a href="{% url 'reportes:mapa' %}">← Mapa de riesgos</a><a href="{% url 'reportes:descargas' %}">Descargar capas</a></nav>
   <h1 class="form-titulo">Línea del tiempo</h1>
-  <p class="form-ayuda">Todo lo que se ha reportado, en orden, desde el inicio de la emergencia. Son reportes de la comunidad: <b>no es información oficial</b>.</p>
+  <p class="form-ayuda">Todo lo que ha pasado, en orden, desde el inicio de la emergencia: lo que reporta la comunidad, los avisos que mandamos a los teléfonos, los comunicados oficiales, las noticias y los informes. Lo que reporta la comunidad y lo que avisamos <b>no es información oficial</b>; lo oficial lleva el nombre de su institución y el enlace al documento.</p>
 
   <form class="filtros" onsubmit="return false" aria-label="Filtros">
     <label>Zona<select id="f-zona"></select></label>
@@ -24,7 +24,7 @@
   <section class="navegador" id="navegador" aria-label="Ir a un día">
     <div class="pista-grafico" id="pista-grafico" hidden></div>
     <div class="nav-leyenda">
-      <span><i style="background:#c8151b"></i><span id="ley-reportes">Reportes por día</span></span>
+      <span><i style="background:#c8151b"></i><span id="ley-reportes">Reportes y sucesos por día</span></span>
       <span><i style="background:#2f6fb3;border-radius:50%"></i><span id="ley-lluvia">Día de lluvia muy fuerte</span></span>
       <span class="nav-ayuda">Toca un día para ir a él</span>
     </div>
@@ -33,7 +33,7 @@
   </section>
 
   <div id="linea"></div>
-  <p class="ficha-pie">Horas de Galápagos. Los días sin reportes se juntan en una sola fila. Los días de lluvia muy fuerte (50 mm o más) llevan una nota con lo que llovió; el detalle de la lluvia y el pronóstico están en <a href="/clima/">/clima</a>.</p>
+  <p class="ficha-pie">Horas de Galápagos. Los días sin nada que contar se juntan en una sola fila. Las marcas redondas son reportes con un punto en el mapa; las cuadradas, sucesos de una zona o de todo Galápagos (avisos, comunicados oficiales, noticias, informes). De noche, de 21:00 a 06:00, los avisos no se mandan a los teléfonos: quedan aquí y a las 06:00 sale un resumen. Los días de lluvia muy fuerte (50 mm o más) llevan una nota con lo que llovió; el detalle de la lluvia y el pronóstico están en <a href="/clima/">/clima</a>.</p>
   {% include "parciales/firma.html" %}
 </main>
 {% endblock %}

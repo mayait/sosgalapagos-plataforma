@@ -70,6 +70,15 @@ def lluvia(request, desde: datetime, hasta: datetime, estacion: str = ""):
     }
 
 
+@api.get("/sucesos.json", summary="Sucesos de la línea del tiempo", tags=["informe"])
+def sucesos(request, desde: datetime = None, hasta: datetime = None):
+    """Lo que pasó y no es un punto del mapa: avisos enviados a los teléfonos (o retenidos de noche),
+    boletines oficiales, noticias e informes. `zonas` vacío significa todo Galápagos."""
+    from reportes import cronica
+
+    return {"sucesos": cronica.sucesos(desde, hasta)}
+
+
 @api.get("/reportes/vivos.geojson", summary="Reportes en el mapa", tags=["mapa"])
 def vivos(request, periodo: str = "ahora"):
     """Reportes como GeoJSON.

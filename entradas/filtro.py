@@ -27,6 +27,8 @@ TEMAS = {
     "via": re.compile(r"\b(via|calle|camino|carretera|paso|puente|vereda)\s+(esta\s+)?(cerrad[oa]|cortad[oa]|bloquead[oa]|intransitable|destruid[oa]|hundid[oa]|caid[oa])\b|\bno (se puede|hay) pas(ar|o)\b|\bderrumbe\b|\bdeslave\b|\bdeslizamiento\b|\barbol caido\b"),
     "infraestructura": re.compile(r"\bsin (luz|agua|energia|internet|senal)\b|\bcable (caido|suelto|en el suelo)\b"),
     "ayuda": re.compile(r"\b(centro|punto|lugar) de acopio\b|\b(reciben|recibimos|se reciben|estan recibiendo)\b.*\b(donacion|viveres|ropa|agua|kits?|colchones|alimentos)\b|\bdonaciones?\b|\b(olla comun|almuerzos? gratis|reparten|estan repartiendo|entregan|voluntari[oa]s?)\b|\brefugio\b"),
+    # Lo que la gente vio y sirve para afinar el mapa: «aquí no pasó nada», «aquí siempre se inunda», «aquí llegó hasta…».
+    "observacion": re.compile(r"\b(aqui|aca|por aqui|en mi (casa|barrio|calle)|en este (barrio|sector))\b.*\b(todo (esta )?(bien|tranquilo|normal|seco)|no (paso|pasa|ha pasado) nada|no (se inundo|se inunda|llego el agua|entro el agua|hubo agua))\b|\btodo (esta )?(bien|tranquilo|seco) (aqui|aca|por aqui|en)\b|\b(siempre|cada vez que llueve|todos los anos) se (inunda|llena|empoza)\b|\bzona de riesgo\b|\b(ayer|anoche|esa noche|el (lunes|martes|miercoles|jueves|viernes|sabado|domingo)) (se inundo|llego el agua|entro el agua|subio el agua)\b"),
     "bueno": re.compile(r"\bya (volvio|regreso|hay) (la )?(luz|agua|senal|internet|paso)\b|\bya (se puede pasar|habilitaron|limpiaron|abrieron)\b|\bbuena noticia\b"),
 }
 # Daño en infraestructura: una obra pública y una palabra de daño, en cualquier orden.

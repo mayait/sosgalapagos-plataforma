@@ -63,6 +63,7 @@ def _configuracion():
         "pushPublica": settings.PUSH_PUBLICA if avisos.activos() else "",
         "pushSuscribir": reverse("reportes:push_suscribir"),
         "todos": "/riesgos/api/reportes/vivos.geojson?periodo=evento",
+        "sucesos": "/riesgos/api/sucesos.json",
         "lluviaHoraria": "/riesgos/api/lluvia.json",
     }
 
@@ -149,6 +150,12 @@ def reportar(request):
     except ValueError:
         pass
 
+    # Un daño en infraestructura dura lo que tarde el arreglo: lo dice quien avisa (entre 1 y 180 días).
+    vence_en = None
+    dura = _numero(request.POST.get("dura_dias"))
+    if tipo.pide_duracion and dura and 1 <= dura <= 180:
+        vence_en = visto_en + timedelta(days=round(dura))
+
     punto = Point(lon, lat, srid=4326)
     precision = _numero(request.POST.get("precision"))
     resultado = reglas.crear_reporte(
@@ -156,6 +163,7 @@ def reportar(request):
         punto=punto,
         huella=huella,
         visto_en=visto_en,
+        vence_en=vence_en,
         gravedad=gravedad,
         profundidad=profundidad,
         foto=foto,
@@ -280,7 +288,8 @@ def manifiesto_app(request):
             "shortcuts": [
                 {"name": "Reportar", "url": "/riesgos/reportar/"},
                 {"name": "Clima en vivo", "url": "/clima/"},
-                {"name": "Ver como lista", "url": "/riesgos/informe/"},
+                {"name": "Lluvia y viento", "url": "/riesgos/mapa-del-tiempo/"},
+                {"name": "Línea del tiempo", "url": "/riesgos/informe/"},
             ],
         },
         content_type="application/manifest+json",
@@ -416,13 +425,16 @@ def push_suscribir(request):
         return JsonResponse({"suscrito": False})
     actual = SuscripcionPush.objects.filter(direccion=direccion).first()
     if datos.get("consulta"):  # qué tiene elegido este teléfono
-        return JsonResponse({"suscrito": bool(actual), "temas": (actual.temas if actual else None) or alertas.POR_DEFECTO, "zonas": actual.zonas if actual else []})
+        return JsonResponse({"suscrito": bool(actual), "temas": (actual.temas if actual else None) or alertas.POR_DEFECTO, "zonas": actual.zonas if actual else [],
+                             "de_noche": bool(actual and actual.de_noche)})
     # Cada quien elige de qué enterarse y de qué islas; lo que no se reconoce se ignora.
     preferencias = {}
     if isinstance(datos.get("temas"), list):
         preferencias["temas"] = [t for t in datos["temas"] if t in alertas.TEMAS]
     if isinstance(datos.get("zonas"), list):
         preferencias["zonas"] = [z for z in datos["zonas"] if z in alertas.ZONAS]
+    if isinstance(datos.get("de_noche"), bool):
+        preferencias["de_noche"] = datos["de_noche"]
     if actual and preferencias and not datos.get("keys"):
         SuscripcionPush.objects.filter(pk=actual.pk).update(**preferencias)
         return JsonResponse({"suscrito": True, **preferencias})
