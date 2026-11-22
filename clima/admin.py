@@ -1,6 +1,6 @@
 from django.contrib.gis import admin
 
-from .models import Calibracion, Corrida, Estacion, EstacionDanada, Sincronizacion
+from .models import AvisoEnviado, Boletin, Calibracion, Corrida, Estacion, EstacionDanada, MareaExtremo, PronosticoOficial, Sincronizacion
 
 
 class SoloLectura(admin.ModelAdmin):
@@ -43,4 +43,30 @@ class EstacionDanadaAdmin(admin.ModelAdmin):
 class CalibracionAdmin(SoloLectura):
     list_display = ("creada", "grupo", "plazo", "dias", "eventos", "brier", "brier_base", "habilidad")
     list_filter = ("grupo", "plazo")
+
+
+@admin.register(Boletin)
+class BoletinAdmin(admin.ModelAdmin):
+    """Lo extrae un modelo de lenguaje: aquí una persona lo corrige y lo marca como revisado."""
+
+    list_display = ("visto_en", "fuente", "tipo", "numero", "afecta_galapagos", "nivel", "vigente_hasta", "revisado")
+    list_filter = ("fuente", "tipo", "afecta_galapagos", "revisado")
+    readonly_fields = ("huella", "extraido_con", "visto_en")
+
+
+@admin.register(AvisoEnviado)
+class AvisoEnviadoAdmin(SoloLectura):
+    list_display = ("creado", "tema", "zona", "titulo", "entregados")
+    list_filter = ("tema", "zona")
+
+
+@admin.register(MareaExtremo)
+class MareaExtremoAdmin(SoloLectura):
+    list_display = ("ts", "puerto", "tipo", "altura_m", "fuente", "datum")
+    list_filter = ("puerto", "fuente")
+
+
+@admin.register(PronosticoOficial)
+class PronosticoOficialAdmin(SoloLectura):
+    list_display = ("fecha", "isla", "minima_c", "maxima_c", "obtenido")
 

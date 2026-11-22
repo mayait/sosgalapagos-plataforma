@@ -192,3 +192,40 @@ def clima_pronostico(request):
 
     return pronostico.proximos_dias()
 
+
+@api.get("/clima/mar", summary="Mareas y estado del mar por puerto", tags=["clima"])
+def clima_mar(request):
+    """Pleamares y bajamares (tabla oficial del INOCAR cuando la hay) y oleaje pronosticado. No reemplaza los avisos de la Armada."""
+    from clima import mar
+
+    return mar.resumen()
+
+
+@api.get("/clima/oficial", summary="Pronóstico y boletines oficiales", tags=["clima"])
+def clima_oficial(request):
+    """Lo que publican el INAMHI y el INOCAR. Los resúmenes los escribe un modelo de lenguaje: el documento oficial manda."""
+    from clima import oficiales
+    from clima.models import PronosticoOficial
+
+    hoy = timezone.now().astimezone(dt_timezone(timedelta(hours=-6))).date()
+    return {
+        "aviso": "Resúmenes automáticos de documentos oficiales. Pueden tener errores: abre siempre el documento de la institución.",
+        "boletines": oficiales.vigentes(),
+        "pronostico_inamhi": [
+            {"isla": p.isla, "fecha": p.fecha, "minima_c": p.minima_c, "maxima_c": p.maxima_c, "periodos": p.periodos, "lluvia_horas": p.lluvia_horas, "obtenido": p.obtenido}
+            for p in PronosticoOficial.objects.filter(fecha__gte=hoy).order_by("isla", "fecha")
+        ],
+    }
+
+
+@api.get("/clima/alertas", summary="Temas de alerta a los que alguien se puede suscribir", tags=["clima"])
+def clima_alertas(request):
+    from clima import alertas
+    from clima.models import AvisoEnviado
+
+    return {
+        "temas": [{"id": k, "nombre": v, "por_defecto": k in alertas.POR_DEFECTO} for k, v in alertas.TEMAS.items()],
+        "zonas": [{"id": k, "nombre": v} for k, v in alertas.ZONAS.items()],
+        "ultimos": [{"tema": a.tema, "zona": a.zona, "titulo": a.titulo, "cuerpo": a.cuerpo, "enlace": a.enlace, "creado": a.creado} for a in AvisoEnviado.objects.all()[:10]],
+    }
+

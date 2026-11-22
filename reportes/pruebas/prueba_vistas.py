@@ -306,7 +306,7 @@ def prueba_suscribirse_y_darse_de_baja_de_los_avisos(client, monkeypatch):
     client.defaults["HTTP_ORIGIN"] = "http://testserver"  # el navegador siempre dice desde qué sitio llama
 
     datos = {"endpoint": "https://push.ejemplo.test/abc", "keys": {"p256dh": "BPk", "auth": "xyz"}}
-    assert client.post("/riesgos/avisos/suscribir/", json.dumps(datos), content_type="application/json").json() == {"suscrito": True}
+    assert client.post("/riesgos/avisos/suscribir/", json.dumps(datos), content_type="application/json").json()["suscrito"] is True
     client.post("/riesgos/avisos/suscribir/", json.dumps(datos), content_type="application/json")  # dos veces no duplica
     assert SuscripcionPush.objects.count() == 1
     mala = client.post("/riesgos/avisos/suscribir/", json.dumps({"endpoint": "http://sin-cifrar"}), content_type="application/json")
@@ -359,5 +359,5 @@ def prueba_suscribirse_desde_la_portada_manda_un_aviso_de_prueba(client, monkeyp
     ajeno = sin_csrf.post("/riesgos/avisos/suscribir/", datos, content_type="application/json", headers={"Origin": "https://otro-sitio.test"})
     assert ajeno.status_code == 403
     propio = sin_csrf.post("/riesgos/avisos/suscribir/", datos, content_type="application/json", headers={"Origin": "http://testserver"})
-    assert propio.json() == {"suscrito": True}
+    assert propio.json()["suscrito"] is True
     assert enviados == [SuscripcionPush.objects.get().pk]

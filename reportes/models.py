@@ -113,6 +113,9 @@ class SuscripcionPush(models.Model):
     huella = models.CharField(max_length=64, blank=True, editable=False)
     creada_en = models.DateTimeField(auto_now_add=True)
     ultimo_envio = models.DateTimeField(null=True, blank=True)
+    # De qué quiere enterarse y de qué islas. Sin islas elegidas, de todas.
+    temas = models.JSONField(default=list, blank=True)
+    zonas = models.JSONField(default=list, blank=True)
 
     class Meta:
         verbose_name = "suscripción a avisos"

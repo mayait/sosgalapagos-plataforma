@@ -200,4 +200,13 @@ CLIMA_SQLITE = entorno("CLIMA_SQLITE", "")
 # Carpeta donde el recolector guarda las respuestas de los modelos, y el pronóstico que publica.
 CLIMA_PRONOSTICO_DIR = entorno("CLIMA_PRONOSTICO_DIR", "")
 CLIMA_PRONOSTICO_JSON = entorno("CLIMA_PRONOSTICO_JSON", "")
+# Fuentes oficiales y del mar. Las direcciones van en el entorno, nunca aquí. Vacío: esa fuente no se consulta.
+CLIMA_INOCAR_MAREAS_URL = entorno("CLIMA_INOCAR_MAREAS_URL", "")      # con {cp} y {fecha}
+CLIMA_INOCAR_OLEAJE_RSS = entorno("CLIMA_INOCAR_OLEAJE_RSS", "")
+CLIMA_ERFEN_URL = entorno("CLIMA_ERFEN_URL", "")
+CLIMA_INAMHI_ADVERTENCIA_URL = entorno("CLIMA_INAMHI_ADVERTENCIA_URL", "")
+CLIMA_INAMHI_PRONOSTICO_URL = entorno("CLIMA_INAMHI_PRONOSTICO_URL", "")
+CLIMA_INAMHI_LLUVIA_HORAS_URL = entorno("CLIMA_INAMHI_LLUVIA_HORAS_URL", "")
+CLIMA_STORMGLASS_API = entorno("CLIMA_STORMGLASS_API", "")
+CLIMA_STORMGLASS_LLAVES = entorno("CLIMA_STORMGLASS_LLAVES", "")       # separadas por comas; 10 llamadas al día cada una
 
