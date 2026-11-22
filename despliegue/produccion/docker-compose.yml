@@ -25,6 +25,8 @@ x-plataforma: &plataforma
     - CLIMA_ESTADO=/srv/clima/datos/estado.json
     - CLIMA_HORARIO=/srv/clima/datos/horario.json
     - CLIMA_SQLITE=/var/lib/clima/clima.db
+    - CLIMA_PRONOSTICO_DIR=/var/lib/clima/pronostico
+    - CLIMA_PRONOSTICO_JSON=/srv/clima/datos/pronostico.json
     - MEDIOS_DIR=/medios
     - RELIEVE_DIR=/relieve
   volumes:

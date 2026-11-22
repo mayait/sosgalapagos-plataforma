@@ -176,3 +176,11 @@ def clima_salud(request):
 
     return consultas.salud()
 
+
+@api.get("/clima/pronostico/verificacion", summary="Acierto del pronóstico de lluvia fuerte", tags=["clima"])
+def clima_verificacion(request, dias: int = 45):
+    """Lo pronosticado frente a lo que llovió. Verificación automática y preliminar, no oficial."""
+    from clima import pronostico
+
+    return pronostico.verificar(max(7, min(dias, 365)))
+

@@ -20,6 +20,9 @@ def estaciones(ahora=None):
             [ahora - timedelta(hours=1), ahora - timedelta(hours=24), ahora - timedelta(hours=72)],
         )
         lluvia = {e: (a, b, d) for e, a, b, d in c.fetchall()}
+    from .models import EstacionDanada
+
+    danadas = {d.estacion_id: {"desde": d.desde, "motivo": d.motivo} for d in EstacionDanada.objects.filter(variable="lluvia_mm", desde__lte=ahora).exclude(hasta__lte=ahora)}
     salida = []
     for e in Estacion.objects.exclude(fuente="goes"):
         l = lluvia.get(e.pk, (None, None, None))
@@ -28,7 +31,9 @@ def estaciones(ahora=None):
             "lat": e.punto.y if e.punto else None, "lon": e.punto.x if e.punto else None, "altitud_m": e.altitud_m,
             "primera": e.primera, "ultima": e.ultima,
             "minutos_sin_dato": round((ahora - e.ultima).total_seconds() / 60) if e.ultima else None,
-            "lluvia_mm": {"1h": _r(l[0]), "24h": _r(l[1]), "72h": _r(l[2])},
+            # Un pluviómetro dañado marca cifras imposibles: no se publica su lluvia.
+            "lluvia_mm": None if e.pk in danadas else {"1h": _r(l[0]), "24h": _r(l[1]), "72h": _r(l[2])},
+            "danada": danadas.get(e.pk),
         })
     return salida
 
