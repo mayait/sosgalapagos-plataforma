@@ -165,3 +165,7 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 - **Avisos del navegador (Web Push):** en iPhone solo llegan a la app instalada. Solo se avisa de peligros confirmados, a quien lo pidió.
 
 ||||||| d68eddb
+- **Dos despliegues a la vez tumbaron `/riesgos/` unos minutos** (22-nov, 07:00 UTC): otra sesión corría `desplegar.sh` al mismo tiempo y Docker dejó contenedores a medio recrear. Se levantó con `docker compose up -d`; no se perdió ningún dato. *Qué se hace:* antes de desplegar, avisar a las otras sesiones (`ListAgents`) y mirar que no haya otro despliegue en curso.
+- **El formato del webhook de OpenWA se averiguó anotando solo la estructura** (campos y tipos, sin contenido) en modo ensayo. La ubicación de WhatsApp sí trae coordenadas en el webhook, aunque la base de OpenWA no las guarde.
+- **La llave «ANTHROPIC DEV» no tenía saldo.** Se usó «CLAUDE_API_KEY». *Qué se hace:* probar cada llave con una llamada mínima antes de configurarla.
+

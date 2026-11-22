@@ -55,22 +55,38 @@ despliegue/local.sh whatsapp_probar --foto foto.jpg "así está el puente de la 
 
 Mantiene la conversación entre llamadas (chat de mentira `prueba@c.us`). No publica nada salvo con `--publicar`, que solo funciona en desarrollo.
 
-## 5. Encenderlo en producción
+## 5. Estado en producción (22-nov-2026)
 
-Todo va en `despliegue/produccion/.env` del servidor. Faltan cuatro cosas que solo Julián puede dar:
+**Encendido en modo ensayo.** Lee los chats privados del número de trabajo, procesa lo que pasa el filtro y guarda lo que respondería. No envía ningún mensaje ni publica nada.
 
-1. **Una llave de API de OpenWA propia de este servicio** (`OPENWA_LLAVE`), con permiso sobre la sesión «trabajo», y la dirección del servidor (`OPENWA_URL`) y el id de la sesión (`OPENWA_SESION`).
-2. **La llave del modelo** (`ANTHROPIC_API_KEY` o `GOOGLE_API_KEY`) y `IA_MODELO`.
-3. **Qué chats se atienden** (`WHATSAPP_CHATS`) y si se abren los privados (`WHATSAPP_DIRECTOS`).
-4. **El webhook en OpenWA**, para la sesión «trabajo», evento de mensaje recibido:
-   `https://sosgalapagos.org/riesgos/api/whatsapp/entrada?secreto=<WHATSAPP_SECRETO>`
+| Qué | Cómo quedó |
+|---|---|
+| Modo | `WHATSAPP_MODO=ensayo` |
+| Chats | Privados (`WHATSAPP_DIRECTOS=1`), solo lo que pasa el filtro. Ningún grupo (`WHATSAPP_CHATS` vacío) |
+| Modelo | `IA_MODELO=anthropic:claude-haiku-5-5`. La llave de Gemini también está en el servidor: se cambia con `IA_MODELO=google:gemini-3.5-flash-lite` |
+| Llave de OpenWA | «sosgalapagos-riesgos», rol operador, solo la sesión «trabajo» |
+| Webhook | Sesión «trabajo», evento `message.received`, hacia `/riesgos/api/whatsapp/entrada`, con el secreto en la cabecera `X-Secreto` |
 
-Orden recomendado: primero `WHATSAPP_MODO=ensayo` unos días. En ensayo no envía ni publica nada: guarda lo que habría respondido, y se revisa en el admin (`/riesgos/admin/entradas/mensajeentrante/`). Cuando las respuestas convenzan, `WHATSAPP_MODO=activo`.
+Todo está en `despliegue/produccion/.env` del servidor. Para cambiar algo: editar esa línea y `docker compose up -d` en esa carpeta.
 
-## 6. Lo que no se pudo comprobar
+**Revisar el ensayo:** `/riesgos/admin/entradas/mensajeentrante/` muestra cada mensaje atendido, por qué pasó el filtro y qué se habría respondido.
 
-- **El formato exacto del webhook de OpenWA.** No hay documentación pública y no tenía llave de API. El lector (`entradas/openwa.py`, `normalizar`) acepta las formas más comunes; hay que mirar el primer mensaje real en modo ensayo.
-- **Dónde vienen las coordenadas de una ubicación.** En la base del servidor una ubicación trae solo la miniatura del mapa, sin latitud ni longitud. Si el webhook tampoco las trae, la ubicación de WhatsApp no servirá y habrá que pedir el enlace de Google Maps.
-- **La descarga de fotos** (`bajar_foto`): la dirección sale del panel de OpenWA, sin probar.
-- **Ninguna llamada real a un modelo**: no había llaves. Se probó con el modelo de pruebas de la librería.
+**Pasar a activo** (responde y publica): `WHATSAPP_MODO=activo`. Antes conviene leer unos días de ensayo.
+
+**Apagarlo:** `WHATSAPP_MODO=apagado`, o desactivar el webhook en el panel de OpenWA.
+
+## 6. Lo que se comprobó y lo que no
+
+Comprobado el 22-nov-2026 con un mensaje de prueba del número personal de Julián a su número de trabajo:
+
+- El webhook llega y trae el texto, y **la ubicación de WhatsApp sí trae latitud y longitud**.
+- El modelo real (Claude Haiku 5.5) entiende el aviso, y Gemini 3.5 Flash Lite también (unos 2 s por mensaje).
+- La conversación completa: texto → pide el lugar → ubicación → aviso armado en el punto correcto.
+- La descarga de una foto con la llave del servicio.
+
+Sin comprobar:
+
+- Un mensaje **con foto** de punta a punta (la descarga funciona; falta verla entrar por el webhook).
+- El modo **activo**: nunca se ha enviado una respuesta real ni publicado un aviso desde WhatsApp.
+- Los **grupos**: no se sabe en qué campo viene quien escribe dentro de un grupo.
 - La sesión «trabajo» es el número personal de trabajo de Julián. Responder de forma automática desde ahí puede hacer que WhatsApp restrinja la cuenta.

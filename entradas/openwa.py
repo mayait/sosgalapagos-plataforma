@@ -40,8 +40,10 @@ def _numero(v):
 def normalizar(carga):
     """Convierte lo que manda el webhook (o una fila de la API) en un Mensaje. None si no es un mensaje entrante.
 
-    El servidor envuelve el mensaje de varias formas según la versión («data», «message»,
-    «payload»); se busca en todas.
+    Formato comprobado el 22-nov-2026 (evento «message.received»): el mensaje viene en «data», con
+    id, from, to, chatId, body, type, timestamp, fromMe, isGroup, contact y, en una ubicación,
+    location {latitude, longitude, description}. El «id» es el que pide la descarga de la foto.
+    Se aceptan también otras envolturas («message», «payload») por si cambia la versión.
     """
     m = carga
     for clave in ("data", "payload", "message"):
@@ -75,7 +77,7 @@ def normalizar(carga):
         id=str(m.get("waMessageId") or m.get("messageId") or m.get("id") or ""),
         chat=chat,
         autor=m.get("author") or m.get("participant") or m.get("from") or chat,
-        es_grupo=chat.endswith("@g.us"),
+        es_grupo=bool(m.get("isGroup")) or chat.endswith("@g.us"),
         tipo=tipo,
         texto=str(texto).strip(),
         lat=lat,
