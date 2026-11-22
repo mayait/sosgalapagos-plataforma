@@ -308,6 +308,8 @@ def _publicar(conversacion, mensaje, tipo, b):
             f"✅ Publicado: *{r.nombre}*{' · ' + r.zona.nombre if r.zona else ''}\n{enlace}",
             "Ya aparece en el mapa como «por verificar». La foto y el texto se ven cuando coordinación los revise."
             + (" La ubicación es aproximada: si puedes, mándame el punto exacto." if aproximado else ""),
+            "Tu aviso sirve para tomar decisiones, saber hasta dónde subió el agua y mejorar los modelos de riesgo. "
+            f"No te contactaremos por esto ni lo usaremos con fines comerciales: {settings.SITIO_URL}/riesgos/privacidad/",
         ]
     total = colaborador.puntos if colaborador else resultado.puntos
     partes.append(f"Ganaste {resultado.puntos} puntos" + (f", {colaborador.nombre}" if colaborador and colaborador.nombre else "") + f". Llevas {total}.")
