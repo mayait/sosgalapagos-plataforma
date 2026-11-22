@@ -25,13 +25,22 @@ x-plataforma: &plataforma
     - CLIMA_ESTADO=/srv/clima/datos/estado.json
     - CLIMA_HORARIO=/srv/clima/datos/horario.json
     - CLIMA_SQLITE=/var/lib/clima/clima.db
+    # Lo que esperan los módulos del recolector anterior (clima/anterior/):
+    - CLIMA_SALIDA=/srv/clima/datos
+    - CLIMA_DB=/var/lib/clima/clima.db
+    - CLIMA_FCD_DIR=/var/lib/clima/fcd
+    - CLIMA_PRIVADO=/var/lib/clima-privado
+    - CLIMA_FUENTES_ENV=/dev/null
     - CLIMA_PRONOSTICO_DIR=/var/lib/clima/pronostico
     - CLIMA_PRONOSTICO_JSON=/srv/clima/datos/pronostico.json
     - MEDIOS_DIR=/medios
     - RELIEVE_DIR=/relieve
   volumes:
     - medios:/medios
-    - /srv/sosgalapagos-clima:/srv/clima:ro
+    # La carpeta que lee el panel de /clima/: esta aplicación escribe ahí estado, horario, diario y las descargas.
+    - /srv/sosgalapagos-clima:/srv/clima
+    # Copia completa privada de los datos (para investigadores). La ruta real está en el .env del servidor.
+    - ${CLIMA_PRIVADO_HOST:-/var/lib/sosgalapagos-clima/privado}:/var/lib/clima-privado
     # Base del recolector de clima, para copiarla a esta base (se abre en solo lectura; el montaje
     # admite escritura porque SQLite necesita su archivo de memoria compartida). Ver docs/plan-clima.md.
     - /var/lib/sosgalapagos-clima:/var/lib/clima

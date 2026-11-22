@@ -8,7 +8,7 @@ import time
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from clima.tareas import actualizar_mar, actualizar_oficiales, guardar_pronostico, recalibrar_pronostico, revisar_alertas, sincronizar_clima
+from clima.tareas import publicar_descargas, actualizar_mar, actualizar_oficiales, guardar_pronostico, recalibrar_pronostico, revisar_alertas, sincronizar_clima
 from entradas.tareas import purgar
 from reportes.tareas import cerrar_vencidos
 
@@ -20,7 +20,7 @@ class Command(BaseCommand):
         vuelta = 0
         while True:
             cerrar_vencidos.enqueue()
-            if settings.CLIMA_SQLITE and vuelta % 5 == 2:  # cada cinco minutos, tras la corrida del recolector
+            if (settings.CLIMA_SQLITE or settings.CLIMA_FUENTES_NATIVAS) and vuelta % 5 == 0:  # cada cinco minutos, tras la corrida del recolector
                 sincronizar_clima.enqueue()
             if settings.CLIMA_PRONOSTICO_DIR and vuelta % 60 == 9:  # cada hora
                 guardar_pronostico.enqueue()
@@ -28,6 +28,8 @@ class Command(BaseCommand):
                 recalibrar_pronostico.enqueue()
             if vuelta % 5 == 4:       # cada cinco minutos: ¿algo merece aviso?
                 revisar_alertas.enqueue()
+            if settings.CLIMA_PUBLICAR_PANEL and vuelta % 60 == 17:
+                publicar_descargas.enqueue()
             if vuelta % 60 == 13:     # cada hora: pronóstico del INAMHI y boletines nuevos
                 actualizar_oficiales.enqueue()
             if vuelta % 720 == 20:    # dos veces al día: mareas y oleaje (Stormglass da 10 llamadas diarias por llave)
