@@ -42,6 +42,8 @@ HORAS = 120          # horas de pronóstico desde ahora
 HORAS_ANTES = 24     # se guardan 24 h antes de ahora, solo para el acumulado de 24 h
 TROZO = 240          # ubicaciones por petición (cada una pesa 1 llamada)
 PAUSA_S = 30         # entre trozos: 240 cada 30 s = 480 por minuto, bajo el límite de 600
+MINIMO_H = 5         # nunca se refresca más seguido, aunque haya corrida nueva
+SIN_META_H = 12      # si los metadatos no responden, solo se refresca cuando el archivo pasa de esta edad
 
 # id en la API de pronóstico → (nombre, id de metadatos para la hora de corrida)
 MODELOS = {
@@ -121,19 +123,30 @@ def _iso(t):
     return t.strftime("%Y-%m-%dT%H:%MZ") if t else None
 
 
-def hay_corrida_nueva(destino, api=None):
-    """True si la corrida del modelo de referencia es distinta de la del archivo publicado.
+def hay_corrida_nueva(destino, api=None, ahora=None):
+    """True si conviene refrescar: hay una corrida nueva del modelo de referencia.
 
+    Cuida la cuota, porque cada refresco gasta ≈ 957 llamadas:
+    - nunca refresca si el archivo tiene menos de MINIMO_H horas;
+    - si los metadatos no responden, solo refresca cuando el archivo pasa de SIN_META_H horas.
     Pedir los metadatos no gasta llamadas de la API.
     """
+    archivo = _archivo(destino)
+    if not archivo.exists():
+        return True
+    edad_h = ((ahora or time.time()) - archivo.stat().st_mtime) / 3600
+    if edad_h < MINIMO_H:
+        return False
     api = api or _endpoint()
     ini, _ = corrida(api, MODELOS[REFERENCIA][1])
+    if ini is None:
+        return edad_h >= SIN_META_H
     try:
-        previo = json.loads(_archivo(destino).read_text())
+        previo = json.loads(archivo.read_text())
         anterior = next(m["corrida"] for m in previo["modelos"] if m["id"] == REFERENCIA)
     except (OSError, ValueError, KeyError, StopIteration):
         return True
-    return ini is None or _iso(ini) != anterior
+    return _iso(ini) != anterior
 
 
 def _pedir(api, puntos, modelos, dias, pausa):

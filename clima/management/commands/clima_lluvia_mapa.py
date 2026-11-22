@@ -1,6 +1,6 @@
 """Escribe el mapa de lluvia y viento de los modelos (lluvia-mapa.json) para el panel de /clima/.
 
-  manage.py clima_lluvia_mapa                    solo si hay corrida nueva del IFS (si no, no gasta nada)
+  manage.py clima_lluvia_mapa                    solo si hay corrida nueva del IFS y pasaron 5 h (si no, no gasta nada)
   manage.py clima_lluvia_mapa --forzar           siempre (gasta ≈ 957 llamadas de Open-Meteo)
   manage.py clima_lluvia_mapa --destino CARPETA  por defecto, CLIMA_SALIDA
 

@@ -50,4 +50,17 @@ def prueba_exportar(tmp_path, monkeypatch):
     assert m["corrida"] == "2026-11-22T00:00Z"
     assert base64.b64decode(m["lluvia"][0])[0] == lm.codificar_lluvia(1.2)
     assert base64.b64decode(m["u"][0])[0] == lm.codificar_viento(-5.0)   # del este, hacia el oeste
-    assert not lm.hay_corrida_nueva(tmp_path, api="x")
+    assert not lm.hay_corrida_nueva(tmp_path, api="x")                       # recién escrito
+    import time
+    assert not lm.hay_corrida_nueva(tmp_path, api="x", ahora=time.time() + 6 * 3600)  # misma corrida
+
+
+def prueba_sin_metadatos_no_se_gasta_la_cuota(tmp_path, monkeypatch):
+    """Si los metadatos fallan, no se refresca en cada pasada: solo cuando el archivo ya es viejo."""
+    import time
+    (tmp_path / lm.NOMBRE).write_text('{"modelos": []}')
+    monkeypatch.setattr(lm, "corrida", lambda api, meta: (None, None))
+    ahora = time.time()
+    assert not lm.hay_corrida_nueva(tmp_path, api="x", ahora=ahora + 1 * 3600)
+    assert not lm.hay_corrida_nueva(tmp_path, api="x", ahora=ahora + 8 * 3600)
+    assert lm.hay_corrida_nueva(tmp_path, api="x", ahora=ahora + 13 * 3600)
