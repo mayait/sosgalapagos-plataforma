@@ -665,7 +665,12 @@ def fuente_wunderground(con):
     for wid, (cod, nom, isla, lat, lon, alt) in _wu_estaciones().items():
         try:
             req = urllib.request.Request(f"{base}/{wid}", headers={"User-Agent": "Mozilla/5.0 (sosgalapagos-clima)"})
-            with urllib.request.urlopen(req, timeout=60) as r:
+            # La página rechaza (403) la lista de cifrados que trae el Python de la imagen de contenedor;
+            # con la lista por defecto de OpenSSL, que es la que usa el Python de Debian, responde.
+            import ssl
+            tls = ssl.create_default_context()
+            tls.set_ciphers("DEFAULT")
+            with urllib.request.urlopen(req, timeout=60, context=tls) as r:
                 d = _wu_leer(r.read().decode("utf-8", "replace"))
         except Exception as e:  # una estación caída no detiene a las demás
             errores.append(f"{cod}: {e}")

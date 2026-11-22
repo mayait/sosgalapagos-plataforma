@@ -8,7 +8,8 @@ Lo que cambió es dónde escriben. Reciben una conexión de `clima/compat.py`, q
 |---|---|
 | `recolector.py` | `http_json` acepta una respuesta vacía (204) como «nada nuevo» |
 | `danadas.py` | Reescrito: lee los sensores dañados del admin (`EstacionDanada`), no de un JSON |
-| `fuentes_extra.py`, `pronostico.py`, `mareas.py`, `estacionalidad.py` | Ninguno |
+| `fuentes_extra.py` | Weather Underground se pide con la lista de cifrados por defecto de OpenSSL: con la del Python de la imagen la página responde 403 |
+| `pronostico.py`, `mareas.py`, `estacionalidad.py` | Ninguno |
 
 Quien los llama: `clima/fuentes.py` (recoger) y `clima/panel.py` (mareas, pronóstico y estacionalidad del panel).
 
