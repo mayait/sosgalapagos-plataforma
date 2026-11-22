@@ -380,7 +380,6 @@ def prueba_los_datos_del_mapa_de_lluvia_los_sirve_la_plataforma(client, settings
     r = client.get("/riesgos/api/clima/lluvia-mapa.json")
     assert r.status_code == 200 and b"".join(r.streaming_content) == b'{"generado": "x"}' and "max-age" in r["Cache-Control"]
 
-||||||| parent of e049bb0 (feat(privacidad): para qué sirve cada reporte y política de uso de datos del mapa de riesgos)
 
 
 
