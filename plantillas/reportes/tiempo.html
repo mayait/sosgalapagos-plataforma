@@ -1,26 +1,26 @@
 {# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec> · Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE). #}
 {% extends "base.html" %}
 {% load static reportes_extras %}
-{% block titulo %}Mapa del tiempo{% endblock %}
-{% block estilos %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css">{% endblock %}
+{% block titulo %}Mapa de lluvia y viento{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'terceros/leaflet/leaflet.css' %}">
+<link rel="stylesheet" href="{% propio 'mapa/lluvia-mapa.css' %}">{% endblock %}
 {% block contenido %}
-{# Prototipo: mapa animado de Windy (lluvia, viento, olas). Es un servicio externo; no forma parte de la app sin señal. #}
+{% comment %}Lluvia y viento de modelos globales (Open-Meteo), animados sobre el mapa. Los datos los escribe la tarea
+   `actualizar_lluvia_mapa` en /clima/datos/lluvia-mapa.json. Reemplaza al prototipo de Windy, cuya llave
+   gratis es solo para desarrollo y no trae la capa de lluvia.{% endcomment %}
 <main class="pagina ancha">
-  <nav class="migas"><a href="/clima/">← Clima en vivo</a><a href="{% url 'reportes:mapa' %}">Mapa de riesgos</a></nav>
-  <h1 class="form-titulo">Mapa del tiempo</h1>
-  <p class="form-ayuda">Lluvia, viento y olas pronosticados por modelos globales, animados sobre el mapa. Es una vista de <b>Windy</b>, no una medición ni un pronóstico oficial: en islas pequeñas los modelos globales se quedan cortos con la lluvia.</p>
-  {% if llave %}<div id="windy" class="windy-caja"></div>
-  <p class="ficha-pie">Cambia de capa (lluvia, viento, olas) con el menú del mapa. Para lo que está midiendo cada estación, ve a <a href="/clima/">Clima en vivo</a>.</p>
-  {% else %}<p class="vacio"><b>Mapa no disponible.</b> Falta configurar la llave.</p>{% endif %}
+  <nav class="migas"><a href="{% url 'reportes:mapa' %}">← Mapa de riesgos</a><a href="/clima/">Clima en vivo</a></nav>
+  <h1 class="form-titulo">Mapa de lluvia y viento</h1>
+  <p class="form-ayuda">Lluvia y viento pronosticados por modelos globales para los próximos 5 días. <b>Es un pronóstico de modelo, no una medición ni un pronóstico oficial</b>: en islas pequeñas los modelos se quedan muy cortos con la lluvia. El pronóstico oficial es del INAMHI.</p>
+  <div id="lluvia-mapa" class="lluvia-mapa-caja"></div>
+  <p class="ficha-pie">Toca el mapa para ver la lluvia y el viento en un punto. Lo que están midiendo las estaciones está en <a href="/clima/">Clima en vivo</a>.</p>
   {% include "parciales/firma.html" %}
 </main>
 {% endblock %}
 {% block guiones %}
-{% if llave %}
-<script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"></script>
-<script src="https://api.windy.com/assets/map-forecast/libBoot.js"></script>
+<script src="{% static 'terceros/leaflet/leaflet.js' %}"></script>
+<script src="{% propio 'mapa/lluvia-mapa.js' %}"></script>
 <script>
-  windyInit({ key: '{{ llave }}', lat: -0.74, lon: -90.4, zoom: 8, overlay: 'rain' }, function (windy) { window.__windy = windy; });
+  LluviaMapa.montar(document.getElementById('lluvia-mapa'), {datos: '{{ datos }}'});
 </script>
-{% endif %}
 {% endblock %}

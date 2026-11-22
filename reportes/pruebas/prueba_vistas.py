@@ -364,3 +364,10 @@ def prueba_suscribirse_desde_la_portada_manda_un_aviso_de_prueba(client, monkeyp
     propio = sin_csrf.post("/riesgos/avisos/suscribir/", datos, content_type="application/json", headers={"Origin": "http://testserver"})
     assert propio.json()["suscrito"] is True
     assert enviados == [SuscripcionPush.objects.get().pk]
+
+
+def prueba_el_mapa_del_tiempo_es_propio_y_dice_que_es_modelo(client):
+    pagina = client.get("/riesgos/mapa-del-tiempo/").content.decode()
+    assert "lluvia-mapa.js" in pagina and "/clima/datos/lluvia-mapa.json" in pagina
+    assert "windy" not in pagina.lower()
+    assert "no una medición ni un pronóstico oficial" in pagina

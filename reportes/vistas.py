@@ -374,8 +374,8 @@ def relieve(request, ruta):
 
 @require_GET
 def tiempo(request):
-    """Prototipo: el mapa animado de Windy con lluvia, viento y olas."""
-    return render(request, "reportes/tiempo.html", {"llave": settings.WINDY_MAPA_LLAVE})
+    """Mapa de lluvia y viento de los modelos, animado. Lee /clima/datos/lluvia-mapa.json."""
+    return render(request, "reportes/tiempo.html", {"datos": "/clima/datos/lluvia-mapa.json"})
 
 
 @require_GET
