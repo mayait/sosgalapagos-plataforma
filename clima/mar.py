@@ -142,6 +142,14 @@ def actualizar_stormglass_mar(puertos=("san-cristobal", "isabela", "santa-cruz")
     return total
 
 
+DIAS = ("lun", "mar", "mié", "jue", "vie", "sáb", "dom")
+
+
+def _local(ts):
+    t = ts.astimezone(GALAPAGOS)
+    return f"{DIAS[t.weekday()]} {t.day} {t:%H:%M}"
+
+
 # ── Lectura ──────────────────────────────────────────────────────────────────
 def resumen(ahora=None):
     """Para cada puerto: las próximas pleamares y bajamares (oficiales si las hay) y el mar de las próximas 72 h."""
@@ -157,7 +165,7 @@ def resumen(ahora=None):
             "puerto": puerto, "nombre": p["nombre"], "zona": p["zona"],
             "mareas": {"fuente": "INOCAR, tabla oficial" if fuente == "inocar" else "Stormglass (estación NOAA cercana)",
                        "referencia": extremos[0].datum if extremos else "", "hora": "Galápagos (UTC−6)",
-                       "extremos": [{"ts": e.ts, "local": e.ts.astimezone(GALAPAGOS).strftime("%a %d %H:%M"), "tipo": "pleamar" if e.tipo == "P" else "bajamar", "altura_m": e.altura_m} for e in extremos]},
+                       "extremos": [{"ts": e.ts, "local": _local(e.ts), "tipo": "pleamar" if e.tipo == "P" else "bajamar", "altura_m": e.altura_m} for e in extremos]},
             "mar_72h": {"ola_max_m": round(max(olas), 1), "cuando": pico.hora, "mar_de_fondo_m": pico.fondo_m, "periodo_s": pico.periodo_s,
                         "agua_c": horas[0].agua_c, "obtenido": horas[0].obtenido} if olas else None,
         })

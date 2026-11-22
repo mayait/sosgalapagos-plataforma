@@ -253,7 +253,7 @@ class Boletin(models.Model):
     vigente_desde = models.DateTimeField(null=True, blank=True)
     vigente_hasta = models.DateTimeField(null=True, blank=True)
     afecta_galapagos = models.BooleanField(default=False)
-    nivel = models.CharField(max_length=20, blank=True)     # el que el documento da para Galápagos, si lo da
+    nivel = models.CharField(max_length=80, blank=True)     # el que el documento da para Galápagos, si lo da
     resumen = models.TextField(blank=True)
     datos = models.JSONField(default=dict, blank=True)      # lo demás que se extrajo (olas, período, zonas…)
     enlace = models.URLField(max_length=400, blank=True)    # al documento oficial

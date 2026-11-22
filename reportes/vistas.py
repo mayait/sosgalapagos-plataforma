@@ -360,6 +360,12 @@ def relieve(request, ruta):
 
 
 @require_GET
+def tiempo(request):
+    """Prototipo: el mapa animado de Windy con lluvia, viento y olas."""
+    return render(request, "reportes/tiempo.html", {"llave": settings.WINDY_MAPA_LLAVE})
+
+
+@require_GET
 def puntos(request):
     """Tabla de puntos: quién ha publicado más. Solo el nombre o apodo que cada persona eligió."""
     huella, _ = _huella(request)
