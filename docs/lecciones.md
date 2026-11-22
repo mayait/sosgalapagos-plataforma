@@ -146,6 +146,13 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 - **En la línea del tiempo lo relevante son los reportes, no la lluvia** (corrección de Julián el mismo día). Se quitó la columna de lluvia, su cifra y el selector de estación. La lluvia queda solo como hito («Llovió X mm este día») los días de 50 mm o más (`HITO_MM`, preliminar), con la estación de la isla. Los días sin reportes ni hito se juntan en una fila. En el mapa, el acceso se llama **«Ver como lista»**.
 - **La línea del tiempo se filtra por zonas grandes, no por barrio** (indicación de Julián): Santa Cruz (Puerto Ayora), Santa Cruz parte alta, San Cristóbal (Puerto Baquerizo), San Cristóbal parte alta e Isabela. Se asignan por coordenadas en `informe.js` (`zonaGrande`): parte alta de Santa Cruz al norte de la latitud −0,718; parte alta de San Cristóbal al este de la longitud −89,585. Son cortes aproximados y preliminares.
 
+## Edificios con volumen y color en 3D (22-nov-2026)
+
+- **Una capa de polígonos puede levantarse en la vista 3D.** Si el manifiesto de `/mapas` le pone `"extrusion": {"altura": "altura_m", "auto_3d": true}`, `capas.js` la dibuja como volumen: cada polígono sube hasta su altura y toma el color de su clase (`clasificar`). Fuera del 3D se ve plana, como siempre. Con `auto_3d`, la capa se enciende sola al entrar en 3D y se apaga al salir, sin guardarse como elección de la persona; si la toca, pasa a ser suya.
+- **Para qué nació:** los edificios de la zona afectada del 21-nov, pintados por la gravedad aparente de donde están y con la altura estimada (petición de Julián). La capa y sus datos viven en `sosgalapagos-datos`.
+- **Dos cajas en el mismo sitio parpadean.** Esos edificios también están en el mapa base, que los dibuja en gris. Para que no se peleen, el volumen de la capa se dibuja con una copia de los polígonos crecida medio metro desde su centro (`crecida()`), y los edificios del mapa base sin altura conocida bajan de 4 m a un piso (`SOS.ALTURA_PISO`, 3 m). Así la caja de color envuelve a la gris.
+- **La altura es una estimación**, el promedio de los edificios de su tamaño en una muestra: sirve para leer el conjunto, no un edificio.
+
 ## Fase 2: WhatsApp, puntos, app y avisos (22-nov-2026)
 
 - **El formulario dejaba enviar sin lugar.** Si el teléfono no daba la ubicación, el pin quedaba en el centro por defecto del mapa y el reporte salía ahí, sin avisar. *Qué se hace:* no se envía sin un origen del lugar (teléfono, foto, mapa o a mano); el botón «Estoy aquí» dice qué pasó (sin permiso, GPS apagado, poco preciso) y cómo arreglarlo en iPhone y en Android.
@@ -157,3 +164,4 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 - **Los puntos son un gracias, no un premio.** 10 por aviso, 5 más con foto, 2 por confirmar. Solo se muestra el nombre o apodo que la persona eligió; coordinación puede ocultar uno impropio. Un «nombre» con forma de teléfono o correo no se guarda.
 - **Avisos del navegador (Web Push):** en iPhone solo llegan a la app instalada. Solo se avisa de peligros confirmados, a quien lo pidió.
 
+||||||| d68eddb

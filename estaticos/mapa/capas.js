@@ -12,7 +12,7 @@
   const SOS = window.SOS;
   const ZOOM_ROTULOS = 15; // los rótulos de barrios y calles solo se ven de cerca
 
-  const estado = { mapa: null, manifiesto: null, descargas: {}, todo: null, capas: [], orden: [], encendidas: new Set(), iniciales: [], puestas: {}, base: 'gris', limites: null, teselas: {} };
+  const estado = { mapa: null, manifiesto: null, descargas: {}, todo: null, capas: [], orden: [], encendidas: new Set(), iniciales: [], puestas: {}, base: 'gris', limites: null, teselas: {}, en3d: false, auto3d: new Set() };
   const GUARDADO = 'sos-capas-4';
   const BASE_GUARDADA = 'sos-base'; // lo que la persona dejó encendido se recuerda en su teléfono
   const datosUrl = () => `${SOS.cfg.capasUrl}datos/${SOS.cfg.capasVariante}/`;
@@ -24,7 +24,7 @@
   // Se guarda lo encendido y también qué capas existían: así una capa nueva que el otro
   // equipo publique encendida aparece aunque la persona ya tuviera su elección guardada.
   const recordar = () => {
-    try { localStorage.setItem(GUARDADO, JSON.stringify({ encendidas: [...estado.encendidas], conocidas: estado.capas.map((c) => c.id) })); } catch (e) { /* sin espacio */ }
+    try { localStorage.setItem(GUARDADO, JSON.stringify({ encendidas: [...estado.encendidas].filter((id) => !estado.auto3d.has(id)), conocidas: estado.capas.map((c) => c.id) })); } catch (e) { /* sin espacio */ }
   };
   const texto = (v) => ['to-string', ['get', v]];
 
@@ -199,6 +199,21 @@
           agregar({ id: fuente + '-borde-si', type: 'line', filter: filtro ? ['all', filtro, cond] : cond, paint: Object.assign({}, pintura, { 'line-dasharray': trazo(regla.estilo.dashArray) }) });
         } else agregar({ id: fuente + '-borde', type: 'line', paint: pintura });
       }
+      // Volumen en la vista 3D («extrusion» en el manifiesto): cada polígono se levanta hasta la
+      // altura que trae y con el color de su clase. Fuera del 3D la capa está, pero escondida.
+      if (capa.extrusion && mapa.getSource(fuente + '-vol')) {
+        const def = {
+          id: fuente + '-volumen', type: 'fill-extrusion', source: fuente + '-vol', minzoom: Math.max(minzoom, 14),
+          layout: { visibility: estado.en3d ? 'visible' : 'none' },
+          paint: {
+            'fill-extrusion-color': porClase(capa, 'fillColor', e.fillColor || e.color || '#9ca3af'),
+            'fill-extrusion-height': ['coalesce', ['to-number', ['get', capa.extrusion.altura || 'altura_m'], ALTURA_PISO + 0.3], ALTURA_PISO + 0.3],
+            'fill-extrusion-base': 0, 'fill-extrusion-opacity': 0.95,
+          },
+        };
+        if (filtro) def.filter = filtro;
+        lista.push(def);
+      }
     }
 
     if (capa.tipo === 'linea') {
@@ -314,7 +329,62 @@
     return 'ancla-capas';
   }
 
+  // ── Volumen en 3D ─────────────────────────────────────────────────────────
+  // Altura de un piso. Los edificios del mapa base sin altura conocida se levantan un piso
+  // (mapa.js usa SOS.ALTURA_PISO), y las capas con «extrusion» traen su propia altura.
+  const ALTURA_PISO = 3;
+  SOS.ALTURA_PISO = ALTURA_PISO;
+  // Copia de la capa con cada polígono crecido unos decímetros desde su centro. Así la caja de
+  // color envuelve a la caja gris del mismo edificio en el mapa base y no parpadean una contra otra.
+  function crecida(datos, metros) {
+    const GRADO = 111320; // metros por grado; Galápagos está en el ecuador
+    const anillos = (poligono) => {
+      const ext = poligono[0];
+      const cx = ext.reduce((a, v) => a + v[0], 0) / ext.length, cy = ext.reduce((a, v) => a + v[1], 0) / ext.length;
+      const radio = ext.reduce((a, v) => a + Math.hypot(v[0] - cx, v[1] - cy), 0) / ext.length * GRADO;
+      const k = 1 + metros / Math.max(radio, 1);
+      return poligono.map((anillo) => anillo.map(([x, y]) => [cx + (x - cx) * k, cy + (y - cy) * k]));
+    };
+    return {
+      type: 'FeatureCollection',
+      features: (datos.features || []).filter((f) => f.geometry && /Polygon$/.test(f.geometry.type)).map((f) => ({
+        type: 'Feature', properties: f.properties,
+        geometry: f.geometry.type === 'Polygon'
+          ? { type: 'Polygon', coordinates: anillos(f.geometry.coordinates) }
+          : { type: 'MultiPolygon', coordinates: f.geometry.coordinates.map(anillos) },
+      })),
+    };
+  }
+  async function prepararVolumen(capa) {
+    const id = 'capa-' + capa.id + '-vol';
+    if (estado.mapa.getSource(id)) return;
+    try {
+      const datos = await fetch(conV(datosUrl() + capa.archivo)).then((r) => r.json());
+      if (!estado.mapa.getSource(id)) estado.mapa.addSource(id, { type: 'geojson', data: crecida(datos, 0.5), tolerance: 0.2 });
+    } catch (e) { /* sin volumen: la capa se ve plana, como siempre */ }
+  }
+  // La vista 3D avisa aquí al entrar y al salir (mapa.js). Al entrar se muestran los volúmenes y
+  // se encienden las capas que piden verse en 3D («auto_3d»); al salir, esas se apagan si la
+  // persona no las tocó. No se guarda como elección suya.
+  async function vista3d(activa) {
+    estado.en3d = activa;
+    for (const capa of estado.orden) {
+      if (!capa.extrusion) continue;
+      if (activa && capa.extrusion.auto_3d && !estado.encendidas.has(capa.id)) {
+        estado.encendidas.add(capa.id); estado.auto3d.add(capa.id);
+        await encender(capa);
+      } else if (!activa && estado.auto3d.has(capa.id)) {
+        estado.auto3d.delete(capa.id);
+        if (estado.encendidas.has(capa.id)) { estado.encendidas.delete(capa.id); apagar(capa); }
+      }
+      const volumen = 'capa-' + capa.id + '-volumen';
+      if (estado.mapa.getLayer(volumen)) estado.mapa.setLayoutProperty(volumen, 'visibility', estado.en3d ? 'visible' : 'none');
+    }
+    pintar();
+  }
+
   async function encender(capa) {
+    if (capa.extrusion && capa.tipo === 'poligono' && capa.archivo) await prepararVolumen(capa);
     if (capa.tipo === 'raster' && !estado.limites) {
       estado.limites = await fetch(conV(datosUrl() + 'raster/limites.json')).then((r) => r.json()).catch(() => ({}));
     }
@@ -338,6 +408,7 @@
 
   function alternar(id) {
     const capa = estado.capas.find((c) => c.id === id);
+    estado.auto3d.delete(id);
     if (estado.encendidas.has(id)) { estado.encendidas.delete(id); apagar(capa); } else { estado.encendidas.add(id); encender(capa); }
     recordar();
     pintar();
@@ -689,7 +760,7 @@
   function cerrar() { panel().hidden = true; document.getElementById('capas-abrir').hidden = false; }
 
   SOS.capas = {
-    globo, revisar, conV, pista,
+    globo, revisar, conV, pista, vista3d,
     manifiesto: () => estado.manifiesto,
     datos: datosUrl,
     async iniciar(mapa) {

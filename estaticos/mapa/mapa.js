@@ -485,7 +485,8 @@
           id: 'edificios-3d', type: 'fill-extrusion', source: 'base', 'source-layer': 'buildings', minzoom: 15,
           paint: {
             'fill-extrusion-color': '#d6d5d1', 'fill-extrusion-opacity': 0.9,
-            'fill-extrusion-height': ['coalesce', ['get', 'height'], 4],
+            // Sin altura conocida, un piso. Las capas con volumen propio (capas.js) quedan por encima.
+            'fill-extrusion-height': ['coalesce', ['get', 'height'], SOS.ALTURA_PISO || 3],
             'fill-extrusion-base': ['coalesce', ['get', 'min_height'], 0],
           },
         }, 'ancla-raster');
@@ -500,6 +501,8 @@
       mapa.dragRotate.disable();
       mapa.touchZoomRotate.disableRotation();
     }
+    // Las capas con volumen (edificios pintados por gravedad, con su altura) siguen a la vista 3D.
+    if (SOS.capas && SOS.capas.vista3d) SOS.capas.vista3d(en3d).catch(() => {});
   }
   document.getElementById('relieve').addEventListener('click', alternar3d);
 
