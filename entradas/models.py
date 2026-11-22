@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """Mensajes que llegan por canales externos (WhatsApp) y esperan verificación.
 
 Un mensaje nunca se publica solo: coordinación lo convierte en reporte o lo descarta.

@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """El mar: pleamares y bajamares de la tabla oficial del INOCAR, y oleaje y mareas de Stormglass.
 
 Los endpoints van en variables de entorno (nunca en el repositorio):

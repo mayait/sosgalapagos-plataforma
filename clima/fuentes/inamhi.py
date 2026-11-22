@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """INAMHI: estaciones automáticas de Puerto Ayora y Puerto Baquerizo Moreno.
 
 Dos servicios: la lluvia de cada 5 minutos de las últimas ~6 horas (etiqueta = inicio del

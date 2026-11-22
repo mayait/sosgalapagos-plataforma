@@ -1,3 +1,5 @@
+/* SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+   Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE). */
 /* La app de SOS Galápagos en el teléfono: instalar y recibir avisos. Sirve en todo el sitio.
 
    Se usa igual en la portada, en /riesgos/ y en /clima/:

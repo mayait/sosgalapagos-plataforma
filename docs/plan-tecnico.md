@@ -57,7 +57,7 @@ Cloudflare ─► Caddy (el que ya existe)
 
 ## 3. Estructura del repositorio
 
-Repositorio `mayait/sosgalapagos-plataforma`. Apache 2.0 para el código y CC BY 4.0 para los datos, con los mismos archivos de licencia que el repo de datos.
+Repositorio `mayait/sosgalapagos-plataforma`. Nació con Apache 2.0 para el código y CC BY 4.0 para los datos. **Desde el 22-nov-2026:** código con todos los derechos reservados (`LICENSE`) y datos y modelos propios bajo CC BY-NC-ND 4.0 (`LICENCIA-DATOS.md`).
 
 ```
 sosgalapagos-plataforma/

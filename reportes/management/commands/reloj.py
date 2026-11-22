@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """Encola cada minuto las tareas periódicas. Las ejecuta el trabajador (manage.py db_worker).
 
 El marco de tareas de Django no trae un planificador, así que este proceso hace

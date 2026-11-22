@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """Colector del satélite GOES-19 (ABI y GLM). Una pasada cada 5 minutos, en su propio proceso.
 
 Qué hace en cada pasada:

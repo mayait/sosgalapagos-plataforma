@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """Lo común a todas las fuentes de clima: pedir, guardar y preguntar qué hay ya guardado.
 
 Cada fuente es un módulo de esta carpeta con una función `recoger()` que devuelve cuántas

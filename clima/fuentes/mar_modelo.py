@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """Nivel del mar y oleaje modelados (Open-Meteo Marine), para comparar con Stormglass y como reserva.
 
 Marea más nivel modelados cada 15 minutos y altura de ola por hora, de los puertos sin mareógrafo

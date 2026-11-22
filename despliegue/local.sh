@@ -1,4 +1,6 @@
 #!/bin/sh
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 # Entorno local en la Mac con «container» (Apple), porque aquí no hay Docker.
 # Uso: despliegue/local.sh <orden de manage.py…>   p. ej.  despliegue/local.sh migrate
 #      despliegue/local.sh servidor                levanta la web en http://localhost:8000

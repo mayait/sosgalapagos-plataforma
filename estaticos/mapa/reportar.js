@@ -1,3 +1,5 @@
+/* SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+   Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE). */
 /* Formulario de reporte: foto, tipo, profundidad y lugar. Sin cuenta.
    Si no hay señal, el reporte se guarda en el teléfono y se envía después. */
 (function () {

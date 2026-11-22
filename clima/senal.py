@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """La señal de lluvia fuerte que se publica: de lo que dicen los modelos a una probabilidad por zona.
 
 Es un pronóstico de modelos; NO es un dato oficial ni una alerta. El oficial es el del INAMHI.

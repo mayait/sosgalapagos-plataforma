@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """API pública. En la fase 1 solo trae la salida GeoJSON que usa el mapa.
 
 La forma Open311 (tipos, crear y consultar reportes) y las llaves llegan en la fase 2.
@@ -16,7 +18,10 @@ from reportes.models import Estado, Reporte
 api = NinjaAPI(
     title="SOS Galápagos · Reportes de riesgo",
     version="0.1",
-    description="Información ciudadana preliminar, no oficial. Emergencias: 911.",
+    description=("Información ciudadana preliminar, no oficial. Emergencias: 911. "
+                 "© 2026 Universidad San Francisco de Quito (USFQ) · SOS Galápagos · autor: Julián Maya (jamaya@usfq.edu.ec). "
+                 "Datos y modelos propios bajo CC BY-NC-ND 4.0, con atribución; los datos de terceros conservan la licencia de su fuente. "
+                 "Para integrar esta API en otro producto, pide permiso al autor."),
     docs_url="/docs",
 )
 

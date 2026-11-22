@@ -1,3 +1,5 @@
+/* SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+   Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE). */
 {% load reportes_extras %}/* Service worker del mapa. Guarda la interfaz, el mapa base y las capas ya vistas,
    para que la app instalada abra sin señal. Los reportes van siempre a la red:
    el mapa guarda la última respuesta por su cuenta y muestra de qué hora es. */

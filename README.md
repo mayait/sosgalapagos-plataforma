@@ -79,6 +79,14 @@ Archivo/         lo que se descarta (nunca se borra)
 
 ## Licencias
 
-**© 2026 Universidad San Francisco de Quito (USFQ).** Código bajo [Apache 2.0](LICENSE), con el aviso [`NOTICE`](NOTICE). Reportes y textos bajo [CC BY 4.0](LICENCIA-CC-BY-4.0.txt). Las librerías, las tipografías, el mapa base (OpenStreetMap, ODbL) y los logotipos de la USFQ conservan sus propias condiciones; el detalle está en `NOTICE`.
+**© 2026 Universidad San Francisco de Quito (USFQ) · SOS Galápagos. Autor: Julián Maya (jamaya@usfq.edu.ec).**
+
+| Qué | Licencia |
+|---|---|
+| Código | [Todos los derechos reservados](LICENSE): se puede leer; usarlo, copiarlo, modificarlo o crear algo a partir de él requiere permiso escrito del autor |
+| Datos, modelos y textos propios | [CC BY-NC-ND 4.0](LICENCIA-DATOS.md): con atribución, sin uso comercial y sin obras derivadas |
+| Datos de terceros (IERSE, GSC, FCD, INAMHI…) | La licencia de cada fuente, publicada con su permiso: [`LICENCIA-DATOS.md`](LICENCIA-DATOS.md) |
+
+Toda cita o uso autorizado nombra a **SOS Galápagos, a la USFQ y a Julián Maya**. Para pedir permiso: jamaya@usfq.edu.ec. Las librerías, las tipografías, el mapa base (OpenStreetMap, ODbL) y los logotipos de la USFQ conservan sus propias condiciones; el detalle está en [`NOTICE`](NOTICE). Las versiones anteriores al 22-nov-2026 salieron bajo Apache 2.0 y CC BY 4.0 (`Archivo/licencias-anteriores/`).
 
 El análisis y el código se prepararon con asistencia de agentes de inteligencia artificial.

@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """Guarda en la base lo que dijeron los modelos y lo que se publicó, y lo verifica.
 
   manage.py clima_pronostico              lee lo nuevo (corre solo cada hora)

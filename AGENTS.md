@@ -10,7 +10,7 @@ Plataforma de reportes de riesgo de SOS Galápagos: un mapa único donde la gent
 2. **Nunca se borran archivos, datos ni contenedores.** Lo que se descarta se mueve a `Archivo/`. Un reporte cerrado tampoco se borra: queda en el archivo.
 3. **No se rompen los datos de `/mapas/…` ni `/clima`.** Este proyecto solo lee lo que publican. `/mapas/` ya no tiene visor (su página redirige aquí), pero su carpeta de datos no se da de baja nunca: este mapa lee todo de ahí.
 4. **Las capas conservan los principios de `/mapas`: toda capa se puede encender, apagar y descargar** (Shapefile y GeoJSON). El panel Capas lee el `capas.json` y el `descargas.json` que publica `/mapas`; no se mantiene una lista de capas aparte. Una capa nueva se añade en el repo de datos y aparece sola aquí.
-5. **No se copia código de ResponseGrid** (`mayait/sosgalapagos`, AGPL-3.0). Este proyecto es Apache 2.0. El visual se rehace desde [`docs/visual-mapa.md`](docs/visual-mapa.md).
+5. **No se copia código de ResponseGrid** (`mayait/sosgalapagos`, AGPL-3.0). Este proyecto tiene todos los derechos reservados desde el 22-nov-2026 ([`LICENSE`](LICENSE)): cada archivo de código propio empieza con el aviso de autoría (USFQ · SOS Galápagos · Julián Maya) y ese aviso no se quita. Los datos y modelos propios van bajo CC BY-NC-ND 4.0 y los de terceros conservan su licencia ([`LICENCIA-DATOS.md`](LICENCIA-DATOS.md)). El visual se rehace desde [`docs/visual-mapa.md`](docs/visual-mapa.md).
 6. **Privacidad:**
    - Ningún dato personal público. Nunca nombres de menores ni cédulas.
    - Las fotos se guardan sin metadatos (`reportes/fotos.py`).
@@ -118,7 +118,7 @@ SOS Galápagos no es un solo repositorio, son seis. No hay organización de GitH
 
 ### Reglas que cruzan repositorios
 
-- **No se copia código de `sosgalapagos` (AGPL-3.0) a `sosgalapagos-plataforma` (Apache 2.0).**
+- **No se copia código de `sosgalapagos` (AGPL-3.0) a `sosgalapagos-plataforma`** (todos los derechos reservados desde el 22-nov-2026; antes, Apache 2.0).
 - **Nada de un repositorio privado pasa a uno público.** Ni los datos personales de `estudiantes-riesgo-nino` ni la lógica de detección de estafas del bot (`src/analista.ts`).
 - **Cada repositorio tiene sus propias reglas de commit y de ramas.** Léelas en su `AGENTS.md` o `LEEME.md` antes de hacer commit. Dos que cambian: en `sosgalapagos` los commits van como «IA Humana» y sin `Co-Authored-By`; en `sosgalapagos-datos` y en `sosgalapagos-plataforma` se trabaja en una rama con pull request, también sin `Co-Authored-By`.
 - **Desplegar es un paso aparte y manual.** Subir a `main` no publica nada en `sosgalapagos.org`. No despliegues si no te lo piden.

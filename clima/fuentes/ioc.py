@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """Mareógrafos de la red IOC: nivel del mar medido en Puerto Ayora y Baltra.
 
 Se usa siempre el mismo radar por estación («ras», con el mismo cero que la serie UHSLC; el

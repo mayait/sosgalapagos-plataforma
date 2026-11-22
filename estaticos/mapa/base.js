@@ -1,3 +1,5 @@
+/* SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+   Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE). */
 /* Mapa base: extracto PMTiles de Galápagos, estilado en gris claro.
    Los datos son de OpenStreetMap (ODbL) y el esquema de Protomaps. */
 (function () {

@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """El nivel de lluvia y la lluvia por hora para el mapa y la línea del tiempo.
 
 Salen de esta misma base (la app `clima`). Solo en una Mac de desarrollo, donde no se recoge

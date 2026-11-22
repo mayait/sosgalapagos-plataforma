@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """Crea un aviso de coordinación desde la consola: entra confirmado y con su contenido visible.
 
 Sirve para lo que no llega por el formulario: un centro de acopio con nombre propio,
