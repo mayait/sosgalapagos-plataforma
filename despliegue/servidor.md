@@ -91,3 +91,15 @@ La plataforma las sirve en `/riesgos/relieve3d/`. No hace falta reiniciar nada.
 
 - [ ] Sumar la base (`bd`) y las fotos (`medios`) al respaldo diario del servidor.
 - [ ] Marcar `version.txt` de `/mapas` como «no guardar» en Caddy, para que el mapa se entere antes de una publicación nueva.
+
+## Respaldo
+
+`despliegue/produccion/respaldo.sh` guarda cada día un volcado de la base (reportes, clima, avisos) y las fotos en `/var/lib/sosgalapagos-plataforma/respaldos`, y conserva 14. Lo corre `sosgalapagos-plataforma-respaldo.timer`:
+
+```bash
+cp despliegue/produccion/sosgalapagos-plataforma-respaldo.* /etc/systemd/system/
+systemctl daemon-reload && systemctl enable --now sosgalapagos-plataforma-respaldo.timer
+```
+
+Para restaurar: `gunzip -c plataforma-AAAA-MM-DD.sql.gz | docker compose exec -T postgis psql -U plataforma -d plataforma` sobre una base vacía.
+

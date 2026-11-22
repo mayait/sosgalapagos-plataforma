@@ -1,0 +1,7 @@
+[Unit]
+Description=Copia diaria de la base y las fotos de la plataforma de SOS Galápagos
+
+[Service]
+Type=oneshot
+ExecStart=/opt/sosgalapagos-plataforma/despliegue/produccion/respaldo.sh
+Nice=15
