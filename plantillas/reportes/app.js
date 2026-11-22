@@ -3,6 +3,7 @@
    Se usa igual en la portada, en /riesgos/ y en /clima/:
      <div data-sos-app></div>
      <script src="/riesgos/app.js" defer></script>
+   (ese archivo es un cargador mínimo; el componente se sirve en /riesgos/app/, sin caché).
    No depende de nada más: trae sus estilos y su configuración.
 
    Instalar: en Android y en el computador el navegador ofrece la instalación; en iPhone no

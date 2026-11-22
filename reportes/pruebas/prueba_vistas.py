@@ -325,14 +325,15 @@ def prueba_sin_llaves_no_se_ofrecen_avisos_y_no_se_envia_nada(client, settings):
 
 def prueba_el_mapa_ofrece_la_app_y_los_puntos(client):
     html = client.get("/riesgos/").content.decode()
-    assert "data-sos-app" in html and 'src="/riesgos/app.js"' in html and ">Puntos</a>" in html and 'href="/clima/"' in html
+    assert "data-sos-app" in html and 'src="/riesgos/app/"' in html and ">Puntos</a>" in html and 'href="/clima/"' in html
     sw = client.get("/riesgos/sw.js").content.decode()
     assert "addEventListener('push'" in sw and "notificationclick" in sw
 
 
 def prueba_el_componente_de_la_app_sirve_en_todo_el_sitio(client, settings):
     settings.PUSH_PUBLICA, settings.PUSH_PRIVADA = "BPublica", "privada"
-    js = client.get("/riesgos/app.js")
+    assert "/riesgos/app/" in client.get("/riesgos/app.js").content.decode()  # el .js solo carga el componente
+    js = client.get("/riesgos/app/")
     assert js["Content-Type"].startswith("text/javascript") and js["Cache-Control"] == "no-cache"
     codigo = js.content.decode()
     assert "publica: 'BPublica'" in codigo and "/riesgos/avisos/suscribir/" in codigo
