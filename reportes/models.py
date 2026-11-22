@@ -23,6 +23,8 @@ class Clase(models.TextChoices):
     RIESGO = "riesgo", "Un peligro"
     BUENO = "bueno", "Algo bueno"
     AYUDA = "ayuda", "Dónde donar o colaborar"
+    # Lo que la gente vio y sirve para afinar el mapa de riesgo: «aquí no se inundó», «aquí sí», «esto siempre se inunda».
+    OBSERVA = "observa", "Ayúdanos a mejorar el mapa"
 
 
 class TipoRiesgo(models.Model):
@@ -37,6 +39,8 @@ class TipoRiesgo(models.Model):
     activo = models.BooleanField(default=True)
     # Un lugar que recibe donaciones necesita un teléfono al que llamar antes de ir.
     pide_contacto = models.BooleanField("pide un teléfono de contacto", default=False)
+    # Un daño en infraestructura dura lo que tarde el arreglo: quien avisa dice cuánto cree que estará así.
+    pide_duracion = models.BooleanField("pregunta cuánto va a durar", default=False)
 
     class Meta:
         verbose_name = "tipo de aviso"
@@ -118,6 +122,8 @@ class SuscripcionPush(models.Model):
     # De qué quiere enterarse y de qué islas. Sin islas elegidas, de todas.
     temas = models.JSONField(default=list, blank=True)
     zonas = models.JSONField(default=list, blank=True)
+    # De noche (21:00 a 06:00) no se manda nada, salvo a quien lo pide aquí y solo lo urgente.
+    de_noche = models.BooleanField("recibir lo urgente también de noche", default=False)
 
     class Meta:
         verbose_name = "suscripción a avisos"
@@ -233,3 +239,53 @@ class Confirmacion(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()} · {self.reporte.id_publico}"
+
+
+class ClaseSuceso(models.TextChoices):
+    OFICIAL = "oficial", "Informe o comunicado oficial"
+    NOTICIA = "noticia", "Noticia"
+    INFORME = "informe", "Informe o mapa de SOS Galápagos"
+    NOTA = "nota", "Nota de coordinación"
+
+
+class ZonaGrande(models.TextChoices):
+    """Las zonas con que se filtra la línea del tiempo. Vacío: todo Galápagos."""
+
+    SANTA_CRUZ = "sc", "Santa Cruz (Puerto Ayora)"
+    SANTA_CRUZ_ALTA = "sc-alta", "Santa Cruz, parte alta"
+    SAN_CRISTOBAL = "sx", "San Cristóbal (Puerto Baquerizo)"
+    SAN_CRISTOBAL_ALTA = "sx-alta", "San Cristóbal, parte alta"
+    ISABELA = "is", "Isabela"
+    ISLA_SANTA_CRUZ = "santa-cruz", "Toda Santa Cruz"
+    ISLA_SAN_CRISTOBAL = "san-cristobal", "Todo San Cristóbal"
+
+
+class Suceso(models.Model):
+    """Algo que pasó en la emergencia y debe quedar en la línea del tiempo, aunque no tenga un punto en el mapa.
+
+    Un comunicado oficial, una noticia, un informe publicado, una decisión de coordinación. Se
+    escribe a mano en el admin. Los avisos que se mandan a los teléfonos y los boletines oficiales
+    que se leen solos (app `clima`) entran a la línea del tiempo sin pasar por aquí.
+
+    No lleva nombres de personas afectadas, cédulas ni teléfonos personales.
+    """
+
+    clase = models.CharField(max_length=8, choices=ClaseSuceso, default=ClaseSuceso.NOTA)
+    titulo = models.CharField("título", max_length=140)
+    texto = models.TextField(blank=True, help_text="Qué pasó, en pocas frases. Sin nombres de personas afectadas.")
+    fuente = models.CharField(max_length=80, blank=True, help_text="Quién lo dice: INAMHI, COE cantonal, el nombre del medio…")
+    enlace = models.URLField(max_length=400, blank=True, help_text="Al documento o a la noticia original.")
+    ocurrido = models.DateTimeField("cuándo", default=timezone.now, db_index=True)
+    # Lo que dura: un cierre de vía anunciado, una suspensión de clases. Vacío: un hecho puntual.
+    hasta = models.DateTimeField("vigente hasta", null=True, blank=True)
+    zona = models.CharField(max_length=14, choices=ZonaGrande, blank=True, help_text="Vacío: todo Galápagos.")
+    visible = models.BooleanField("se ve en la línea del tiempo", default=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "suceso de la línea del tiempo"
+        verbose_name_plural = "sucesos de la línea del tiempo"
+        ordering = ["-ocurrido"]
+
+    def __str__(self):
+        return f"{self.get_clase_display()} · {self.titulo}"

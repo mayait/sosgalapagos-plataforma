@@ -272,6 +272,10 @@ a { color: inherit; }
 .clase-bueno.estado-por_verificar .fila-icono, .fila-icono.clase-bueno.estado-por_verificar,
 .clase-ayuda.estado-por_verificar .fila-icono, .fila-icono.clase-ayuda.estado-por_verificar { background: var(--blanco); color: var(--por-verificar); }
 .opcion.clase-bueno svg { color: #b98900; }
+/* Observaciones para afinar el mapa: azul gris, para que no se lean como un peligro. */
+.clase-observa .fila-icono, .fila-icono.clase-observa { background: #3d6a8c; color: var(--blanco); }
+.clase-observa.estado-por_verificar .fila-icono, .fila-icono.clase-observa.estado-por_verificar { background: var(--blanco); color: var(--por-verificar); }
+.opcion.clase-observa svg { color: #3d6a8c; }
 .fila-texto { flex: 1; min-width: 0; }
 .fila-titulo { font-weight: 700; font-size: 14.5px; }
 .fila-sub { font-size: 12.5px; color: var(--gris); }
@@ -520,6 +524,14 @@ textarea.nota { width: 100%; min-height: 64px; padding: 10px 12px; border: 2px s
 .hito.clase-bueno::before { background: #f2b400; }
 .hito.clase-buena::before { border-radius: 3px; background: #db2777; }
 .hito.clase-ayuda::before { background: #db2777; }
+.hito.clase-observa::before { background: #3d6a8c; }
+/* Sucesos sin punto en el mapa: avisos enviados, comunicados oficiales, noticias e informes. Marca cuadrada. */
+.hito.clase-aviso::before { border-radius: 2px; background: var(--negro); }
+.hito.clase-oficial::before { border-radius: 2px; background: #1d4ed8; }
+.hito.clase-noticia::before { border-radius: 2px; background: #6b7280; }
+.hito.clase-informe::before, .hito.clase-nota::before { border-radius: 2px; background: #0f766e; }
+.hito.retenido .hito-clase::after { content: " · no se envió: era de noche"; font-weight: 400; }
+.hito-fuente { font-size: 12px; color: var(--gris, #6b7280); }
 .hito time { font-size: 13px; font-weight: 700; padding-top: 1px; }
 .hito a { display: flex; gap: 10px; text-decoration: none; min-width: 0; }
 .hito img { flex: none; width: 64px; height: 64px; object-fit: cover; border-radius: 8px; background: var(--fondo-suave); }

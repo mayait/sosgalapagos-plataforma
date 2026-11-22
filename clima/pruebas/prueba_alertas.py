@@ -26,6 +26,8 @@ def enviados(monkeypatch, settings):
     settings.PUSH_PUBLICA = settings.PUSH_PRIVADA = "x"
     lista = []
     monkeypatch.setattr(avisos, "_entregar", lambda s, carga: lista.append((s.direccion, json.loads(carga))) or True)
+    # Estas pruebas corren a cualquier hora: salvo que una pida la noche, es de día.
+    monkeypatch.setattr(alertas, "es_de_noche", lambda ahora: False)
     return lista
 
 
@@ -116,20 +118,77 @@ def prueba_cada_quien_recibe_solo_sus_temas_y_sus_islas(enviados):
     enviados.clear()
     alertas.emitir("mar", "isabela", "mar:isabela:hoy", "Oleaje fuerte", "cuerpo")
     assert [d for d, _ in enviados] == ["https://push.test/mar-isabela"]   # «mar» no es de los temas por defecto
+    assert not AvisoEnviado.objects.filter(retenido=True).exists()
     assert AvisoEnviado.objects.count() == 2
 
 
-def prueba_la_lluvia_medida_dispara_un_aviso_por_zona(enviados, monkeypatch):
+def _zonas(monkeypatch, *zonas):
     from reportes import clima as panel
 
+    monkeypatch.setattr(panel, "estado", lambda: {"inundacion": {"zonas": list(zonas)}})
+
+
+def prueba_la_lluvia_se_avisa_solo_si_esta_lloviendo_ahora(enviados, monkeypatch):
     suscribir("a")
-    monkeypatch.setattr(panel, "estado", lambda: {"inundacion": {"zonas": [
-        {"id": "santa-cruz-alta", "zona": "Parte alta", "nivel": "alto", "R": {"R24h": 120}},
-        {"id": "la-cascada", "zona": "La Cascada", "nivel": "muy alto", "R": {"R24h": 233.4}}, {"id": "san-cristobal", "zona": "San Cristóbal", "nivel": "medio"}]}})
+    # Lo de la madrugada del 22-nov: el nivel seguía «muy alto» por lo acumulado, pero ya no llovía. No es motivo de aviso.
+    _zonas(monkeypatch, {"id": "la-cascada", "zona": "La Cascada (Puerto Ayora)", "nivel": "muy alto", "nivel_instantaneo": "alto", "R": {"R1h": 0.0, "R3h": 0.0, "R24h": 231}})
+    assert alertas.revisar() == [] and enviados == []
+    # Llueve ahora en dos zonas de la misma isla: un solo aviso, con la que más llueve, y dice lo medido sin asustar.
+    _zonas(monkeypatch, {"id": "santa-cruz-alta", "zona": "Parte alta de Santa Cruz", "nivel": "alto", "nivel_instantaneo": "alto", "R": {"R1h": 12.2, "R3h": 20, "R24h": 60}},
+           {"id": "la-cascada", "zona": "La Cascada (Puerto Ayora)", "nivel": "muy alto", "nivel_instantaneo": "muy alto", "R": {"R1h": 31.6, "R3h": 48.2, "R24h": 233.4}},
+           {"id": "san-cristobal", "zona": "San Cristóbal", "nivel": "medio", "nivel_instantaneo": "medio", "R": {"R1h": 6}})
     emitidos = alertas.revisar()
-    # Dos zonas de la misma isla en alerta: un solo aviso, con la peor.
-    assert len(emitidos) == 1 and "muy alto" in emitidos[0].titulo and "233 mm" in emitidos[0].cuerpo and emitidos[0].zona == "santa-cruz"
+    assert len(emitidos) == 1 and emitidos[0].zona == "santa-cruz" and emitidos[0].urgente
+    assert emitidos[0].titulo == "Llueve muy fuerte en Santa Cruz" and "32 mm en la última hora y 48 en tres horas" in emitidos[0].cuerpo
+    assert "peligros" not in (emitidos[0].titulo + emitidos[0].cuerpo).lower() and "Aléjate" not in emitidos[0].cuerpo and "no oficial" in emitidos[0].cuerpo
     assert alertas.revisar() == []  # cinco minutos después no se repite
+
+
+def prueba_de_noche_no_se_manda_nada_y_a_las_seis_sale_un_resumen(enviados, monkeypatch):
+    monkeypatch.undo()   # aquí sí cuenta la hora
+    from reportes import avisos
+
+    monkeypatch.setattr(avisos, "_entregar", lambda s, carga: enviados.append((s.direccion, json.loads(carga))) or True)
+    suscribir("dormido")
+    despierto = suscribir("despierto")
+    despierto.de_noche = True
+    despierto.save()
+    noche = datetime(2026, 11, 23, 8, 19, tzinfo=timezone.utc)      # 02:19 en Galápagos
+    assert alertas.es_de_noche(noche) and alertas.es_de_noche(noche.replace(hour=3)) and not alertas.es_de_noche(noche.replace(hour=12)) and not alertas.es_de_noche(noche.replace(hour=2, minute=59))
+    # Algo que no es urgente: nadie lo recibe, queda retenido.
+    a = alertas.emitir("oficiales", "", "boletin:x", "Advertencia del INAMHI n.º 90", "cuerpo", ahora=noche)
+    assert a.retenido and a.entregados == 0 and enviados == []
+    # Lo urgente (llueve muy fuerte ahora): solo a quien pidió que lo despierten.
+    b = alertas.emitir("lluvia", "santa-cruz", "lluvia:santa-cruz:muy alto:x", "Llueve muy fuerte en Santa Cruz", "cuerpo", urgente=True, ahora=noche)
+    assert b.retenido and b.entregados == 1 and [d for d, _ in enviados] == ["https://push.test/despierto"]
+    AvisoEnviado.objects.update(creado=noche)
+    enviados.clear()
+    # A las cinco y pico todavía no; a las seis, un solo resumen para todos, con la hora de cada cosa.
+    assert alertas._resumen_de_la_noche(noche.replace(hour=11, minute=55)) == []
+    resumen = alertas._resumen_de_la_noche(noche.replace(hour=12, minute=0))
+    assert len(resumen) == 1 and resumen[0].titulo == "Esta noche en Galápagos" and resumen[0].entregados == 2
+    assert "02:19 Advertencia del INAMHI n.º 90" in resumen[0].cuerpo and "02:19 Llueve muy fuerte" in resumen[0].cuerpo and resumen[0].enlace == "/riesgos/informe/"
+    assert alertas._resumen_de_la_noche(noche.replace(hour=12, minute=5)) == [] and len(enviados) == 2   # no se repite
+    # Una noche tranquila no manda resumen.
+    assert alertas._resumen_de_la_noche(noche.replace(hour=12) + timedelta(days=1)) == []
+
+
+def prueba_un_peligro_de_vida_confirmado_es_lo_unico_de_reportes_que_suena_de_noche(enviados, monkeypatch):
+    from django.contrib.gis.geos import Point
+
+    from reportes import avisos, reglas
+    from reportes.models import Fuente, TipoRiesgo
+
+    monkeypatch.setattr(alertas, "es_de_noche", lambda ahora: True)
+    d = suscribir("despierto")
+    d.de_noche = True
+    d.save()
+    suscribir("dormido")
+    tipo = TipoRiesgo.objects.get(codigo="agua_via")
+    leve = reglas.crear_reporte(tipo=tipo, punto=Point(-90.31, -0.74, srid=4326), huella="c1", fuente=Fuente.COORDINADOR, gravedad="no_pasar").reporte
+    grave = reglas.crear_reporte(tipo=tipo, punto=Point(-90.33, -0.70, srid=4326), huella="c2", fuente=Fuente.COORDINADOR, gravedad="peligro_vida").reporte
+    assert avisos.de_reporte(leve) == 0 and avisos.de_reporte(grave) == 1
+    assert [d for d, _ in enviados] == ["https://push.test/despierto"] and AvisoEnviado.objects.filter(retenido=True).count() == 2
 
 
 def prueba_oleaje_fuerte_y_boletin_oficial_avisan(enviados, monkeypatch):
@@ -165,7 +224,10 @@ def prueba_elegir_temas_e_islas_desde_el_telefono(client, monkeypatch):
     base = {"endpoint": "https://push.test/tel", "keys": {"p256dh": "k", "auth": "a"}}
     assert enviar(base)["temas"] == ["peligros", "lluvia", "oficiales"]
     assert enviar({"endpoint": base["endpoint"], "temas": ["mar", "inventado"], "zonas": ["isabela", "marte"]}) == {"suscrito": True, "temas": ["mar"], "zonas": ["isabela"]}
-    assert enviar({"endpoint": base["endpoint"], "consulta": True}) == {"suscrito": True, "temas": ["mar"], "zonas": ["isabela"]}
+    assert enviar({"endpoint": base["endpoint"], "consulta": True}) == {"suscrito": True, "temas": ["mar"], "zonas": ["isabela"], "de_noche": False}
+    # De noche no llega nada, salvo que la persona lo pida.
+    assert enviar({"endpoint": base["endpoint"], "temas": ["mar"], "zonas": [], "de_noche": True})["de_noche"] is True
+    assert enviar({"endpoint": base["endpoint"], "consulta": True})["de_noche"] is True
     temas = client.get("/riesgos/api/clima/alertas").json()
     assert [t["id"] for t in temas["temas"]] == ["peligros", "lluvia", "pronostico", "mar", "oficiales"] and len(temas["zonas"]) == 3
 

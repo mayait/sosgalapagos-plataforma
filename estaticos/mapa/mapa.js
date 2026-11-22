@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   const SOS = window.SOS, cfg = SOS.cfg;
-  const COLOR = { por_verificar: '#6b7280', confirmado: '#e11b22', bajando: '#d97706', cerrado: '#b4b4b4', bueno: '#f2b400', ayuda: '#db2777' }; // el rosa es el de los corazones de «Buenas noticias y ayuda»
+  const COLOR = { por_verificar: '#6b7280', confirmado: '#e11b22', bajando: '#d97706', cerrado: '#b4b4b4', bueno: '#f2b400', ayuda: '#db2777', observa: '#3d6a8c' }; // azul gris: una observación, no un peligro; // el rosa es el de los corazones de «Buenas noticias y ayuda»
   const SONDEO_MS = 4000;       // cada cuánto se pregunta si hay reportes nuevos
   const OPACIDAD_MINIMA = 0.4;  // un reporte a punto de vencer no desaparece del todo
 
@@ -146,6 +146,7 @@
           ['==', ['get', 'estado'], 'cerrado'], COLOR.cerrado,
           ['==', ['get', 'clase'], 'bueno'], COLOR.bueno,
           ['==', ['get', 'clase'], 'ayuda'], COLOR.ayuda,
+          ['==', ['get', 'clase'], 'observa'], COLOR.observa,
           ['==', ['get', 'estado'], 'bajando'], COLOR.bajando,
           COLOR.confirmado],
         'circle-stroke-color': ['match', ['get', 'estado'], 'por_verificar', COLOR.por_verificar, '#ffffff'],

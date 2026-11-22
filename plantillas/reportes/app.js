@@ -161,12 +161,15 @@
     decir('Mis avisos', `${entrada || ''}
       <p class="grupo">Quiero enterarme de</p>${TEMAS.map((t) => casilla('tema', t, tengo.temas.includes(t.id))).join('')}
       <p class="grupo">De estas islas <small>(sin marcar ninguna: de todas)</small></p>${ZONAS.map((z) => casilla('zona', z, (tengo.zonas || []).includes(z.id))).join('')}
+      <p class="grupo">De noche <small>(de 21:00 a 06:00)</small></p>
+      <p class="nota">De noche no mandamos avisos: a las 06:00 llega un resumen de lo que pasó.</p>
+      <label class="opcion"><input type="checkbox" data-noche${tengo.de_noche ? ' checked' : ''}><span>Despiértame solo si llueve muy fuerte en ese momento o hay un peligro de vida confirmado</span></label>
       <p class="nota">Son estimaciones y reportes preliminares, no alertas oficiales. Las alertas las dan el COE, la SNGR y el ECU 911.</p>
       <button type="button" class="secundario" data-apagar>Apagar todos los avisos</button>`, 'Guardar');
     dialogo.onclose = null;
     dialogo.querySelector('[data-cerrar]').addEventListener('click', () => {
       const de = (g) => [...dialogo.querySelectorAll(`[data-${g}]:checked`)].map((i) => i.dataset[g]);
-      guardar({ endpoint: suscripcion.endpoint, temas: de('tema'), zonas: de('zona') }).catch(() => {});
+      guardar({ endpoint: suscripcion.endpoint, temas: de('tema'), zonas: de('zona'), de_noche: Boolean(dialogo.querySelector('[data-noche]:checked')) }).catch(() => {});
     }, { once: true });
     dialogo.querySelector('[data-apagar]').addEventListener('click', async () => {
       await guardar({ endpoint: suscripcion.endpoint, baja: true }).catch(() => {});

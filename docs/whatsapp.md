@@ -90,3 +90,10 @@ Sin comprobar:
 - El modo **activo**: nunca se ha enviado una respuesta real ni publicado un aviso desde WhatsApp.
 - Los **grupos**: no se sabe en qué campo viene quien escribe dentro de un grupo.
 - La sesión «trabajo» es el número personal de trabajo de Julián. Responder de forma automática desde ahí puede hacer que WhatsApp restrinja la cuenta.
+
+## Observaciones y duración (22-nov-2026)
+
+Por el chat también se puede avisar lo que no es una emergencia y sirve para corregir el mapa de riesgo: «aquí no se inundó» o «todo bien por aquí» (`aqui_no_paso`), «anoche se inundó» (`aqui_se_inundo`) y «aquí siempre se inunda» (`zona_de_riesgo`). El filtro los deja pasar (tema `observacion`) y el modelo los distingue del agua que está ahí ahora.
+
+En un daño en infraestructura, si la persona dice cuánto va a durar («un mes»), el aviso se queda ese tiempo (`duracion_dias`, entre 1 y 180 días). Si no lo dice, dura el plazo del tipo (14 días).
+

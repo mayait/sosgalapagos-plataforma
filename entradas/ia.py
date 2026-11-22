@@ -32,6 +32,7 @@ class Extraccion(BaseModel):
     profundidad: Literal["tobillo", "rodilla", "cintura", "puerta_auto"] | None = Field(default=None, description="Altura del agua, si la dice o se ve con claridad en la foto.")
     contacto: str | None = Field(default=None, description="Teléfono de contacto DEL LUGAR (un centro de acopio, una institución), si la persona lo da. Nunca el teléfono de quien escribe.")
     nombre: str | None = Field(default=None, description="Nombre o apodo con el que la persona dice que quiere aparecer, solo si lo dice ella misma.")
+    duracion_dias: int | None = Field(default=None, ge=1, le=180, description="Solo para un daño en infraestructura: cuántos días dice la persona que va a estar así («una semana» = 7, «un mes» = 30). None si no lo dice.")
     no_puede_ubicar: bool = Field(default=False, description="True si la persona dice que no puede o no sabe mandar la ubicación.")
 
 
@@ -42,7 +43,8 @@ Tu única tarea es rellenar el esquema con lo que la persona dice o lo que se ve
 Reglas:
 - No inventes nada. Si un dato no está, déjalo vacío.
 - «es_reporte» es True solo si avisa de algo que ocurre en un lugar: un peligro, un daño, algo bueno o un sitio donde ayudar.
-- Un daño en infraestructura pública (vía, puente, tubería, poste, muelle, escuela) es un tipo aparte del agua que sube y baja: dura días o semanas.
+- Un daño en infraestructura pública (vía, puente, tubería, poste, muelle, escuela) es un tipo aparte del agua que sube y baja: dura días o semanas. Si la persona dice cuánto va a durar, ponlo en «duracion_dias».
+- También sirve lo que NO es una emergencia y ayuda a corregir el mapa de riesgo: «aquí no se inundó» o «todo bien aquí» (aqui_no_paso), «aquí se inundó» cuando ya pasó (aqui_se_inundo) y «aquí siempre se inunda» o «esta es zona de riesgo» (zona_de_riesgo). Eso también es un reporte. Si el agua está ahí ahora, usa el tipo de peligro, no estos.
 - La descripción y el título nunca llevan nombres de personas, cédulas ni teléfonos. Si la persona los escribe, quítalos.
 - «contacto» es solo el teléfono de un lugar o de una institución que recibe ayuda. No pongas el número de quien escribe.
 - No describas caras ni personas de la foto. Describe el agua, la vía, el daño.
@@ -80,7 +82,7 @@ def extraer(textos, foto=None, tipos=(), borrador=None, pregunta=""):
 
 
 # ── Sin modelo: reglas simples ───────────────────────────────────────────────
-TIPO_POR_TEMA = {"agua": "agua_via", "via": "via_cortada", "infraestructura": "dano_infraestructura", "ayuda": "donar_colaborar", "bueno": "algo_bueno"}
+TIPO_POR_TEMA = {"agua": "agua_via", "via": "via_cortada", "infraestructura": "dano_infraestructura", "ayuda": "donar_colaborar", "bueno": "algo_bueno", "observacion": "aqui_no_paso"}
 
 
 def por_reglas(textos, borrador=None):
@@ -89,7 +91,13 @@ def por_reglas(textos, borrador=None):
     texto = " ".join(t for t in textos if t).strip()
     v = filtro.evaluar(texto, conversacion_abierta=False)
     plano = filtro.sin_tildes(texto)
-    tipo = next((TIPO_POR_TEMA[t] for t in ("infraestructura", "via", "agua", "ayuda", "bueno") if t in v.temas), None)
+    # Una observación manda sobre «agua»: «aquí no se inundó» nombra el agua, pero no es un peligro.
+    tipo = next((TIPO_POR_TEMA[t] for t in ("observacion", "infraestructura", "via", "agua", "ayuda", "bueno") if t in v.temas), None)
+    if tipo == "aqui_no_paso":
+        if re.search(r"\b(siempre|cada vez que llueve|todos los anos) se (inunda|llena|empoza)\b|\bzona de riesgo\b", plano):
+            tipo = "zona_de_riesgo"
+        elif re.search(r"\b(se inundo|llego el agua|entro el agua|subio el agua)\b", plano) and not re.search(r"\bno (se inundo|llego el agua|entro el agua)\b", plano):
+            tipo = "aqui_se_inundo"
     if "cable" in plano and re.search(r"cable (caido|suelto|en el suelo)", plano):
         tipo = "cable"
     telefono = re.search(r"(?<!\d)(\+?593[\s-]?\d[\d\s-]{7,10}|0\d[\d\s-]{7,10})(?!\d)", texto)

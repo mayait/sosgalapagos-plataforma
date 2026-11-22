@@ -300,7 +300,11 @@ class PronosticoOficial(models.Model):
 
 
 class AvisoEnviado(models.Model):
-    """Un aviso que ya se mandó a los teléfonos. La clave impide repetir el mismo."""
+    """Un aviso para los teléfonos. La clave impide repetir el mismo.
+
+    De noche (21:00 a 06:00, hora de Galápagos) los avisos no se mandan: quedan retenidos y a
+    las 06:00 sale un solo resumen. Todos, enviados o retenidos, se ven en la línea del tiempo.
+    """
 
     clave = models.CharField(max_length=120, unique=True)
     tema = models.CharField(max_length=12)
@@ -310,6 +314,9 @@ class AvisoEnviado(models.Model):
     enlace = models.CharField(max_length=200)
     creado = models.DateTimeField(auto_now_add=True)
     entregados = models.PositiveIntegerField(default=0)
+    urgente = models.BooleanField(default=False)           # llueve muy fuerte ahora o hay peligro de vida confirmado
+    retenido = models.BooleanField("retenido por ser de noche", default=False)
+    resumido = models.BooleanField("ya salió en el resumen de la mañana", default=False)
 
     class Meta:
         verbose_name = "aviso enviado"

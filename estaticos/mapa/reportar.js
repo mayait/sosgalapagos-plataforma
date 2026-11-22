@@ -65,7 +65,7 @@
   window.reporte = () => ({
     paso: 1, tipo: '', clase: 'riesgo', profundidad: '', gravedad: 'cuidado', gravedadTocada: false, nota: '',
     foto: null, vistaFoto: '', lat: null, lon: null, precision: null, origen: '',
-    gps: '', codigoGps: 0, pideContacto: false, contacto: '', nombre: '', puntos: 0, textoPuntos: '',
+    gps: '', codigoGps: 0, pideContacto: false, pideDuracion: false, duraDias: 0, contacto: '', nombre: '', puntos: 0, textoPuntos: '',
     vistoEn: new Date().toISOString(), enviando: false, error: '',
     tituloFinal: '', textoFinal: '', enlaceFinal: '/riesgos/', mini: null,
 
@@ -87,6 +87,7 @@
         riesgo: 'Ejemplo: el agua corre fuerte hacia la esquina',
         bueno: 'Ejemplo: ya volvió la luz en el barrio; vecinos reparten almuerzos en la cancha',
         ayuda: 'Ejemplo: reciben agua y ropa seca, de 8 a 18 h; hacen falta voluntarios para clasificar',
+        observa: 'Ejemplo: en esta esquina el agua llegó al bordillo y no entró a las casas',
       }[this.clase];
     },
     get textoUbicacion() {
@@ -151,9 +152,10 @@
     },
     sinFoto() { this.foto = null; this.vistaFoto = ''; this.paso = 2; },
 
-    elegirTipo(codigo, clase, pideContacto) {
+    elegirTipo(codigo, clase, pideContacto, pideDuracion) {
       this.tipo = codigo;
       this.pideContacto = Boolean(pideContacto);
+      this.pideDuracion = Boolean(pideDuracion);
       this.clase = clase || 'riesgo';
       if (CON_AGUA.includes(codigo)) { this.paso = 3; return; }
       this.profundidad = 'sin_dato';
@@ -184,6 +186,7 @@
         tipo: this.tipo, profundidad: this.profundidad, gravedad: this.gravedad, nota: this.nota.trim(),
         lat: c.lat, lon: c.lng, precision: this.origen === 'gps' ? this.precision : '', visto_en: this.vistoEn, foto: this.foto,
         contacto: this.pideContacto ? this.contacto.trim() : '', nombre: this.nombre.trim(),
+        dura_dias: this.pideDuracion && this.duraDias ? this.duraDias : '',
       };
     },
 
@@ -210,6 +213,7 @@
           ? 'Alguien ya había avisado de esto aquí mismo. Tu aviso confirma que sigue ahí y renueva el plazo.'
           : 'Ya aparece en el mapa como «por verificar». Se retira solo cuando pase su plazo.';
         if (this.clase !== 'riesgo' && !datos.duplicado) this.textoFinal = 'Gracias. Ya aparece en el mapa; el texto se publica cuando coordinación lo revise.';
+        if (this.clase === 'observa' && !datos.duplicado) this.textoFinal = 'Gracias. Con lo que viste se corrige el mapa de riesgo. Ya aparece en el mapa; la foto y el texto se publican cuando coordinación los revise.';
         this.enlaceFinal = '/riesgos/?r=' + datos.id;
         this.puntos = datos.puntos || 0;
         this.textoPuntos = `Ganaste ${this.puntos} puntos${datos.nombre ? ', ' + datos.nombre : ''}. Llevas ${datos.total || this.puntos}.`
