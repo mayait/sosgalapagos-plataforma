@@ -103,6 +103,12 @@ def prueba_inamhi_cinco_minutos_en_hora_continental_y_respaldo_solo_donde_falta(
     inamhi.recoger(ahora=datetime(2026, 11, 22, 15, 20, tzinfo=UTC))
     assert not base.existe("inamhi", "M0191", en=respaldo)
     assert Estacion.objects.filter(fuente="inamhi").count() == 2
+    # Una estación sin datos frescos no arrastra a la otra; si fallan las dos, la corrida es un fallo.
+    monkeypatch.setattr(base, "http_json", lambda url, *a, **k: {"ok": False, "reason": "datos_antiguos_o_vacios"} if "-90.315" in url else {**d, "estaciones": [{"codigo": "M0221", "mm": [0.4]}]})
+    assert inamhi.recoger(ahora=datetime(2026, 11, 22, 15, 20, tzinfo=UTC)) == 1
+    monkeypatch.setattr(base, "http_json", lambda url, *a, **k: {"ok": False})
+    with pytest.raises(ValueError):
+        inamhi.recoger(ahora=datetime(2026, 11, 22, 15, 20, tzinfo=UTC))
 
 
 def prueba_ioc_elige_el_sensor_vivo_y_resta_el_desfase():

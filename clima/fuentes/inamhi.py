@@ -52,9 +52,13 @@ def filas_de_5min(cod, d):
 def recoger(ahora=None):
     api = base.endpoint("CLIMA_INAMHI_API")
     _registrar_estaciones()
-    filas, cubiertas = [], set()
+    filas, cubiertas, errores = [], set(), []
     for cod, (qlat, qlon, *_) in ESTACIONES.items():
-        nuevas, horas = filas_de_5min(cod, base.http_json(f"{api}/tiempo-real-5min/{qlat}/{qlon}"))
+        try:  # una estación sin datos frescos no deja sin datos a la otra
+            nuevas, horas = filas_de_5min(cod, base.http_json(f"{api}/tiempo-real-5min/{qlat}/{qlon}"))
+        except Exception as e:
+            errores.append(f"{cod}: {type(e).__name__}: {e}"[:160])
+            continue
         filas += nuevas
         cubiertas |= {(cod, h) for h in horas}
     n = base.guardar(FUENTE, filas)
@@ -65,6 +69,8 @@ def recoger(ahora=None):
     # Una vez por hora: rellenar con el historial las horas sin 5 minutos.
     if (ahora or dt.datetime.now(base.UTC)).minute < 5:
         n += historial(dias=2)
+    if len(errores) == len(ESTACIONES):  # ninguna respondió bien: la corrida cuenta como fallo
+        raise ValueError("; ".join(errores)[:400])
     return n
 
 
