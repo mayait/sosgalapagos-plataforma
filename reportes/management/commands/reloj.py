@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """Encola cada minuto las tareas periódicas. Las ejecuta el trabajador (manage.py db_worker).
 
 El marco de tareas de Django no trae un planificador, así que este proceso hace
@@ -8,7 +10,7 @@ import time
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from clima.tareas import publicar_descargas, actualizar_mar, actualizar_oficiales, guardar_pronostico, recalibrar_pronostico, revisar_alertas, sincronizar_clima
+from clima.tareas import actualizar_mar, actualizar_oficiales, ciclo_clima, guardar_pronostico, publicar_descargas, recalibrar_pronostico, revisar_alertas
 from entradas.tareas import purgar
 from reportes.tareas import cerrar_vencidos
 
@@ -20,15 +22,15 @@ class Command(BaseCommand):
         vuelta = 0
         while True:
             cerrar_vencidos.enqueue()
-            if (settings.CLIMA_SQLITE or settings.CLIMA_FUENTES_NATIVAS) and vuelta % 5 == 0:  # cada cinco minutos, tras la corrida del recolector
-                sincronizar_clima.enqueue()
-            if settings.CLIMA_PRONOSTICO_DIR and vuelta % 60 == 9:  # cada hora
+            if settings.CLIMA_RECOGER and vuelta % 5 == 0:  # cada cinco minutos: fuentes, nivel y panel
+                ciclo_clima.enqueue()
+            if settings.CLIMA_RECOGER and vuelta % 60 == 9:  # cada hora
                 guardar_pronostico.enqueue()
-            if settings.CLIMA_PRONOSTICO_DIR and vuelta % 1440 == 30:  # una vez al día: aprende de lo que llovió ayer
+            if settings.CLIMA_RECOGER and vuelta % 1440 == 30:  # una vez al día: aprende de lo que llovió ayer
                 recalibrar_pronostico.enqueue()
             if vuelta % 5 == 4:       # cada cinco minutos: ¿algo merece aviso?
                 revisar_alertas.enqueue()
-            if settings.CLIMA_PUBLICAR_PANEL and vuelta % 60 == 17:
+            if settings.CLIMA_RECOGER and settings.CLIMA_SALIDA and vuelta % 60 == 17:
                 publicar_descargas.enqueue()
             if vuelta % 60 == 13:     # cada hora: pronóstico del INAMHI y boletines nuevos
                 actualizar_oficiales.enqueue()

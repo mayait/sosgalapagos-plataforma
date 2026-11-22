@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 # Despliega o actualiza el mapa de riesgos en el servidor. Solo añade: no reinicia el sitio.
 # Uso (en el servidor):  /opt/sosgalapagos-plataforma/despliegue/produccion/desplegar.sh
 #
@@ -30,6 +32,12 @@ fi
 if ! grep -q '^WHATSAPP_SECRETO=.\+' .env; then
   sed -i '/^WHATSAPP_SECRETO=/d' .env
   echo "WHATSAPP_SECRETO=$(openssl rand -hex 24)" >> .env
+fi
+
+if ! grep -q '^CLIMA_RELEVO_LLAVE=.\+' .env; then
+  # La llave con que se identifica la máquina de relevo de IERSE (despliegue/relevo/).
+  sed -i '/^CLIMA_RELEVO_LLAVE=/d' .env
+  echo "CLIMA_RELEVO_LLAVE=$(openssl rand -hex 32)" >> .env
 fi
 
 echo "→ Levantando (las migraciones corren antes que la web)"

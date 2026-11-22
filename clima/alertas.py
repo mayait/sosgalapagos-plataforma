@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """Alertas por tema: cada persona elige de qué quiere enterarse y de qué islas.
 
 Temas:
@@ -102,7 +104,7 @@ def _mar(ahora):
 
     salida = []
     for puerto, p in PUERTOS.items():
-        pico = MarHora.objects.filter(puerto=puerto, hora__gte=ahora, hora__lte=ahora + timedelta(hours=36), ola_m__gte=OLA_FUERTE_M).order_by("-ola_m").first()
+        pico = MarHora.objects.filter(puerto=puerto, fuente="stormglass", hora__gte=ahora, hora__lte=ahora + timedelta(hours=36), ola_m__gte=OLA_FUERTE_M).order_by("-ola_m").first()
         if pico:
             cuando = pico.hora.astimezone(GALAPAGOS)
             salida.append(emitir("mar", p["zona"], f"mar:{puerto}:{cuando:%Y-%m-%d}", f"Oleaje fuerte en {p['nombre']}",

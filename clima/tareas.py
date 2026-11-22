@@ -1,25 +1,23 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """Tareas periódicas del clima. Las encola el reloj."""
 from django.tasks import task
 
 
 @task
-def sincronizar_clima():
-    """El ciclo de cada cinco minutos: recoger lo que ya recoge esta aplicación, copiar lo demás,
-    calcular el nivel de cada zona y, si esta aplicación es la que publica, generar los datos del panel."""
+def ciclo_clima():
+    """El ciclo de cada cinco minutos: recoger las fuentes, calcular el nivel de cada zona y
+    generar los datos del panel. Una parte que falla no frena a las demás."""
     from django.conf import settings
 
     from . import fuentes, niveles, panel
-    from .sincronizar import sincronizar
 
-    r = {"nativas": fuentes.recolectar() if fuentes.nativas() else {}}
-    if settings.CLIMA_SQLITE:
-        s = sincronizar()
-        r.update(leidas=s.leidas, cambiadas=s.cambiadas, borradas=s.borradas, segundos=s.segundos, error=s.error)
+    r = {"fuentes": fuentes.recolectar()}
     try:
         r["nivel"] = niveles.actualizar()
-    except Exception as e:  # una parte que falla no frena a las demás
+    except Exception as e:
         r["nivel"] = f"{type(e).__name__}: {e}"
-    if settings.CLIMA_PUBLICAR_PANEL and settings.CLIMA_SALIDA:
+    if settings.CLIMA_SALIDA:
         try:
             r["panel"] = panel.publicar()
         except Exception as e:
@@ -29,18 +27,19 @@ def sincronizar_clima():
 
 @task
 def publicar_descargas():
-    """Cada hora: los ZIP de descarga pública y la copia completa privada."""
-    from . import panel
+    """Cada hora: los ZIP de descarga pública."""
+    from . import descargas
 
-    return panel.descargas()
+    return descargas.publicar()
 
 
 @task
 def guardar_pronostico():
+    """Cada hora: lo que dijo cada modelo y lo que se publicó, para poder verificarlo después."""
     from . import pronostico
 
-    leidos, nuevas = pronostico.guardar_archivo()
-    return {"archivos": leidos, "modelos": nuevas, "publicados": pronostico.guardar_emitido()}
+    leidas, nuevas = pronostico.guardar_modelos()
+    return {"corridas": leidas, "modelos": nuevas, "publicados": pronostico.guardar_emitido()}
 
 
 @task

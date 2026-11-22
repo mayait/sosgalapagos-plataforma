@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """API pública. En la fase 1 solo trae la salida GeoJSON que usa el mapa.
 
 La forma Open311 (tipos, crear y consultar reportes) y las llaves llegan en la fase 2.
@@ -16,7 +18,10 @@ from reportes.models import Estado, Reporte
 api = NinjaAPI(
     title="SOS Galápagos · Reportes de riesgo",
     version="0.1",
-    description="Información ciudadana preliminar, no oficial. Emergencias: 911.",
+    description=("Información ciudadana preliminar, no oficial. Emergencias: 911. "
+                 "© 2026 Universidad San Francisco de Quito (USFQ) · SOS Galápagos · autor: Julián Maya (jamaya@usfq.edu.ec). "
+                 "Datos y modelos propios bajo CC BY-NC-ND 4.0, con atribución; los datos de terceros conservan la licencia de su fuente. "
+                 "Para integrar esta API en otro producto, pide permiso al autor."),
     docs_url="/docs",
 )
 
@@ -171,7 +176,7 @@ def clima_serie(request, estacion: str, variable: str = "lluvia_mm", desde: date
 
 @api.get("/clima/salud", summary="Salud de las fuentes de clima", tags=["clima"])
 def clima_salud(request):
-    """Qué fuentes responden, cuánto tardan y cuánto retraso lleva la copia a esta base."""
+    """Qué fuentes responden, cuánto tardan y hace cuánto llegó la última medición."""
     from clima import consultas
 
     return consultas.salud()
@@ -230,12 +235,30 @@ def clima_alertas(request):
     }
 
 
-@api.get("/clima/nivel", summary="Nivel de lluvia peligrosa por zona (cálculo en Django, en prueba)", tags=["clima"])
+@api.get("/clima/nivel", summary="Nivel de lluvia peligrosa por zona", tags=["clima"])
 def clima_nivel(request):
-    """El nivel calculado en esta base, y cuánto coincide con el del recolector anterior. Preliminar, no oficial."""
-    from clima import niveles
+    """El nivel vigente de cada zona. Es una estimación propia y preliminar, no una alerta oficial."""
     from clima.models import Estado
 
     e = Estado.objects.filter(clave="inundacion").first()
-    return {"en_prueba": True, "coincidencia_con_el_anterior": niveles.coincidencia(), **(e.datos if e else {"zonas": []})}
+    return {"aviso": "Estimación propia y preliminar a partir de la lluvia medida. No es una alerta oficial: sigue las indicaciones del COE, la SNGR y el ECU 911.",
+            **(e.datos if e else {"zonas": []})}
 
+
+@api.get("/clima/relevo/ierse", summary="Relevo de IERSE: qué pedir", tags=["clima"], include_in_schema=False)
+def clima_relevo_pedidos(request):
+    """Para la máquina de relevo en Ecuador: la lista de pedidos que debe hacerle a IERSE ahora."""
+    from clima import relevo
+
+    if not relevo.autorizado(request):
+        return api.create_response(request, {"error": "no autorizado"}, status=403)
+    return relevo.pedidos()
+
+
+@api.post("/clima/relevo/ierse", summary="Relevo de IERSE: entregar respuestas", tags=["clima"], include_in_schema=False)
+def clima_relevo_entrega(request):
+    from clima import relevo
+
+    if not relevo.autorizado(request):
+        return api.create_response(request, {"error": "no autorizado"}, status=403)
+    return relevo.recibir(request.body)

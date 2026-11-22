@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """El mar: pleamares y bajamares de la tabla oficial del INOCAR, y oleaje y mareas de Stormglass.
 
 Los endpoints van en variables de entorno (nunca en el repositorio):
@@ -137,8 +139,8 @@ def actualizar_stormglass_mar(puertos=("san-cristobal", "isabela", "santa-cruz")
         filas = []
         for h in d["hours"]:
             valores = {campo: (h.get(nombre) or {}).get("sg") for nombre, campo in PARAMETROS.items()}
-            filas.append(MarHora(puerto=puerto, hora=datetime.fromisoformat(h["time"]), obtenido=ahora, **valores))
-        total += len(MarHora.objects.bulk_create(filas, update_conflicts=True, unique_fields=["puerto", "hora"], update_fields=list(PARAMETROS.values()) + ["obtenido"]))
+            filas.append(MarHora(puerto=puerto, fuente="stormglass", hora=datetime.fromisoformat(h["time"]), obtenido=ahora, **valores))
+        total += len(MarHora.objects.bulk_create(filas, update_conflicts=True, unique_fields=["puerto", "fuente", "hora"], update_fields=list(PARAMETROS.values()) + ["obtenido"]))
     return total
 
 
@@ -156,17 +158,26 @@ def resumen(ahora=None):
     ahora = ahora or datetime.now(timezone.utc)
     salida = []
     for puerto, p in PUERTOS.items():
-        fuente = "inocar" if MareaExtremo.objects.filter(puerto=puerto, fuente="inocar", ts__gte=ahora).exists() else "stormglass"
-        extremos = list(MareaExtremo.objects.filter(puerto=puerto, fuente=fuente, ts__gte=ahora - timedelta(hours=6), ts__lte=ahora + timedelta(days=4)))
-        horas = list(MarHora.objects.filter(puerto=puerto, hora__gte=ahora, hora__lte=ahora + timedelta(hours=72)))
-        olas = [h.ola_m for h in horas if h.ola_m is not None]
-        pico = max(horas, key=lambda h: h.ola_m or 0) if olas else None
+        fuente_marea = "inocar" if MareaExtremo.objects.filter(puerto=puerto, fuente="inocar", ts__gte=ahora).exists() else "stormglass"
+        extremos = list(MareaExtremo.objects.filter(puerto=puerto, fuente=fuente_marea, ts__gte=ahora - timedelta(hours=6), ts__lte=ahora + timedelta(days=4)))
+        # El mar de las próximas 72 horas: Stormglass; si no tiene datos de este puerto, el modelo de Open-Meteo.
+        horas, modelo = [], ""
+        for fuente, etiqueta in (("stormglass", "Stormglass"), ("openmeteo", "Open-Meteo Marine")):
+            horas = list(MarHora.objects.filter(puerto=puerto, fuente=fuente, hora__gte=ahora - timedelta(hours=1), hora__lte=ahora + timedelta(hours=72), ola_m__isnull=False).order_by("hora"))
+            if horas:
+                modelo = etiqueta
+                break
+        olas = [h.ola_m for h in horas]
+        pico = max(horas, key=lambda h: h.ola_m) if horas else None
+        r1 = lambda v: None if v is None else round(v, 1)  # noqa: E731
         salida.append({
             "puerto": puerto, "nombre": p["nombre"], "zona": p["zona"],
-            "mareas": {"fuente": "INOCAR, tabla oficial" if fuente == "inocar" else "Stormglass (estación NOAA cercana)",
+            "mareas": {"fuente": "INOCAR, tabla oficial" if fuente_marea == "inocar" else "Stormglass (estación NOAA cercana)",
                        "referencia": extremos[0].datum if extremos else "", "hora": "Galápagos (UTC−6)",
                        "extremos": [{"ts": e.ts, "local": _local(e.ts), "tipo": "pleamar" if e.tipo == "P" else "bajamar", "altura_m": e.altura_m} for e in extremos]},
-            "mar_72h": {"ola_max_m": round(max(olas), 1), "cuando": pico.hora, "mar_de_fondo_m": pico.fondo_m, "periodo_s": pico.periodo_s,
-                        "agua_c": horas[0].agua_c, "obtenido": horas[0].obtenido} if olas else None,
+            "mar_72h": {"modelo": modelo, "ola_max_m": round(max(olas), 1), "cuando": pico.hora, "mar_de_fondo_m": pico.fondo_m, "periodo_s": pico.periodo_s,
+                        "agua_c": horas[0].agua_c, "obtenido": horas[0].obtenido,
+                        # Hora a hora, para dibujarlo: [hora, ola, mar de fondo, período, viento, racha, dirección del mar de fondo]
+                        "horas": [[h.hora, r1(h.ola_m), r1(h.fondo_m), r1(h.periodo_s), r1(h.viento_ms), r1(h.racha_ms), None if h.direccion is None else round(h.direccion)] for h in horas]} if horas else None,
         })
     return {"generado": ahora, "aviso": "Predicciones y modelos, no mediciones. La tabla del INOCAR es la oficial; lo demás es orientativo. No reemplaza los avisos de la Armada.", "puertos": salida}

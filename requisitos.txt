@@ -15,3 +15,6 @@ pydantic-ai-slim[anthropic,google]>=2.71,<3
 # cifra el identificador del chat de WhatsApp.
 pywebpush>=2.5,<3
 websockets>=15
+# Satélite GOES-19 (clima/satelite/): lee los archivos de la NOAA por rangos, sin bajarlos enteros.
+numpy==2.5.4
+h5py==3.16.0

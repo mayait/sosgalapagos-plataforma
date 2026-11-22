@@ -1,3 +1,5 @@
+/* SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+   Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE). */
 /* Buscador y «Mis puntos».
 
    Buscador: la lupa junto a «Capas». Busca calles, barrios, lugares, cruces y puntos de los

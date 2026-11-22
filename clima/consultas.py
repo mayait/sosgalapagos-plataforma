@@ -1,9 +1,11 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """Lecturas del clima para la API y las páginas. Todo sale de los resúmenes por hora."""
 from datetime import datetime, timedelta, timezone
 
 from django.db import connection
 
-from .models import Estacion, Sincronizacion
+from .models import Estacion
 
 GALAPAGOS = timezone(timedelta(hours=-6))  # el día de Galápagos; no cambia de hora
 DE_SUMA = {"lluvia_mm"}
@@ -24,7 +26,7 @@ def estaciones(ahora=None):
 
     danadas = {d.estacion_id: {"desde": d.desde, "motivo": d.motivo} for d in EstacionDanada.objects.filter(variable="lluvia_mm", desde__lte=ahora).exclude(hasta__lte=ahora)}
     salida = []
-    for e in Estacion.objects.exclude(fuente="goes"):
+    for e in Estacion.objects.exclude(fuente__in=("goes", "fcd")):
         l = lluvia.get(e.pk, (None, None, None))
         salida.append({
             "id": e.clave, "nombre": e.nombre, "isla": e.isla, "operador": e.operador,
@@ -73,7 +75,7 @@ def serie(clave, variable, desde, hasta, paso="hora"):
 
 
 def salud(ahora=None):
-    """Cómo va cada fuente en las últimas 24 horas y cuánto retraso lleva la copia a esta base."""
+    """Cómo va cada fuente en las últimas 24 horas y hace cuánto llegó la última medición."""
     ahora = ahora or datetime.now(timezone.utc)
     with connection.cursor() as c:
         c.execute(
@@ -92,19 +94,11 @@ def salud(ahora=None):
         total, ultima = c.fetchone()
         c.execute("SELECT count(*) FROM clima_horaria")
         horarias = c.fetchone()[0]
-    copias = list(Sincronizacion.objects.filter(inicio__gte=ahora - timedelta(hours=24)))
-    con_error = [s for s in copias if s.error]
     return {
         "generado": ahora,
         "observaciones": total,
         "resumenes_por_hora": horarias,
         "ultima_medicion": ultima,
         "retraso_min": round((ahora - ultima).total_seconds() / 60, 1) if ultima else None,
-        "copia": {
-            "corridas_24h": len(copias), "con_error": len(con_error),
-            "segundos_media": _r(sum(s.segundos for s in copias) / len(copias)) if copias else None,
-            "ultimo_error": con_error[0].error if con_error else "",
-        },
         "fuentes": fuentes,
-        "nivel_en_django": __import__("clima.niveles", fromlist=["x"]).coincidencia(ahora=ahora),
     }

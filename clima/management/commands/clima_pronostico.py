@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """Guarda en la base lo que dijeron los modelos y lo que se publicó, y lo verifica.
 
   manage.py clima_pronostico              lee lo nuevo (corre solo cada hora)
@@ -22,8 +24,8 @@ class Command(BaseCommand):
                 self.stdout.write(f"{r['grupo']:6} plazo {r['plazo']} · {r['dias']} días ({r['eventos']} de lluvia fuerte) · a={r['a']} b={r['b']} · brier {r['brier']} frente a {r['brier_base']} · habilidad {r['habilidad']}")
             return
         if not verificar:
-            leidos, nuevas = pronostico.guardar_archivo()
-            self.stdout.write(f"archivos leídos {leidos} · filas nuevas de modelos {nuevas} · publicados nuevos {pronostico.guardar_emitido()}")
+            leidos, nuevas = pronostico.guardar_modelos()
+            self.stdout.write(f"corridas leídas {leidos} · filas nuevas de modelos {nuevas} · publicados nuevos {pronostico.guardar_emitido()}")
             return
         v = pronostico.verificar(dias)
         self.stdout.write(f"{v['desde']} a {v['hasta']}: {v['dias_observados']} días-punto observados, {v['dias_de_lluvia_fuerte']} con {v['umbral_mm']} mm o más")

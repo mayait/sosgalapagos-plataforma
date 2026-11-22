@@ -1,3 +1,5 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 """Primer filtro de los mensajes de WhatsApp: reglas y expresiones regulares, sin modelo.
 
 Decide si un mensaje parece material para SOS Galápagos (un peligro, un daño, algo bueno,

@@ -1,9 +1,8 @@
-"""Clima: mediciones de las estaciones, guardadas en la misma base que el mapa.
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
+"""Clima: todo lo que se mide, se pronostica y se avisa, en la misma base que el mapa (PostgreSQL).
 
-Etapa 1 de la migración (docs/plan-clima.md): el recolector anterior sigue corriendo y
-escribe en su base SQLite; aquí se copia todo a PostgreSQL cada cinco minutos, y desde
-aquí se sirven las series, los resúmenes por hora y la salud de cada fuente.
-
+Las fuentes (clima/fuentes/) escriben aquí directamente; no hay otra base ni archivos intermedios.
 Las horas se guardan en UTC. El día de Galápagos es UTC−6.
 """
 from django.contrib.gis.db import models
@@ -92,23 +91,6 @@ class Corrida(models.Model):
         ordering = ["-ts"]
 
 
-class Sincronizacion(models.Model):
-    """Cada copia desde la base del recolector anterior. Sirve para medir el retraso y el costo."""
-
-    inicio = models.DateTimeField(auto_now_add=True)
-    segundos = models.FloatField(default=0)
-    leidas = models.IntegerField(default=0)
-    cambiadas = models.IntegerField(default=0)
-    borradas = models.IntegerField(default=0)
-    completa = models.BooleanField(default=False)
-    error = models.TextField(blank=True)
-
-    class Meta:
-        verbose_name = "sincronización"
-        verbose_name_plural = "sincronizaciones"
-        ordering = ["-inicio"]
-
-
 class EstacionDanada(models.Model):
     """Un sensor con errores, marcado a mano. Sus datos se siguen guardando, pero desde «desde»
     no se usan en los cálculos ni se publican. Para reactivarlo, se pone la fecha «hasta».
@@ -126,6 +108,33 @@ class EstacionDanada(models.Model):
 
     def __str__(self):
         return f"{self.estacion} · {self.variable} desde {self.desde:%d-%m-%Y}"
+
+
+class PronosticoCorrida(models.Model):
+    """Una corrida de un modelo meteorológico, resumida por punto. Es la historia de lo que dijo cada modelo.
+
+    `datos` es {punto: {dias: {fecha: mm}, …}}: en un determinista, un valor por día (y el detalle por
+    hora del modelo de 9 km); en un conjunto, la lista con el valor de cada miembro, por día y por
+    bloque de 6 horas.
+    """
+
+    modelo = models.CharField(max_length=40)
+    tipo = models.CharField(max_length=12)                  # determinista o conjunto
+    referencia = models.DateTimeField()                     # la hora de la corrida; si no se conoce, el bloque de 6 h en que se recibió
+    corrida = models.DateTimeField(null=True, blank=True)   # inicio de la corrida, si el proveedor lo informa
+    disponible = models.DateTimeField(null=True, blank=True)
+    recibido = models.DateTimeField()
+    datos = models.JSONField(default=dict)
+
+    class Meta:
+        verbose_name = "corrida de un modelo"
+        verbose_name_plural = "corridas de los modelos"
+        constraints = [models.UniqueConstraint(fields=["modelo", "tipo", "referencia"], name="pronostico_corrida_unica")]
+        indexes = [models.Index(fields=["tipo", "modelo", "-recibido"], name="pronostico_corrida_ultima")]
+        ordering = ["-recibido"]
+
+    def __str__(self):
+        return f"{self.modelo} · {self.referencia:%d-%m %H:%M}"
 
 
 class PronosticoModelo(models.Model):
@@ -215,9 +224,13 @@ class MareaExtremo(models.Model):
 
 
 class MarHora(models.Model):
-    """Estado del mar pronosticado para un puerto, hora a hora: oleaje, mar de fondo, viento y nivel."""
+    """Estado del mar pronosticado para un puerto según un modelo: oleaje, mar de fondo, viento y nivel.
+
+    Stormglass da un valor por hora; Open-Meteo, el nivel cada 15 minutos. Son modelos, no mediciones.
+    """
 
     puerto = models.CharField(max_length=20)
+    fuente = models.CharField(max_length=12, default="stormglass")  # stormglass u openmeteo
     hora = models.DateTimeField()
     ola_m = models.FloatField(null=True)
     fondo_m = models.FloatField("mar de fondo (m)", null=True)
@@ -231,7 +244,7 @@ class MarHora(models.Model):
     obtenido = models.DateTimeField()
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields=["puerto", "hora"], name="mar_hora_unica")]
+        constraints = [models.UniqueConstraint(fields=["puerto", "fuente", "hora"], name="mar_hora_unica")]
         ordering = ["hora"]
 
 
@@ -307,8 +320,7 @@ class AvisoEnviado(models.Model):
 class NivelManual(models.Model):
     """Nivel puesto a mano por la coordinación a partir de reportes de campo.
 
-    Solo SUBE el nivel calculado, nunca lo baja, y vale entre «desde» y «hasta». Reemplaza al
-    archivo niveles_manuales.json del recolector anterior.
+    Solo SUBE el nivel calculado, nunca lo baja, y vale entre «desde» y «hasta».
     """
 
     zona = models.CharField(max_length=30)      # la-cascada, santa-cruz-alta, san-cristobal, isabela
@@ -324,10 +336,10 @@ class NivelManual(models.Model):
 
 
 class NivelZona(models.Model):
-    """El nivel de lluvia peligrosa de una zona en cada pasada, con el del recolector anterior al lado.
+    """El nivel de lluvia peligrosa de una zona en cada pasada: la historia del nivel.
 
-    Sirve para dos cosas: tener la historia del nivel, y medir si el cálculo nuevo da lo mismo
-    que el anterior antes de reemplazarlo.
+    `anterior` y `coincide` solo tienen datos hasta el 22-nov-2026: son la comparación con el
+    recolector que se retiró ese día, guardada como constancia de que el cálculo daba lo mismo.
     """
 
     zona = models.CharField(max_length=30)

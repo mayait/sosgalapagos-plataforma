@@ -1,4 +1,6 @@
 #!/bin/sh
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
 # Copia diaria de la base de la plataforma (reportes, clima, avisos) y de las fotos.
 # La corre sosgalapagos-plataforma-respaldo.timer. Guarda las 14 más recientes.
 set -eu

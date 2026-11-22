@@ -1,6 +1,9 @@
-"""Lee el nivel de lluvia que publica /clima (estado.json). Solo lectura.
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
+"""El nivel de lluvia y la lluvia por hora para el mapa y la línea del tiempo.
 
-En el servidor CLIMA_ESTADO es la ruta del archivo; en la Mac, la URL pública.
+Salen de esta misma base (la app `clima`). Solo en una Mac de desarrollo, donde no se recoge
+clima, se leen los archivos públicos de sosgalapagos.org (CLIMA_ESTADO y CLIMA_HORARIO).
 """
 import json
 from datetime import datetime, timezone
@@ -23,10 +26,16 @@ def _leer(origen=None):
 def estado():
     datos = cache.get("clima_estado")
     if datos is None:
-        try:
-            datos = _leer()
-        except Exception:
-            datos = {}
+        from clima.models import Estado
+
+        guardado = Estado.objects.filter(clave="inundacion").first()
+        if guardado:
+            datos = {"inundacion": guardado.datos}
+        else:  # desarrollo local, sin clima propio
+            try:
+                datos = _leer()
+            except Exception:
+                datos = {}
         cache.set("clima_estado", datos, 60)
     return datos
 
@@ -76,7 +85,7 @@ def horario():
 
 
 def _en_base():
-    """True si el clima ya está en esta base (etapa 1 de docs/plan-clima.md). En la Mac, sin copia, no."""
+    """True si hay clima en esta base. En una Mac de desarrollo, sin recolección, no."""
     from clima.models import Horaria
 
     return Horaria.objects.filter(variable="lluvia_mm").exists()
