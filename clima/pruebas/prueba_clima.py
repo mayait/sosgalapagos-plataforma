@@ -245,3 +245,18 @@ def prueba_la_linea_del_tiempo_lee_la_lluvia_de_esta_base(origen):
     inicio, valores = panel.lluvia_por_hora("ierse/n1", hora - timedelta(hours=1), hora + timedelta(hours=1))
     assert inicio == hora - timedelta(hours=1) and valores == [None, 6.0]
 
+
+def prueba_una_fuente_sin_nada_nuevo_no_es_un_fallo(settings, monkeypatch):
+    import io
+
+    from clima import fuentes
+
+    settings.CLIMA_FUENTES_NATIVAS, settings.CLIMA_METAR_API = ["metar"], "https://metar.test/api"
+
+    class SinContenido(io.BytesIO):  # como responde la fuente de noche: 204 y cuerpo vacío
+        status = 204
+
+    monkeypatch.setattr(fuentes.urllib.request, "urlopen", lambda pedido, timeout=0: SinContenido(b""))
+    assert fuentes.recolectar() == {"metar": 0}
+    assert Corrida.objects.get(fuente="metar").ok is True
+

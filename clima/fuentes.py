@@ -27,7 +27,10 @@ def http_json(url, intentos=3, espera=60):
     for i in range(intentos):
         try:
             with urllib.request.urlopen(urllib.request.Request(url, headers={"Content-Type": "application/json", "User-Agent": UA}), timeout=espera) as r:
-                return json.load(r)
+                cuerpo = r.read()
+                # «204, sin contenido»: la fuente respondió bien y no tiene nada nuevo (los aeropuertos no
+                # reportan de noche). El recolector anterior lo contaba como fallo.
+                return json.loads(cuerpo) if cuerpo.strip() else []
         except Exception:
             if i == intentos - 1:
                 raise
