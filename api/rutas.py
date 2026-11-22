@@ -141,3 +141,38 @@ def whatsapp_entrada(request, secreto: str = ""):
     if mensaje:
         procesar_mensaje.enqueue(mensaje.pk)
     return {"atendido": bool(mensaje)}
+
+
+# ── Clima: mediciones guardadas en esta base ─────────────────────────────────
+@api.get("/clima/estaciones", summary="Estaciones meteorológicas y su lluvia reciente", tags=["clima"])
+def clima_estaciones(request):
+    """Mediciones preliminares de terceros, no oficiales. Cada estación cita su operador."""
+    from clima import consultas
+
+    return {"estaciones": consultas.estaciones()}
+
+
+@api.get("/clima/serie", summary="Serie por hora o por día de una estación", tags=["clima"])
+def clima_serie(request, estacion: str, variable: str = "lluvia_mm", desde: datetime = None, hasta: datetime = None, paso: str = "hora"):
+    """`estacion` es «fuente/código». `paso` es «hora» o «dia» (día de Galápagos). Como máximo, un año."""
+    from clima import consultas
+
+    hasta = hasta or timezone.now()
+    desde = desde or hasta - timedelta(days=3)
+    desde = desde if desde.tzinfo else desde.replace(tzinfo=dt_timezone.utc)
+    hasta = hasta if hasta.tzinfo else hasta.replace(tzinfo=dt_timezone.utc)
+    if variable not in ("lluvia_mm", "temp_c", "hr_pct", "presion_hpa", "viento_ms", "nivel_mar_m", "rad_wm2") or paso not in ("hora", "dia"):
+        return api.create_response(request, {"error": "variable o paso desconocido"}, status=400)
+    datos = consultas.serie(estacion, variable, max(desde, hasta - timedelta(days=366)), hasta, paso)
+    if datos is None:
+        return api.create_response(request, {"error": "estación desconocida"}, status=404)
+    return datos
+
+
+@api.get("/clima/salud", summary="Salud de las fuentes de clima", tags=["clima"])
+def clima_salud(request):
+    """Qué fuentes responden, cuánto tardan y cuánto retraso lleva la copia a esta base."""
+    from clima import consultas
+
+    return consultas.salud()
+

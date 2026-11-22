@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "zonas",
     "api",
     "entradas",
+    "clima",
 ]
 
 MIDDLEWARE = [
@@ -191,3 +192,8 @@ WHATSAPP_RETENCION_DIAS = 7      # después se borra el texto de los mensajes
 PUSH_PUBLICA = entorno("PUSH_PUBLICA", "")
 PUSH_PRIVADA = entorno("PUSH_PRIVADA", "")
 PUSH_CONTACTO = entorno("PUSH_CONTACTO", "mailto:sosgalapagos@usfq.edu.ec")
+
+# ── Clima ────────────────────────────────────────────────────────────────────
+# Base SQLite del recolector anterior. Mientras dure la migración (docs/plan-clima.md) se
+# copia de ahí a esta base cada cinco minutos. Vacío: no se copia nada.
+CLIMA_SQLITE = entorno("CLIMA_SQLITE", "")

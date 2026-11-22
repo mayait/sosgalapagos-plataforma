@@ -24,11 +24,15 @@ x-plataforma: &plataforma
     # Lluvia: el JSON que escribe el recolector de /clima cada 5 minutos. Solo lectura.
     - CLIMA_ESTADO=/srv/clima/datos/estado.json
     - CLIMA_HORARIO=/srv/clima/datos/horario.json
+    - CLIMA_SQLITE=/var/lib/clima/clima.db
     - MEDIOS_DIR=/medios
     - RELIEVE_DIR=/relieve
   volumes:
     - medios:/medios
     - /srv/sosgalapagos-clima:/srv/clima:ro
+    # Base del recolector de clima, para copiarla a esta base (se abre en solo lectura; el montaje
+    # admite escritura porque SQLite necesita su archivo de memoria compartida). Ver docs/plan-clima.md.
+    - /var/lib/sosgalapagos-clima:/var/lib/clima
     # Relieve propio del 3D (teselas de cota). Se sube con rsync; ver despliegue/servidor.md.
     - /srv/sosgalapagos-relieve3d:/relieve:ro
   depends_on:
