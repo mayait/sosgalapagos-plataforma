@@ -383,8 +383,8 @@ def relieve(request, ruta):
 
 @require_GET
 def tiempo(request):
-    """Mapa de lluvia y viento de los modelos, animado. Lee /clima/datos/lluvia-mapa.json."""
-    return render(request, "reportes/tiempo.html", {"datos": "/clima/datos/lluvia-mapa.json"})
+    """Mapa de lluvia y viento de los modelos, animado. Los datos los sirve la API de esta aplicación."""
+    return render(request, "reportes/tiempo.html", {"datos": "/riesgos/api/clima/lluvia-mapa.json"})
 
 
 @require_GET

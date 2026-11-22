@@ -368,6 +368,15 @@ def prueba_suscribirse_desde_la_portada_manda_un_aviso_de_prueba(client, monkeyp
 
 def prueba_el_mapa_del_tiempo_es_propio_y_dice_que_es_modelo(client):
     pagina = client.get("/riesgos/mapa-del-tiempo/").content.decode()
-    assert "lluvia-mapa.js" in pagina and "/clima/datos/lluvia-mapa.json" in pagina
+    assert "lluvia-mapa.js" in pagina and "/riesgos/api/clima/lluvia-mapa.json" in pagina
     assert "windy" not in pagina.lower()
     assert "no una medición ni un pronóstico oficial" in pagina
+
+
+def prueba_los_datos_del_mapa_de_lluvia_los_sirve_la_plataforma(client, settings, tmp_path):
+    settings.CLIMA_SALIDA = str(tmp_path)
+    assert client.get("/riesgos/api/clima/lluvia-mapa.json").status_code == 404      # todavía no se generó
+    (tmp_path / "lluvia-mapa.json").write_text('{"generado": "x"}')
+    r = client.get("/riesgos/api/clima/lluvia-mapa.json")
+    assert r.status_code == 200 and b"".join(r.streaming_content) == b'{"generado": "x"}' and "max-age" in r["Cache-Control"]
+

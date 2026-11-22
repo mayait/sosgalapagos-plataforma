@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="{% propio 'mapa/lluvia-mapa.css' %}">{% endblock %}
 {% block contenido %}
 {% comment %}Lluvia y viento de modelos globales (Open-Meteo), animados sobre el mapa. Los datos los escribe la tarea
-   `actualizar_lluvia_mapa` en /clima/datos/lluvia-mapa.json. Reemplaza al prototipo de Windy, cuya llave
+   `actualizar_lluvia_mapa`; lo sirve /riesgos/api/clima/lluvia-mapa.json. Reemplaza al prototipo de Windy, cuya llave
    gratis es solo para desarrollo y no trae la capa de lluvia.{% endcomment %}
 <main class="pagina ancha">
   <nav class="migas"><a href="{% url 'reportes:mapa' %}">← Mapa de riesgos</a><a href="/clima/">Clima en vivo</a></nav>

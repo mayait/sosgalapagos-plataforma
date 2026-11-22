@@ -244,6 +244,21 @@ def clima_alertas(request):
     }
 
 
+@api.get("/clima/lluvia-mapa.json", summary="Rejilla de lluvia y viento de los modelos, para el mapa animado", tags=["clima"])
+def clima_lluvia_mapa(request):
+    """Lo que dibuja el mapa de lluvia y viento (lo genera clima/lluvia_mapa.py cada vez que hay corrida nueva).
+    Son modelos, no mediciones ni un pronóstico oficial."""
+    from pathlib import Path
+
+    from django.conf import settings
+    from django.http import FileResponse
+
+    ruta = Path(settings.CLIMA_SALIDA or ".") / "lluvia-mapa.json"
+    if not settings.CLIMA_SALIDA or not ruta.exists():
+        return api.create_response(request, {"error": "todavía no hay mapa"}, status=404)
+    return FileResponse(open(ruta, "rb"), content_type="application/json", headers={"Cache-Control": "public, max-age=300"})
+
+
 @api.get("/clima/nivel", summary="Nivel de lluvia peligrosa por zona", tags=["clima"])
 def clima_nivel(request):
     """El nivel vigente de cada zona. Es una estimación propia y preliminar, no una alerta oficial."""
