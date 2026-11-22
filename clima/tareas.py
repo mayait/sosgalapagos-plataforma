@@ -78,3 +78,15 @@ def actualizar_mar(stormglass=True):
         r["stormglass_mar"] = mar.actualizar_stormglass_mar()
     return r
 
+
+
+@task
+def actualizar_lluvia_mapa():
+    """Cada hora: el mapa de lluvia de los modelos, solo si hay una corrida nueva del IFS (unas 957 llamadas)."""
+    from django.conf import settings
+
+    from . import lluvia_mapa
+
+    if not settings.CLIMA_SALIDA or not lluvia_mapa.hay_corrida_nueva(settings.CLIMA_SALIDA):
+        return {"lluvia_mapa": "sin corrida nueva"}
+    return {"lluvia_mapa": str(lluvia_mapa.exportar(settings.CLIMA_SALIDA))}
