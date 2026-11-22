@@ -32,13 +32,41 @@ Cada etapa deja el clima funcionando. El recolector anterior no se apaga hasta l
 | Etapa | Qué | Cómo se sabe que está bien | Estado |
 |---|---|---|---|
 | **1. Datos en Django** | App `clima`, copia de la base del recolector a PostgreSQL cada 5 min, resúmenes por hora, API de estaciones, series y salud | Mismas filas por fuente en los dos lados; la copia tarda segundos | **Hecha el 22-nov** |
-| **2. Lo nuevo, nativo** | Boletines del INAMHI y del INOCAR; mareas; guardar cada pronóstico y verificarlo contra lo medido | Cada boletín nuevo aparece sin intervención; el error del pronóstico se mide solo | En curso |
+| **2. Lo nuevo, nativo** | Guardar cada pronóstico y verificarlo contra lo medido (**hecho**); recalibración propia (**hecha**, en evaluación); boletines del INAMHI y del INOCAR y mareas (en curso) | Cada boletín nuevo aparece sin intervención; el error del pronóstico se mide solo | En curso |
 | **3. Cálculos en Django** | Nivel de lluvia peligrosa, mareas y estacionalidad calculados desde PostgreSQL, de forma incremental | Durante 7 días dan lo mismo que el recolector anterior, hora a hora | Pendiente |
 | **4. Panel desde Django** | `/clima/` lo sirve la plataforma, leyendo la API | Mismo contenido, misma dirección | Pendiente |
 | **5. Recolectores en Django** | Cada fuente pasa a ser una tarea; se portan de una en una, empezando por las estables (IOC, METAR, INAMHI, Open-Meteo) y dejando para el final las frágiles (GSC, Weather Underground) | Cada fuente corre en paralelo 3 días y trae las mismas filas | Pendiente |
 | **6. Apagar lo anterior** | Se detienen los timers de systemd (no se borran) y la base SQLite queda como archivo | 14 días sin usar el recolector anterior | Pendiente |
 
 **Por qué en este orden.** Portar primero los recolectores sería lo más arriesgado en plena emergencia: varias fuentes son frágiles (una se lee simulando un navegador, otra raspando una página) y un fallo dejaría sin datos la alerta. Copiando la base se tiene todo en Django desde el primer día, sin tocar lo que recoge los datos.
+
+## 3b. Pronóstico: lo que se encontró y lo que se hizo (22-nov-2026)
+
+Antes no se podía saber si el pronóstico acertaba: las respuestas de los modelos iban a archivos comprimidos y lo publicado no se guardaba. Ahora todo queda en la base (`PronosticoModelo`, `PronosticoEmitido`) y se compara solo con la lluvia medida.
+
+**Lo que salió al verificar del 3 al 21 de noviembre** (95 días-punto con estación, 46 de ellos con 20 mm o más):
+
+- **Todos los modelos globales se quedan cortos por 35–45 mm al día.** No ven la montaña de una isla pequeña.
+- El que mejor avisó fue el IFS de 9 km del ECMWF (10 a 14 de 45 días de lluvia fuerte, según el plazo), seguido del GEM. El resto avisó entre 0 y 9.
+- **Los conjuntos, tomados tal cual, casi nunca dieron 20 mm**: su probabilidad cruda no sirve sin calibrar.
+- La estación M0191 del INAMHI marcó 0 mm el 21-nov, cuando las vecinas midieron más de 200: un hueco que parece un día seco.
+
+**Lo que se construyó:** una recalibración propia (`clima/pronostico.py`, `recalibrar`). Aprende, con los pares guardados, qué probabilidad de lluvia fuerte corresponde a los milímetros que dan los modelos. Es una regresión logística de dos parámetros por grupo (parte alta, costa) y plazo, y solo se usa si su validación —dejando fuera un día entero cada vez— supera a decir siempre la frecuencia observada.
+
+| Grupo | Plazo | Brier | Brier de referencia | Habilidad |
+|---|---|---|---|---|
+| Parte alta | 0–1 días | 0,13 | 0,26 | 0,51 |
+| Parte alta | 2–3 días | 0,16 | 0,25 | 0,38 |
+| Parte alta | 4–5 días | 0,19 | 0,21 | 0,08 |
+| Costa | 0–1 días | 0,15 | 0,25 | 0,40 |
+| Costa | 2–3 días | 0,19 | 0,26 | 0,28 |
+| Costa | 4–5 días | 0,23 | 0,28 | 0,19 |
+
+**Lo que no hay que olvidar:**
+
+- Está ajustada con **tres semanas de un evento extremo**. En esas semanas llovió fuerte más de la mitad de los días, así que hoy da probabilidades altas. Cuando el tiempo cambie tardará en bajar: se recalcula cada día, pero con una ventana de 60 días.
+- **No reemplaza al pronóstico del panel**, que está calibrado con dos años. `/riesgos/api/clima/pronostico` muestra los dos juntos. La decisión de cuál publicar se toma cuando haya varias semanas de los dos verificados lado a lado (`/riesgos/api/clima/pronostico/verificacion`).
+- No se pudo comparar hacia atrás con lo publicado, porque antes no se guardaba.
 
 ## 4. Lo que se gana con Django detrás
 
@@ -68,4 +96,6 @@ manage.py clima_sincronizar --comparar   # cuenta filas en los dos lados, por fu
 ```
 
 - `/riesgos/api/clima/estaciones` · `/riesgos/api/clima/serie?estacion=…&variable=lluvia_mm&paso=hora|dia` · `/riesgos/api/clima/salud`
-- En el admin: estaciones, corridas y sincronizaciones (solo lectura).
+- `/riesgos/api/clima/pronostico` (publicado, recalibrado y modelos) · `/riesgos/api/clima/pronostico/verificacion`
+- `manage.py clima_pronostico [--verificar | --recalibrar]`
+- En el admin: estaciones, corridas, sincronizaciones y calibraciones (solo lectura), y **sensores dañados** (editable: reemplaza a `estaciones_danadas.json`).

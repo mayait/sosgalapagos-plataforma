@@ -63,12 +63,12 @@ def bienvenida(suscripcion):
 
 
 def de_reporte(reporte):
-    """Aviso de un peligro confirmado."""
+    """Aviso de un peligro confirmado, a quienes pidieron el tema «peligros» de esa isla."""
+    from clima import alertas
+
+    isla = {"Santa Cruz": "santa-cruz", "San Cristóbal": "san-cristobal", "Isabela": "isabela"}.get(reporte.zona.isla if reporte.zona else "", "")
     zona = f" en {reporte.zona.nombre}" if reporte.zona else ""
     grave = {"no_pasar": "No pasar. ", "peligro_vida": "Peligro de vida. "}.get(reporte.gravedad, "")
-    return enviar(
-        titulo=f"{reporte.nombre}{zona}",
-        cuerpo=f"{grave}Reporte confirmado. Información preliminar, no oficial. Emergencias: 911.",
-        enlace=f"/riesgos/?r={reporte.id_publico}",
-        etiqueta=reporte.id_publico,
-    )
+    aviso = alertas.emitir("peligros", isla, f"reporte:{reporte.id_publico}", f"{reporte.nombre}{zona}",
+                           f"{grave}Reporte confirmado. Información preliminar, no oficial. Emergencias: 911.", f"/riesgos/?r={reporte.id_publico}")
+    return aviso.entregados if aviso else 0

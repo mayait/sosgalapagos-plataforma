@@ -43,6 +43,11 @@
     dialog.sos-app-dialogo p{margin:0 0 12px}
     dialog.sos-app-dialogo .nota{font-size:13px;color:#666}
     dialog.sos-app-dialogo button{width:100%;min-height:46px;margin-top:4px;border:0;border-radius:12px;background:#e11b22;color:#fff;font:800 14px/1 inherit;font-family:inherit;cursor:pointer}
+    dialog.sos-app-dialogo .grupo{margin:14px 0 6px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#666}
+    dialog.sos-app-dialogo .grupo small{font-weight:400;text-transform:none;letter-spacing:0}
+    dialog.sos-app-dialogo .opcion{display:flex;align-items:flex-start;gap:10px;padding:8px 0;font-size:14.5px;line-height:1.3;cursor:pointer}
+    dialog.sos-app-dialogo .opcion input{flex:none;width:20px;height:20px;margin:0;accent-color:#e11b22}
+    dialog.sos-app-dialogo button.secundario{background:none;color:#666;font-weight:600;text-decoration:underline;min-height:36px}
     dialog.sos-app-dialogo .icono{display:inline-block;vertical-align:-4px;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}`;
   document.head.appendChild(estilo);
 
@@ -54,14 +59,14 @@
 
   // ── Mensajes en una ventana, donde se ven ─────────────────────────────────
   let dialogo = null;
-  function decir(titulo, cuerpo) {
+  function decir(titulo, cuerpo, boton) {
     if (!dialogo) {
       dialogo = document.createElement('dialog');
       dialogo.className = 'sos-app-dialogo';
       document.body.appendChild(dialogo);
       dialogo.addEventListener('click', (e) => { if (e.target === dialogo || e.target.closest('[data-cerrar]')) dialogo.close(); });
     }
-    dialogo.innerHTML = `<h2>${titulo}</h2>${cuerpo}<button type="button" data-cerrar>Entendido</button>`;
+    dialogo.innerHTML = `<h2>${titulo}</h2>${cuerpo}<button type="button" data-cerrar>${boton || 'Entendido'}</button>`;
     if (dialogo.showModal) { if (!dialogo.open) dialogo.showModal(); } else dialogo.setAttribute('open', '');
   }
 
@@ -121,13 +126,7 @@
     }
     ocupado = true; pintar();
     try {
-      if (suscripcion) {
-        await guardar({ endpoint: suscripcion.endpoint, baja: true }).catch(() => {});
-        await suscripcion.unsubscribe().catch(() => {});
-        suscripcion = null;
-        decir('Avisos apagados', '<p>Ya no recibirás avisos en este dispositivo. Puedes volver a encenderlos cuando quieras.</p>');
-        return;
-      }
+      if (suscripcion) return await elegir();
       if (Notification.permission === 'denied') {
         return decir('Avisos bloqueados', esIOS
           ? '<p>Los avisos están apagados para esta app. Actívalos en <b>Ajustes → Notificaciones → SOS Galápagos</b> y vuelve a tocar.</p>'
@@ -142,17 +141,43 @@
       const respuesta = await guardar(nueva.toJSON());
       if (!respuesta.ok) throw new Error('el servidor no guardó la suscripción');
       suscripcion = nueva;
+      await elegir('<p>En unos segundos te llega un <b>aviso de prueba</b>. Ahora elige de qué quieres enterarte.</p>');
+      return;
       decir('Avisos encendidos', '<p>En unos segundos te llega un <b>aviso de prueba</b>. Si no llega, revisa que las notificaciones estén permitidas y que el teléfono no esté en modo «No molestar».</p><p class="nota">Te avisaremos cuando se confirme un peligro nuevo. Es información preliminar, no oficial.</p>');
     } catch (e) {
       decir('No se pudo', `<p>No se pudieron encender los avisos en este navegador. Intenta de nuevo en un momento.</p><p class="nota">${String(e && e.message || e).slice(0, 140)}</p>`);
     } finally { ocupado = false; pintar(); }
   }
 
+  // ── Elegir temas e islas ──────────────────────────────────────────────────
+  const TEMAS = {{ temas|safe }}, ZONAS = {{ zonas|safe }};
+  async function elegir(entrada) {
+    let tengo = { temas: TEMAS.filter((t) => t.por_defecto).map((t) => t.id), zonas: [] };
+    try { const r = await guardar({ endpoint: suscripcion.endpoint, consulta: true }); if (r.ok) tengo = await r.json(); } catch (e) { /* se muestran los de siempre */ }
+    const casilla = (grupo, x, marcado) => `<label class="opcion"><input type="checkbox" data-${grupo}="${x.id}"${marcado ? ' checked' : ''}><span>${x.nombre}</span></label>`;
+    decir('Mis avisos', `${entrada || ''}
+      <p class="grupo">Quiero enterarme de</p>${TEMAS.map((t) => casilla('tema', t, tengo.temas.includes(t.id))).join('')}
+      <p class="grupo">De estas islas <small>(sin marcar ninguna: de todas)</small></p>${ZONAS.map((z) => casilla('zona', z, (tengo.zonas || []).includes(z.id))).join('')}
+      <p class="nota">Son estimaciones y reportes preliminares, no alertas oficiales. Las alertas las dan el COE, la SNGR y el ECU 911.</p>
+      <button type="button" class="secundario" data-apagar>Apagar todos los avisos</button>`, 'Guardar');
+    dialogo.onclose = null;
+    dialogo.querySelector('[data-cerrar]').addEventListener('click', () => {
+      const de = (g) => [...dialogo.querySelectorAll(`[data-${g}]:checked`)].map((i) => i.dataset[g]);
+      guardar({ endpoint: suscripcion.endpoint, temas: de('tema'), zonas: de('zona') }).catch(() => {});
+    }, { once: true });
+    dialogo.querySelector('[data-apagar]').addEventListener('click', async () => {
+      await guardar({ endpoint: suscripcion.endpoint, baja: true }).catch(() => {});
+      await suscripcion.unsubscribe().catch(() => {});
+      suscripcion = null; pintar();
+      decir('Avisos apagados', '<p>Ya no recibirás avisos en este dispositivo. Puedes volver a encenderlos cuando quieras.</p>');
+    }, { once: true });
+  }
+
   // ── Botones ───────────────────────────────────────────────────────────────
   function pintar() {
     let h = '';
     if (!instalada()) h += `<button type="button" data-sos="instalar">${ICONO.bajar}Instalar la app</button>`;
-    if (CFG.publica) h += `<button type="button" data-sos="avisos" aria-pressed="${Boolean(suscripcion)}"${ocupado ? ' disabled' : ''}>${ICONO.campana}${suscripcion ? 'Avisos encendidos' : 'Recibir avisos'}</button>`;
+    if (CFG.publica) h += `<button type="button" data-sos="avisos" aria-pressed="${Boolean(suscripcion)}"${ocupado ? ' disabled' : ''}>${ICONO.campana}${suscripcion ? 'Mis avisos' : 'Recibir avisos'}</button>`;
     for (const caja of document.querySelectorAll('[data-sos-app]')) { caja.classList.add('sos-app'); if (caja.dataset.sosApp === 'oscuro') caja.classList.add('sos-app-oscuro'); caja.innerHTML = h; }
   }
   document.addEventListener('click', (e) => {

@@ -196,3 +196,110 @@ class Calibracion(models.Model):
         verbose_name_plural = "calibraciones"
         ordering = ["-creada", "grupo", "plazo"]
 
+
+# ── Mar ──────────────────────────────────────────────────────────────────────
+class MareaExtremo(models.Model):
+    """Una pleamar o una bajamar predicha para un puerto, según una fuente."""
+
+    puerto = models.CharField(max_length=20)    # santa-cruz, san-cristobal, isabela, baltra
+    ts = models.DateTimeField()
+    tipo = models.CharField(max_length=1)       # P (pleamar) o B (bajamar)
+    altura_m = models.FloatField()
+    fuente = models.CharField(max_length=12)    # inocar (tabla oficial) o stormglass
+    datum = models.CharField(max_length=8)      # MLWS o MSL: las alturas de fuentes distintas no se comparan tal cual
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["puerto", "fuente", "ts"], name="marea_unica")]
+        indexes = [models.Index(fields=["puerto", "ts"], name="marea_puerto_ts")]
+        ordering = ["ts"]
+
+
+class MarHora(models.Model):
+    """Estado del mar pronosticado para un puerto, hora a hora: oleaje, mar de fondo, viento y nivel."""
+
+    puerto = models.CharField(max_length=20)
+    hora = models.DateTimeField()
+    ola_m = models.FloatField(null=True)
+    fondo_m = models.FloatField("mar de fondo (m)", null=True)
+    periodo_s = models.FloatField(null=True)
+    direccion = models.FloatField("dirección del mar de fondo (°)", null=True)
+    viento_ms = models.FloatField(null=True)
+    racha_ms = models.FloatField(null=True)
+    nivel_m = models.FloatField("nivel del mar (m, MSL)", null=True)
+    agua_c = models.FloatField("temperatura del agua (°C)", null=True)
+    lluvia_mm = models.FloatField(null=True)
+    obtenido = models.DateTimeField()
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["puerto", "hora"], name="mar_hora_unica")]
+        ordering = ["hora"]
+
+
+# ── Lo que dicen las instituciones ───────────────────────────────────────────
+class Boletin(models.Model):
+    """Una advertencia o un boletín oficial (INAMHI, INOCAR), con lo que se extrajo de él.
+
+    El documento original suele ser una imagen: un modelo de lenguaje lo lee y saca la
+    vigencia, el nivel y lo que dice de Galápagos. El resumen nunca reemplaza al original:
+    siempre va el enlace al documento oficial.
+    """
+
+    fuente = models.CharField(max_length=12)    # inamhi, inocar
+    tipo = models.CharField(max_length=20)      # advertencia, oleaje, erfen
+    huella = models.CharField(max_length=64, unique=True)  # del documento: uno nuevo es un boletín nuevo
+    numero = models.CharField("número", max_length=30, blank=True)
+    titulo = models.CharField("título", max_length=200, blank=True)
+    emitido = models.DateTimeField(null=True, blank=True)
+    vigente_desde = models.DateTimeField(null=True, blank=True)
+    vigente_hasta = models.DateTimeField(null=True, blank=True)
+    afecta_galapagos = models.BooleanField(default=False)
+    nivel = models.CharField(max_length=20, blank=True)     # el que el documento da para Galápagos, si lo da
+    resumen = models.TextField(blank=True)
+    datos = models.JSONField(default=dict, blank=True)      # lo demás que se extrajo (olas, período, zonas…)
+    enlace = models.URLField(max_length=400, blank=True)    # al documento oficial
+    extraido_con = models.CharField(max_length=60, blank=True)
+    revisado = models.BooleanField("revisado por una persona", default=False)
+    visto_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "boletín oficial"
+        verbose_name_plural = "boletines oficiales"
+        ordering = ["-visto_en"]
+
+    def __str__(self):
+        return f"{self.fuente.upper()} · {self.titulo or self.tipo} {self.numero}"
+
+
+class PronosticoOficial(models.Model):
+    """El pronóstico del INAMHI para una isla: el del día y la lluvia de las próximas horas."""
+
+    isla = models.CharField(max_length=20)      # santa-cruz, san-cristobal, isabela
+    fecha = models.DateField()
+    obtenido = models.DateTimeField()
+    minima_c = models.FloatField(null=True)
+    maxima_c = models.FloatField(null=True)
+    periodos = models.JSONField(default=list)   # [{periodo, condicion}]
+    lluvia_horas = models.JSONField(default=list)  # lo que el INAMHI espera hora a hora
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["isla", "fecha"], name="oficial_unico")]
+        ordering = ["-fecha"]
+
+
+class AvisoEnviado(models.Model):
+    """Un aviso que ya se mandó a los teléfonos. La clave impide repetir el mismo."""
+
+    clave = models.CharField(max_length=120, unique=True)
+    tema = models.CharField(max_length=12)
+    zona = models.CharField(max_length=20, blank=True)
+    titulo = models.CharField("título", max_length=120)
+    cuerpo = models.CharField(max_length=300)
+    enlace = models.CharField(max_length=200)
+    creado = models.DateTimeField(auto_now_add=True)
+    entregados = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "aviso enviado"
+        verbose_name_plural = "avisos enviados"
+        ordering = ["-creado"]
+

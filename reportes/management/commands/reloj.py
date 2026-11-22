@@ -8,7 +8,7 @@ import time
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from clima.tareas import guardar_pronostico, recalibrar_pronostico, sincronizar_clima
+from clima.tareas import actualizar_mar, actualizar_oficiales, guardar_pronostico, recalibrar_pronostico, revisar_alertas, sincronizar_clima
 from entradas.tareas import purgar
 from reportes.tareas import cerrar_vencidos
 
@@ -26,6 +26,12 @@ class Command(BaseCommand):
                 guardar_pronostico.enqueue()
             if settings.CLIMA_PRONOSTICO_DIR and vuelta % 1440 == 30:  # una vez al día: aprende de lo que llovió ayer
                 recalibrar_pronostico.enqueue()
+            if vuelta % 5 == 4:       # cada cinco minutos: ¿algo merece aviso?
+                revisar_alertas.enqueue()
+            if vuelta % 60 == 13:     # cada hora: pronóstico del INAMHI y boletines nuevos
+                actualizar_oficiales.enqueue()
+            if vuelta % 720 == 20:    # dos veces al día: mareas y oleaje (Stormglass da 10 llamadas diarias por llave)
+                actualizar_mar.enqueue()
             if vuelta % 360 == 0:  # cada seis horas: borra el texto viejo de WhatsApp
                 purgar.enqueue()
             vuelta += 1

@@ -287,6 +287,8 @@ def manifiesto_app(request):
 
 def app_js(request):
     """Componente «Instalar la app» y «Recibir avisos», para cualquier página del sitio."""
+    from clima import alertas
+
     respuesta = render(
         request,
         "reportes/app.js",
@@ -294,6 +296,8 @@ def app_js(request):
             "push_publica": settings.PUSH_PUBLICA if avisos.activos() else "",
             "suscribir": reverse("reportes:push_suscribir"),
             "manifiesto": reverse("reportes:manifiesto_app"),
+            "temas": json.dumps([{"id": k, "nombre": v, "por_defecto": k in alertas.POR_DEFECTO} for k, v in alertas.TEMAS.items()], ensure_ascii=False),
+            "zonas": json.dumps([{"id": k, "nombre": v} for k, v in alertas.ZONAS.items()], ensure_ascii=False),
         },
         content_type="text/javascript",
     )
@@ -386,17 +390,34 @@ def push_suscribir(request):
     direccion = str(datos.get("endpoint") or "")
     if not direccion.startswith("https://") or len(direccion) > 2000:
         return JsonResponse({"error": "suscripción inválida"}, status=400)
+    from clima import alertas
+
     if datos.get("baja"):
         SuscripcionPush.objects.filter(direccion=direccion).delete()
         return JsonResponse({"suscrito": False})
+    actual = SuscripcionPush.objects.filter(direccion=direccion).first()
+    if datos.get("consulta"):  # qué tiene elegido este teléfono
+        return JsonResponse({"suscrito": bool(actual), "temas": (actual.temas if actual else None) or alertas.POR_DEFECTO, "zonas": actual.zonas if actual else []})
+    # Cada quien elige de qué enterarse y de qué islas; lo que no se reconoce se ignora.
+    preferencias = {}
+    if isinstance(datos.get("temas"), list):
+        preferencias["temas"] = [t for t in datos["temas"] if t in alertas.TEMAS]
+    if isinstance(datos.get("zonas"), list):
+        preferencias["zonas"] = [z for z in datos["zonas"] if z in alertas.ZONAS]
+    if actual and preferencias and not datos.get("keys"):
+        SuscripcionPush.objects.filter(pk=actual.pk).update(**preferencias)
+        return JsonResponse({"suscrito": True, **preferencias})
     llaves = datos.get("keys") or {}
     if not llaves.get("p256dh") or not llaves.get("auth"):
         return JsonResponse({"error": "suscripción inválida"}, status=400)
     huella, nuevo = _huella(request)
     suscripcion, _ = SuscripcionPush.objects.update_or_create(
-        direccion=direccion, defaults={"p256dh": str(llaves["p256dh"])[:200], "auth": str(llaves["auth"])[:80], "huella": huella}
+        direccion=direccion, defaults={"p256dh": str(llaves["p256dh"])[:200], "auth": str(llaves["auth"])[:80], "huella": huella, **preferencias}
     )
+    if not suscripcion.temas:
+        suscripcion.temas = list(alertas.POR_DEFECTO)
+        suscripcion.save(update_fields=["temas"])
     from .tareas import avisar_bienvenida
 
     avisar_bienvenida.enqueue(suscripcion.pk)  # confirma a la persona que los avisos le llegan
-    return _con_galleta(JsonResponse({"suscrito": True}), nuevo)
+    return _con_galleta(JsonResponse({"suscrito": True, "temas": suscripcion.temas, "zonas": suscripcion.zonas}), nuevo)
