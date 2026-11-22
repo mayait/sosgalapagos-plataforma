@@ -197,6 +197,9 @@ PUSH_CONTACTO = entorno("PUSH_CONTACTO", "mailto:sosgalapagos@usfq.edu.ec")
 # Base SQLite del recolector anterior. Mientras dure la migración (docs/plan-clima.md) se
 # copia de ahí a esta base cada cinco minutos. Vacío: no se copia nada.
 CLIMA_SQLITE = entorno("CLIMA_SQLITE", "")
+# Fuentes que ya recoge esta aplicación (etapa 5): dejan de copiarse de la base anterior. Separadas por comas.
+CLIMA_FUENTES_NATIVAS = [f.strip() for f in entorno("CLIMA_FUENTES_NATIVAS", "").split(",") if f.strip()]
+CLIMA_METAR_API = entorno("CLIMA_METAR_API", "")
 # Carpeta donde el recolector guarda las respuestas de los modelos, y el pronóstico que publica.
 CLIMA_PRONOSTICO_DIR = entorno("CLIMA_PRONOSTICO_DIR", "")
 CLIMA_PRONOSTICO_JSON = entorno("CLIMA_PRONOSTICO_JSON", "")

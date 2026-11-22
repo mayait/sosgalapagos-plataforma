@@ -66,10 +66,15 @@ def _copiar(fila, desde, ruta):
 
             # ── Mediciones: a una tabla temporal y de ahí se concilian ─────────
             c.execute("CREATE TEMP TABLE _obs (fuente text, codigo text, variable text, ts timestamptz, valor float8) ON COMMIT DROP")
-            consulta, parametros = "SELECT fuente, estacion, variable, ts, valor FROM obs", []
+            # Las fuentes que ya recoge esta aplicación no se copian ni se concilian: su verdad está aquí.
+            nativas = list(settings.CLIMA_FUENTES_NATIVAS)
+            consulta, parametros = "SELECT fuente, estacion, variable, ts, valor FROM obs WHERE 1=1", []
             if desde:
-                consulta += " WHERE ts >= ?"
+                consulta += " AND ts >= ?"
                 parametros.append(desde.strftime("%Y-%m-%dT%H:%M:%SZ"))
+            if nativas:
+                consulta += f" AND fuente NOT IN ({','.join('?' * len(nativas))})"
+                parametros += nativas
             leidas = 0
             with c.copy("COPY _obs (fuente, codigo, variable, ts, valor) FROM STDIN") as copia:
                 for fuente, codigo, variable, ts, valor in origen.execute(consulta, parametros):
@@ -94,14 +99,14 @@ def _copiar(fila, desde, ruta):
             if desde:
                 # Lo que el recolector borró en estos días también se borra aquí. Como defensa, solo
                 # si la lectura trajo una cantidad razonable: una lectura trunca no debe vaciar nada.
-                c.execute("SELECT count(*) FROM clima_observacion WHERE ts >= %s", [desde])
+                c.execute("SELECT count(*) FROM clima_observacion o JOIN clima_estacion e ON e.id = o.estacion_id WHERE o.ts >= %s AND NOT (e.fuente = ANY(%s))", [desde, nativas])
                 aqui = c.fetchone()[0]
                 if leidas >= 0.5 * aqui:
                     c.execute(
                         """DELETE FROM clima_observacion x USING clima_estacion e
-                           WHERE x.estacion_id = e.id AND x.ts >= %s AND NOT EXISTS (
+                           WHERE x.estacion_id = e.id AND x.ts >= %s AND NOT (e.fuente = ANY(%s)) AND NOT EXISTS (
                              SELECT 1 FROM _obs o WHERE o.fuente = e.fuente AND o.codigo = e.codigo AND o.variable = x.variable AND o.ts = x.ts)""",
-                        [desde],
+                        [desde, nativas],
                     )
                     fila.borradas = c.rowcount
                 else:
@@ -116,6 +121,8 @@ def _copiar(fila, desde, ruta):
                 for ts, fuente, ok, registros, segundos, error in origen.execute(
                     "SELECT ts, fuente, ok, registros, segundos, error FROM corridas WHERE ts > ?", [corte]
                 ):
+                    if fuente in nativas:
+                        continue  # sus corridas las anota el recolector de aquí
                     copia.write_row((_iso(ts), fuente, bool(ok), registros, segundos, (error or "")[:2000]))
             c.execute(
                 """INSERT INTO clima_corrida (ts, fuente, ok, registros, segundos, error)

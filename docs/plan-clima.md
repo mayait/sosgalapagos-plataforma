@@ -33,9 +33,9 @@ Cada etapa deja el clima funcionando. El recolector anterior no se apaga hasta l
 |---|---|---|---|
 | **1. Datos en Django** | App `clima`, copia de la base del recolector a PostgreSQL cada 5 min, resúmenes por hora, API de estaciones, series y salud | Mismas filas por fuente en los dos lados; la copia tarda segundos | **Hecha el 22-nov** |
 | **2. Lo nuevo, nativo** | Guardar y verificar cada pronóstico; recalibración propia (en evaluación); boletines del INAMHI y del INOCAR; mareas y oleaje; alertas por tema | Cada boletín nuevo aparece sin intervención; el error del pronóstico se mide solo | **Hecha el 22-nov** |
-| **3. Cálculos en Django** | Nivel de lluvia peligrosa, mareas y estacionalidad calculados desde PostgreSQL, de forma incremental | Durante 7 días dan lo mismo que el recolector anterior, hora a hora | Pendiente |
+| **3. Cálculos en Django** | Nivel de lluvia peligrosa, mareas y estacionalidad calculados desde PostgreSQL, de forma incremental | Durante 7 días dan lo mismo que el recolector anterior, hora a hora | **En curso.** El nivel de lluvia ya se calcula aquí y se compara en cada pasada (empezó el 22-nov). Faltan el residuo del nivel del mar y la estacionalidad |
 | **4. Panel desde Django** | `/clima/` lo sirve la plataforma, leyendo la API | Mismo contenido, misma dirección | Pendiente |
-| **5. Recolectores en Django** | Cada fuente pasa a ser una tarea; se portan de una en una, empezando por las estables (IOC, METAR, INAMHI, Open-Meteo) y dejando para el final las frágiles (GSC, Weather Underground) | Cada fuente corre en paralelo 3 días y trae las mismas filas | Pendiente |
+| **5. Recolectores en Django** | Cada fuente pasa a ser una tarea; se portan de una en una, empezando por las estables (IOC, METAR, INAMHI, Open-Meteo) y dejando para el final las frágiles (GSC, Weather Underground) | Cada fuente corre en paralelo 3 días y trae las mismas filas | **En curso.** El mecanismo está (`clima/fuentes.py`, `CLIMA_FUENTES_NATIVAS`) y METAR es la primera fuente nativa (22-nov). Faltan 9 |
 | **6. Apagar lo anterior** | Se detienen los timers de systemd (no se borran) y la base SQLite queda como archivo | 14 días sin usar el recolector anterior | Pendiente |
 
 **Por qué en este orden.** Portar primero los recolectores sería lo más arriesgado en plena emergencia: varias fuentes son frágiles (una se lee simulando un navegador, otra raspando una página) y un fallo dejaría sin datos la alerta. Copiando la base se tiene todo en Django desde el primer día, sin tocar lo que recoge los datos.
@@ -99,6 +99,21 @@ Antes no se podía saber si el pronóstico acertaba: las respuestas de los model
 Por defecto se encienden peligros, lluvia y oficiales. Cada aviso lleva una clave y no se repite. Los umbrales (2,5 m de ola, 8 horas) son preliminares.
 
 **Lo que falta de esta parte:** avisar de pleamares muy altas (hace falta un umbral por puerto), usar el residuo del nivel del mar (con El Niño el mar está unos 50 cm más alto que la tabla), meter el pronóstico por horas del INAMHI en el nivel de lluvia, y que la tabla del INOCAR de 2027 exista (sale en diciembre).
+
+## 3d. Etapas 3 y 5: cómo se hace el relevo (22-nov-2026)
+
+**Nivel de lluvia peligrosa (etapa 3).** `clima/nivel.py` es la regla v0.2 del recolector copiada sin cambiar la lógica; solo cambia de dónde lee. Corre después de cada copia, para el mismo instante que el recolector anterior, y guarda en `NivelZona` el nivel de cada zona junto al del anterior y si coinciden.
+
+- Primera pasada: las 4 zonas iguales. Tarda **0,44 s**; la exportación del recolector anterior, donde va este cálculo, gasta unos 2,5 min de CPU.
+- La coincidencia acumulada está en `/riesgos/api/clima/nivel` y en `/riesgos/api/clima/salud`.
+- **Cuándo se cambia:** con 7 días de comparación y más del 99 % de coincidencia, el panel, la franja del mapa y los avisos pasan a leer el nivel de Django. Hasta entonces mandan los del recolector anterior.
+- Los niveles puestos a mano y los sensores dañados ya son registros del admin. **Mientras convivan los dos, hay que ponerlos en los dos sitios** (el admin y los archivos JSON del repo de datos), o dejarán de coincidir.
+
+**Recolectores nativos (etapa 5).** Cada fuente de `CLIMA_FUENTES_NATIVAS` la recoge `clima/fuentes.py` y deja de copiarse de la base anterior. El recolector anterior la sigue recogiendo por su lado, así que `manage.py clima_sincronizar --comparar` muestra las dos cuentas una junto a la otra.
+
+Orden previsto, de la más estable a la más frágil: METAR (hecha), IOC, INAMHI, Open-Meteo (mar y pronóstico), Tempest, Ambient, WeatherLink, GOES, Weather Underground y GSC. IERSE entra por el puente desde una Mac en Ecuador: su relevo es cambiar a dónde envía el puente.
+
+**Lo que la plataforma ya no lee de archivos:** la lluvia de la línea del tiempo sale de esta base.
 
 ## 4. Lo que se gana con Django detrás
 
