@@ -87,8 +87,8 @@
       <svg><use href="#i-ubicar"/></svg><span x-text="gps === 'buscando' ? 'Buscando tu ubicación…' : origen === 'gps' ? 'Volver a tomar mi ubicación' : 'Estoy aquí: usar mi ubicación'"></span>
     </button>
     <div class="gps-aviso" x-show="avisoGps" :class="'gps-' + gps" role="status">
-      <b x-text="avisoGps.titulo"></b>
-      <template x-for="paso in avisoGps.pasos" :key="paso"><span x-text="paso"></span></template>
+      <b x-text="avisoGps?.titulo"></b>
+      <template x-for="paso in (avisoGps?.pasos || [])" :key="paso"><span x-text="paso"></span></template>
     </div>
 
     <div class="campo-titulo" x-show="clase === 'riesgo'">¿Se puede pasar?</div>
