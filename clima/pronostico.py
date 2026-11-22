@@ -237,3 +237,153 @@ def verificar(dias=45, hoy=None):
         "por_modelo": por_modelo, "publicado": por_punto,
         "guardado": {"modelos": PronosticoModelo.objects.count(), "publicados": PronosticoEmitido.objects.count()},
     }
+
+
+# ── Recalibración con lo medido ──────────────────────────────────────────────
+# Los modelos globales no ven la montaña de una isla pequeña: en noviembre de 2026 se quedaron
+# cortos por 35–45 mm al día. Sus milímetros no sirven tal cual, pero sí ordenan bien los días:
+# aquí se aprende, con los pares guardados, qué probabilidad de lluvia fuerte corresponde a
+# cada cantidad pronosticada. Es una regresión logística de dos parámetros por grupo, sin
+# librerías, validada dejando fuera un día cada vez.
+import math  # noqa: E402
+
+EN_CONSENSO = ("ecmwf_ifs025", "ecmwf_aifs025_single", "gfs_seamless", "icon_seamless", "ukmo_seamless", "meteofrance_seamless", "gem_seamless", "ecmwf_ifs")
+PLAZOS = {0: "0-1", 1: "0-1", 2: "2-3", 3: "2-3", 4: "4-5", 5: "4-5"}
+MINIMO_PARES, MINIMO_EVENTOS = 30, 6
+TIPO = {p["id"]: p["tipo"] for p in PUNTOS}
+
+
+def _mediana(valores):
+    v = sorted(valores)
+    return v[len(v) // 2] if len(v) % 2 else (v[len(v) // 2 - 1] + v[len(v) // 2]) / 2
+
+
+def predictor(mm_modelos):
+    """De lo que dicen los modelos a un solo número: el logaritmo de la media entre su mediana y su máximo.
+
+    El máximo entra porque en estas islas el modelo que más llueve suele ser el menos equivocado.
+    """
+    return math.log1p((_mediana(mm_modelos) + max(mm_modelos)) / 2)
+
+
+def _por_dia_de_emision(desde, hasta):
+    """{(punto, fecha, anticipación): [mm de cada modelo del consenso]} con lo último que se supo ese día."""
+    filas = _ultimo(PronosticoModelo.objects.filter(fecha__gte=desde, fecha__lte=hasta, anticipacion__gte=0, anticipacion__lte=5, modelo__in=EN_CONSENSO, mm__isnull=False),
+                    "obtenido", ["punto", "modelo", "fecha", "anticipacion"], ["mm"])
+    salida = {}
+    for f in filas:
+        salida.setdefault((f["punto"], f["fecha"], f["anticipacion"]), []).append(f["mm"])
+    return {k: v for k, v in salida.items() if len(v) >= 4}
+
+
+def _ajustar(pares, l2=0.05, vueltas=60):
+    """Regresión logística P(fuerte) = 1 / (1 + e^-(a + b·x)) por Newton, con una penalización suave."""
+    a = b = 0.0
+    for _ in range(vueltas):
+        ga = gb = haa = hab = hbb = 0.0
+        for x, y in pares:
+            p = 1 / (1 + math.exp(-max(-30, min(30, a + b * x))))
+            ga += p - y
+            gb += (p - y) * x
+            w = p * (1 - p)
+            haa += w
+            hab += w * x
+            hbb += w * x * x
+        ga += l2 * a
+        gb += l2 * b
+        haa += l2
+        hbb += l2
+        det = haa * hbb - hab * hab
+        if abs(det) < 1e-12:
+            break
+        da, db = (hbb * ga - hab * gb) / det, (haa * gb - hab * ga) / det
+        a, b = a - da, b - db
+        if abs(da) + abs(db) < 1e-7:
+            break
+    return a, b
+
+
+def _prob(a, b, x):
+    return 1 / (1 + math.exp(-max(-30, min(30, a + b * x))))
+
+
+def recalibrar(dias=60, hoy=None, guardar=True):
+    """Ajusta y valida una curva por grupo (alta, costa) y plazo. Devuelve la lista de resultados."""
+    from .models import Calibracion
+
+    hoy = hoy or datetime.now(GALAPAGOS).date()
+    desde, hasta = hoy - timedelta(days=dias), hoy - timedelta(days=1)
+    obs = observado(desde, hasta)
+    grupos = {}
+    for (punto, fecha, ant), mm in _por_dia_de_emision(desde, hasta).items():
+        o = obs.get((punto, fecha))
+        if o is not None:
+            grupos.setdefault((TIPO[punto], PLAZOS[ant]), []).append((fecha, predictor(mm), 1.0 if o >= UMBRAL_MM else 0.0))
+    resultados = []
+    for (grupo, plazo), filas in sorted(grupos.items()):
+        eventos = int(sum(y for _, _, y in filas))
+        if len(filas) < MINIMO_PARES or eventos < MINIMO_EVENTOS or eventos > len(filas) - MINIMO_EVENTOS:
+            continue  # sin días de los dos tipos no hay nada que aprender
+        # Validación: se deja fuera un día entero cada vez (todos sus puntos y plazos), se ajusta con el resto y se predice.
+        errores = base = 0.0
+        for dia in sorted({f for f, _, _ in filas}):
+            dentro = [(x, y) for f, x, y in filas if f != dia]
+            fuera = [(x, y) for f, x, y in filas if f == dia]
+            a, b = _ajustar(dentro)
+            frecuencia = sum(y for _, y in dentro) / len(dentro)
+            errores += sum((_prob(a, b, x) - y) ** 2 for x, y in fuera)
+            base += sum((frecuencia - y) ** 2 for _, y in fuera)
+        a, b = _ajustar([(x, y) for _, x, y in filas])
+        r = {"grupo": grupo, "plazo": plazo, "a": round(a, 4), "b": round(b, 4), "dias": len(filas), "eventos": eventos,
+             "brier": round(errores / len(filas), 4), "brier_base": round(base / len(filas), 4),
+             "habilidad": round(1 - errores / base, 3) if base > 0 else None, "desde": desde, "hasta": hasta}
+        resultados.append(r)
+        if guardar:
+            Calibracion.objects.create(**r)
+    return resultados
+
+
+def vigentes():
+    """La última calibración de cada grupo y plazo que demostró aportar (habilidad > 0)."""
+    from .models import Calibracion
+
+    salida = {}
+    for c in Calibracion.objects.order_by("creada"):
+        salida[(c.grupo, c.plazo)] = c
+    return {k: c for k, c in salida.items() if c.habilidad is not None and c.habilidad > 0}
+
+
+def proximos_dias(hoy=None):
+    """Para cada punto y cada uno de los próximos días: lo publicado, lo recalibrado y lo que dicen los modelos."""
+    hoy = hoy or datetime.now(GALAPAGOS).date()
+    curvas = vigentes()
+    modelos = _ultimo(PronosticoModelo.objects.filter(fecha__gte=hoy, fecha__lte=hoy + timedelta(days=5), mm__isnull=False), "obtenido", ["punto", "modelo", "fecha"], ["mm", "prob20", "obtenido"])
+    por_dia = {}
+    for f in modelos:
+        por_dia.setdefault((f["punto"], f["fecha"]), {})[f["modelo"]] = f
+    publicado = {(f["punto"], f["fecha"]): f for f in _ultimo(PronosticoEmitido.objects.filter(fecha__gte=hoy), "emitido", ["punto", "fecha"], ["prob20", "nivel", "emitido"])}
+    puntos = []
+    for punto in PUNTOS:
+        dias = []
+        for i in range(6):
+            fecha = hoy + timedelta(days=i)
+            m = por_dia.get((punto["id"], fecha), {})
+            mm = [m[k]["mm"] for k in EN_CONSENSO if k in m]
+            conjuntos = [v["prob20"] for k, v in m.items() if k.startswith("conjunto:") and v["prob20"] is not None]
+            curva = curvas.get((punto["tipo"], PLAZOS.get(i, "")))
+            pub = publicado.get((punto["id"], fecha))
+            dias.append({
+                "fecha": fecha, "anticipacion": i,
+                "publicado": {"prob20": pub["prob20"], "nivel": pub["nivel"]} if pub else None,
+                "recalibrado": round(_prob(curva.a, curva.b, predictor(mm)), 2) if curva and len(mm) >= 4 else None,
+                "modelos_mm": {"mediana": round(_mediana(mm), 1), "maximo": round(max(mm), 1), "n": len(mm)} if mm else None,
+                "conjuntos_prob20_cruda": round(sum(conjuntos) / len(conjuntos), 2) if conjuntos else None,
+            })
+        puntos.append({"id": punto["id"], "nombre": punto["nombre"], "zona": punto["zona"], "tipo": punto["tipo"], "dias": dias})
+    return {
+        "hoy": hoy, "umbral_mm": UMBRAL_MM,
+        "aviso": "Pronóstico experimental, no oficial. «publicado» es el del panel; «recalibrado» es una curva nueva ajustada con la lluvia medida en las últimas semanas, todavía en evaluación. El pronóstico oficial es del INAMHI.",
+        "calibraciones": [{"grupo": c.grupo, "plazo": c.plazo, "dias": c.dias, "eventos": c.eventos, "habilidad": c.habilidad, "creada": c.creada} for c in curvas.values()],
+        "puntos": puntos,
+    }
+

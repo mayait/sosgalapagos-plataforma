@@ -184,3 +184,11 @@ def clima_verificacion(request, dias: int = 45):
 
     return pronostico.verificar(max(7, min(dias, 365)))
 
+
+@api.get("/clima/pronostico", summary="Lluvia fuerte en los próximos días, por punto", tags=["clima"])
+def clima_pronostico(request):
+    """Lo publicado, lo recalibrado con las últimas semanas y lo que dicen los modelos. Experimental, no oficial."""
+    from clima import pronostico
+
+    return pronostico.proximos_dias()
+

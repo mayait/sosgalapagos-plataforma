@@ -179,3 +179,20 @@ def prueba_la_lluvia_de_un_sensor_danado_no_se_publica(origen, client):
     e = client.get("/riesgos/api/clima/estaciones").json()["estaciones"][0]
     assert e["lluvia_mm"] is None and e["danada"]["motivo"] == "marca lluvias imposibles"
 
+
+def prueba_la_regresion_aprende_y_no_se_guarda_si_faltan_dias():
+    from clima import pronostico
+
+    # Con más milímetros pronosticados, más días de lluvia fuerte: la curva debe subir.
+    pares = [(float(x), 1.0 if x > 2 else 0.0) for x in [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4] * 5]
+    a, b = pronostico._ajustar(pares)
+    assert b > 0 and pronostico._prob(a, b, 0.5) < 0.3 < 0.7 < pronostico._prob(a, b, 4)
+    assert pronostico.predictor([0, 0, 0, 0]) == 0 and pronostico.predictor([1, 2, 3, 40]) > pronostico.predictor([1, 2, 3, 4])
+    assert pronostico.recalibrar(guardar=False) == []  # sin pares guardados no hay curva
+
+
+def prueba_el_pronostico_de_los_proximos_dias_responde_vacio(client):
+    datos = client.get("/riesgos/api/clima/pronostico").json()
+    assert len(datos["puntos"]) == 7 and datos["puntos"][0]["dias"][0]["recalibrado"] is None
+    assert "no oficial" in datos["aviso"]
+
