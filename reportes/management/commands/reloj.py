@@ -38,7 +38,7 @@ class Command(BaseCommand):
                 actualizar_mar.enqueue()
             if settings.CLIMA_RECOGER and settings.CLIMA_SALIDA and vuelta % 60 == 41:  # cada hora: mapa de lluvia, si hay corrida nueva
                 actualizar_lluvia_mapa.enqueue()
-            if settings.CLIMA_SALIDA and vuelta % 360 == 45:  # cada seis horas: El Niño y la ZCIT (las fuentes cambian una a cuatro veces al día)
+            if settings.CLIMA_RECOGER and settings.CLIMA_SALIDA and vuelta % 360 == 45:  # cada seis horas: El Niño y la ZCIT (las fuentes cambian una a cuatro veces al día)
                 actualizar_nino.enqueue()
             if vuelta % 360 == 0:  # cada seis horas: borra el texto viejo de WhatsApp
                 purgar.enqueue()

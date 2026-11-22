@@ -85,7 +85,10 @@ def _ajuste(nombre):
     return os.environ.get(nombre, "")
 
 
-def _bajar(url, espera=60):
+LIMITE_S = 240  # la corrida entera: después se saltan las fuentes que falten (el trabajador es uno solo y atiende las alertas)
+
+
+def _bajar(url, espera=45):
     pedido = urllib.request.Request(url, headers={"User-Agent": "sosgalapagos.org (clima; contacto en el sitio)"})
     with urllib.request.urlopen(pedido, timeout=espera) as r:
         return r.read()
@@ -252,7 +255,7 @@ def _rango(a, b, paso=1):
     return f"[({a}):{paso}:({b})]" if paso != 1 else f"[({a}):({b})]"
 
 
-def _griddap(base, variables, tiempo, lat, lon, espera=120):
+def _griddap(base, variables, tiempo, lat, lon, espera=60):
     """Pide a un griddap de ERDDAP. `lat` y `lon` son (inicio, fin, paso) en el orden del conjunto de datos."""
     sel = "".join([tiempo, _rango(*lat), _rango(*lon)])
     consulta = ",".join(f"{v}{sel}" for v in variables)
@@ -316,7 +319,7 @@ def indices_diarios(dias=30):
     base = _ajuste("CLIMA_OISST_ERDDAP")
     if not base:
         return []
-    filas = _griddap(base, ["anom"], f"[last-{dias - 1}:last][(0.0)]", (-10, 5, 4), (-170, -80, 4), espera=180)
+    filas = _griddap(base, ["anom"], f"[last-{dias - 1}:last][(0.0)]", (-10, 5, 4), (-170, -80, 4), espera=75)
     por_dia = {}
     for f in filas:
         por_dia.setdefault(f["time"][:10], []).append(f)
@@ -429,6 +432,9 @@ def recoger(ahora=None):
     errores, fuentes = {}, {}
 
     def intenta(nombre, f):
+        if time.monotonic() - t0 > LIMITE_S:
+            errores[nombre] = "sin tiempo"
+            return None
         try:
             return f()
         except Exception as e:  # una fuente caída no tumba las demás
