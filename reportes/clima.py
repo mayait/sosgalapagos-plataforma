@@ -75,8 +75,21 @@ def horario():
     return datos
 
 
+def _en_base():
+    """True si el clima ya está en esta base (etapa 1 de docs/plan-clima.md). En la Mac, sin copia, no."""
+    from clima.models import Horaria
+
+    return Horaria.objects.filter(variable="lluvia_mm").exists()
+
+
 def estaciones_con_lluvia():
     """Estaciones que tienen serie horaria de lluvia: [{id, nombre, isla}], ordenadas por isla y nombre."""
+    if _en_base():
+        from clima.models import Estacion, EstacionDanada
+
+        danadas = set(EstacionDanada.objects.filter(variable="lluvia_mm", hasta__isnull=True).values_list("estacion_id", flat=True))
+        con_lluvia = Estacion.objects.filter(horarias__variable="lluvia_mm").exclude(fuente="goes").exclude(pk__in=danadas).distinct()
+        return sorted(({"id": e.clave, "nombre": e.nombre or e.codigo, "isla": e.isla} for e in con_lluvia), key=lambda x: (x["isla"], x["nombre"]))
     series = (horario().get("series") or {})
     nombres = {f"{e.get('fuente')}/{e.get('estacion')}": e for e in estado().get("estaciones", [])}
     lista = []
@@ -94,6 +107,11 @@ def lluvia_por_hora(estacion, desde, hasta):
     Devuelve (inicio de la primera hora, lista). No se suman ni se promedian estaciones:
     se muestra la serie de una, como la publica /clima.
     """
+    if _en_base():
+        from clima import consultas
+
+        d = consultas.serie(estacion, "lluvia_mm", desde, hasta, "hora")
+        return (d["inicio"], d["valores"]) if d and d["valores"] else (None, [])
     datos = horario()
     serie = ((datos.get("series") or {}).get(estacion) or {}).get("lluvia_mm")
     if not serie or not datos.get("inicio"):

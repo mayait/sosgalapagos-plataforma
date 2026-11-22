@@ -196,3 +196,52 @@ def prueba_el_pronostico_de_los_proximos_dias_responde_vacio(client):
     assert len(datos["puntos"]) == 7 and datos["puntos"][0]["dias"][0]["recalibrado"] is None
     assert "no oficial" in datos["aviso"]
 
+
+# ── Etapa 5: fuentes nativas ─────────────────────────────────────────────────
+def prueba_una_fuente_nativa_se_recoge_aqui_y_deja_de_copiarse(origen, settings, monkeypatch):
+    from clima import fuentes
+
+    con = sqlite3.connect(origen)
+    con.execute("INSERT INTO obs VALUES ('metar','SEGS','temp_c',?,?)", [iso(AHORA - timedelta(hours=1)), 99.0])  # lo que trae el recolector anterior
+    con.execute("INSERT INTO corridas VALUES (?,?,?,?,?,?)", [iso(AHORA - timedelta(minutes=3)), "metar", 1, 1, 1.0, None])
+    con.commit()
+    con.close()
+    settings.CLIMA_FUENTES_NATIVAS, settings.CLIMA_METAR_API = ["metar"], "https://metar.test/api"
+    t = int((AHORA - timedelta(minutes=20)).timestamp())
+    monkeypatch.setattr(fuentes, "http_json", lambda url, **k: [
+        {"icaoId": "SEGS", "obsTime": t, "temp": 27, "altim": 1012.5, "wspd": 10, "wxString": "+TSRA"}, {"icaoId": "KJFK", "obsTime": t, "temp": 5}])
+    assert fuentes.recolectar() == {"metar": 4}
+    assert fuentes.recolectar() == {"metar": 4}  # repetir no duplica
+    valores = {o.variable: o.valor for o in Observacion.objects.filter(estacion__fuente="metar")}
+    assert valores == {"temp_c": 27.0, "presion_hpa": 1012.5, "viento_ms": 5.1, "lluvia_codigo": 3.0}  # nudos a m/s; tormenta = 3
+    assert Corrida.objects.filter(fuente="metar", ok=True).count() == 2
+    # La copia no trae el 99 del recolector anterior ni borra lo recogido aquí.
+    s = sincronizar(ruta=origen)
+    assert not s.error and Observacion.objects.filter(estacion__fuente="metar").count() == 4
+    assert not Observacion.objects.filter(valor=99.0).exists() and Corrida.objects.filter(fuente="metar").count() == 2
+    assert Observacion.objects.filter(estacion__fuente="ierse").count() == 14  # las demás fuentes sí se copian
+
+
+def prueba_si_una_fuente_nativa_falla_queda_anotado(settings, monkeypatch):
+    from clima import fuentes
+
+    settings.CLIMA_FUENTES_NATIVAS, settings.CLIMA_METAR_API = ["metar", "inventada"], "https://metar.test/api"
+
+    def roto(url, **k):
+        raise TimeoutError("sin respuesta")
+
+    monkeypatch.setattr(fuentes, "http_json", roto)
+    assert fuentes.recolectar() == {"metar": "error: TimeoutError"}
+    c = Corrida.objects.get(fuente="metar")
+    assert not c.ok and "sin respuesta" in c.error
+
+
+def prueba_la_linea_del_tiempo_lee_la_lluvia_de_esta_base(origen):
+    from reportes import clima as panel
+
+    sincronizar(completa=True, ruta=origen)
+    assert panel.estaciones_con_lluvia() == [{"id": "ierse/n1", "nombre": "Los Guayabillos", "isla": "Santa Cruz"}]
+    hora = AHORA.replace(minute=0, second=0, microsecond=0) - timedelta(hours=1)
+    inicio, valores = panel.lluvia_por_hora("ierse/n1", hora - timedelta(hours=1), hora + timedelta(hours=1))
+    assert inicio == hora - timedelta(hours=1) and valores == [None, 6.0]
+

@@ -32,7 +32,8 @@ class Command(BaseCommand):
             for fuente in sorted(set(alla) | set(aqui)):
                 a, b = alla.get(fuente, 0), aqui.get(fuente, 0)
                 iguales &= a == b
-                self.stdout.write(f"{fuente:14} origen {a:>9}  aquí {b:>9}  {'=' if a == b else 'DISTINTO (' + str(b - a) + ')'}")
+                nativa = " (nativa: la recoge esta aplicación)" if fuente in settings.CLIMA_FUENTES_NATIVAS else ""
+                self.stdout.write(f"{fuente:14} origen {a:>9}  aquí {b:>9}  {'=' if a == b else 'DISTINTO (' + str(b - a) + ')'}{nativa}")
             self.stdout.write("Iguales." if iguales else "Hay diferencias (es normal durante unos minutos: el recolector sigue escribiendo).")
             return
         s = sincronizar(dias=dias, completa=completa)

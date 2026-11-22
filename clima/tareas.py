@@ -6,8 +6,11 @@ from django.tasks import task
 def sincronizar_clima():
     from .sincronizar import sincronizar
 
+    from . import fuentes
+
+    nativas = fuentes.recolectar() if fuentes.nativas() else {}
     s = sincronizar()
-    r = {"leidas": s.leidas, "cambiadas": s.cambiadas, "borradas": s.borradas, "segundos": s.segundos, "error": s.error}
+    r = {"nativas": nativas, "leidas": s.leidas, "cambiadas": s.cambiadas, "borradas": s.borradas, "segundos": s.segundos, "error": s.error}
     if not s.error:  # con los datos frescos se recalcula el nivel de cada zona
         from . import niveles
 
