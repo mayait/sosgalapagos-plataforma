@@ -38,7 +38,7 @@
       [80, [230, 55, 45, 240]], [115, [205, 40, 150, 245]], [160, [130, 50, 200, 250]], [200, [70, 20, 110, 250]]]},
   };
   const N_LUT = 512;
-  const ENCUADRE_PUERTOS = [[-1.03, -91.06], [-0.58, -89.5]];
+  const ENCUADRE_PUERTOS = [[-1.1, -91.5], [-0.3, -89.2]];  // el sur de Isabela, Santa Cruz y San Cristóbal
 
   // Escala de la paleta: raíz cuadrada (como la codificación), para dar detalle a la lluvia débil.
   const aEscala = (v, max) => Math.sqrt(Math.max(0, v) / max);
@@ -195,7 +195,7 @@
       minZoom: 6, maxZoom: 12, maxBounds: L.latLngBounds(limites).pad(0.6), zoomSnap: 0.25, worldCopyJump: false});
     mapa.attributionControl.setPrefix(false);
     if (!matchMedia("(pointer: coarse)").matches) L.control.zoom({position: "topright"}).addTo(mapa);
-    // Encuadre inicial: los tres puertos poblados (Puerto Villamil, Puerto Ayora y Puerto Baquerizo
+    // Encuadre inicial: las tres islas pobladas, con Puerto Villamil, Puerto Ayora y Puerto Baquerizo
     // Moreno) con sus partes altas. Se puede alejar para ver todo el archipiélago.
     mapa.fitBounds(op.encuadre || ENCUADRE_PUERTOS, {paddingTopLeft: [90, 40], paddingBottomRight: [50, 115]});  // leyenda a la izquierda, botones arriba, línea de tiempo abajo
     L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
