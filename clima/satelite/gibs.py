@@ -1,5 +1,5 @@
 # SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
-# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
+# Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito.
 """Fondo animado del mapa del satélite: imágenes GeoColor de GOES-East (NOAA) servidas por NASA GIBS.
 
 GeoColor es la imagen del satélite tal cual: en color de día y en infrarrojo de noche, cada 10 min,

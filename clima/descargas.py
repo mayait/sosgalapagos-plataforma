@@ -1,5 +1,5 @@
 # SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
-# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
+# Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito.
 """Descargas de datos del clima: un ZIP por mes con las mediciones crudas de las estaciones.
 
 Van a CLIMA_SALIDA/descargas, que el servidor publica en /clima/datos/descargas/. Se rehacen
@@ -56,9 +56,10 @@ de cada uno. Al usarlas, cite al operador y respete su licencia:
 
 La recopilación (estos archivos, tal como están armados) es de SOS Galápagos · Universidad San
 Francisco de Quito (USFQ), autor Julián Maya <jamaya@usfq.edu.ec>, y se distribuye bajo
-CC BY-NC-ND 4.0: se puede copiar y compartir con atribución, sin uso comercial y sin obras
-derivadas. Para cualquier otro uso, pida permiso al autor. Donde la licencia de una fuente sea
-más restrictiva, manda la de la fuente.
+CC BY 4.0: se puede copiar, adaptar y usar, también con fines comerciales, dando crédito así:
+«SOS Galápagos · Universidad San Francisco de Quito (USFQ) · Julián Maya
+<jamaya@usfq.edu.ec>. Licencia CC BY 4.0». Donde la licencia de una fuente sea más
+restrictiva, manda la de la fuente.
 
 ARCHIVOS
 clima_galapagos_AAAA-MM.zip      todas las mediciones de estaciones del mes (un CSV dentro)

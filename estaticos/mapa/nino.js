@@ -1,5 +1,5 @@
 /* SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
- * Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
+ * Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito.
  * Único original: el panel de /clima/ (repositorio de datos) carga este mismo archivo. */
 /* El Niño en el panel de clima: tarjeta con la voz oficial (ERFEN), los índices de la NOAA como contexto
    y un mapa de la anomalía de temperatura (o del nivel) del mar con las regiones Niño, la ZCIT y las ondas.

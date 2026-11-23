@@ -1,5 +1,5 @@
 # SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
-# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
+# Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito.
 """Pruebas del formulario, la ficha y la salida GeoJSON."""
 import json
 from io import BytesIO
@@ -502,7 +502,7 @@ def prueba_las_paginas_ya_no_llevan_migas_ni_mira_tambien(client):
     for ruta in ["/riesgos/informe/", "/riesgos/mapa-del-tiempo/", "/riesgos/descargas/", "/riesgos/puntos/"]:
         html = client.get(ruta).content.decode()
         assert 'class="migas"' not in html and "Mira también" not in html
-        assert "su uso requiere permiso" in html  # la firma conserva el aviso del código
+        assert "Código abierto (Apache 2.0)" in html  # la firma conserva el aviso del código
 
 
 def prueba_el_formulario_no_lleva_menu_pero_si_el_911(client):

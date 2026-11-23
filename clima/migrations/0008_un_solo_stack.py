@@ -1,5 +1,5 @@
 # SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
-# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
+# Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito.
 """El clima queda entero en esta aplicación: sin la base SQLite ni la capa de compatibilidad.
 
 - Se quitan las vistas, funciones y disparadores que imitaban la base SQLite del recolector anterior.
