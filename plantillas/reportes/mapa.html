@@ -2,6 +2,7 @@
 {% extends "base.html" %}
 {% load static reportes_extras %}
 {% block clase_cuerpo %}con-hoja{% endblock %}
+{% block menu %}{% menu_sitio "flotante" %}{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'terceros/maplibre-gl.css' %}">{% endblock %}
 
 {% block contenido %}
@@ -74,12 +75,6 @@
     <div class="hoja-cuerpo">
       <div id="detalle"></div>
       <div id="lista">
-        <nav class="atajos" aria-label="Más">
-          <a href="{% url 'reportes:informe' %}">Ver como lista</a>
-          <a href="{% url 'reportes:tiempo' %}">Lluvia y viento</a>
-          <a href="{% url 'reportes:puntos' %}">Puntos</a>
-          <a href="/clima/">Clima</a>
-        </nav>
         <div data-sos-app class="app-en-hoja" aria-label="La app en tu teléfono"></div>
         <div id="cerca" hx-get="{% url 'reportes:cerca' %}" hx-trigger="load" hx-swap="innerHTML"></div>
         <section id="mis-puntos" class="mis-puntos" aria-label="Mis puntos"></section>

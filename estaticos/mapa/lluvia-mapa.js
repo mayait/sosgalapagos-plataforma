@@ -9,7 +9,7 @@
  * de tiempo con reproducción y, si se quiere, partículas de viento en un canvas propio.
  *
  * Es lluvia de MODELO, no medida ni oficial, y los modelos globales se quedan muy cortos en las islas.
- * El mapa lo dice a la vista. El pronóstico oficial es del INAMHI.
+ * El mapa lo dice a la vista («Lluvia de modelos» y cuánto subestima); el aviso general de cada página dice que no es oficial.
  *
  * Uso:
  *   <link rel="stylesheet" href="lluvia-mapa.css"><script src="lluvia-mapa.js"></script>
@@ -307,7 +307,7 @@
     const modelos = j.modelos.map(m => `<option value="${esc(m.id)}">${esc(m.nombre)}</option>`).join("");
     raiz.insertAdjacentHTML("beforeend", `
       <div class="lm-caja lm-arriba">
-        <div class="lm-caja lm-titulo">Lluvia de modelos<small>estimación, no medida</small></div>
+        <div class="lm-caja lm-titulo">Lluvia de modelos</div>
         <div class="lm-caja lm-grupo" role="group" aria-label="Qué lluvia mostrar">
           <button type="button" data-modo="hora">Por hora</button><button type="button" data-modo="dia"><span class="lm-largo">Acumulado </span>24 h</button>
         </div>
@@ -381,8 +381,7 @@
       }
       const corrida = m.corrida ? `corrida del ${fCorrida.format(Date.parse(m.corrida))}` : "corrida sin fecha conocida";
       $(".lm-aviso").innerHTML = `<b>Modelo ${esc(m.nombre)}</b>, ${corrida} (hora de Galápagos). ` +
-        `<b>Subestima mucho la lluvia en las islas</b> (35–45 mm menos al día): no ve su relieve. ` +
-        `No es un pronóstico oficial; el oficial es del INAMHI.`;
+        `<b>Subestima mucho la lluvia en las islas</b> (35–45 mm menos al día): no ve su relieve.`;
       rango.style.setProperty("--p", ((E.t - tMin) / (tMax - tMin || 1) * 100) + "%");
       raiz.querySelectorAll("[data-modo]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.modo === E.modo)));
       $(".lm-viento").setAttribute("aria-pressed", String(E.viento));

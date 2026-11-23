@@ -5,7 +5,10 @@
    y un mapa de la anomalía de temperatura (o del nivel) del mar con las regiones Niño, la ZCIT y las ondas.
 
    Uso (una línea en el panel de /clima/, que carga /riesgos/estaticos/mapa/nino.js y nino.css):
-     NinoPanel.montar(document.getElementById("nino"));
+     NinoPanel.montar(document.getElementById("nino"));                       todo, como hasta el 23-nov-2026
+     NinoPanel.montar(el, {modo: "comunidad"});   tarjeta corta: titular, 2–3 cifras y qué significa (solo nino.json)
+     NinoPanel.montar(el, {modo: "ciencia"});     índices, boyas, MJO, mapa, ZCIT y NHC, sin la tarjeta del ERFEN
+                                                  (va en «Boletines oficiales») y con una sola nota de método
    Lee nino.json, nino_mapa.json y zcit.json de la API de la plataforma (/riesgos/api/clima/), que los
    sirve desde CLIMA_SALIDA; los genera clima/nino.py y clima/zcit.py. Con {base: "otra/carpeta/"} los lee de otro sitio.
    Necesita Leaflet 1.9.4; si la página no lo cargó, lo carga solo. Estilos en nino.css. */
@@ -126,14 +129,29 @@
     return Object.keys(dias).sort().map(d => [d, dias[d].reduce((a, b) => a + b, 0) / dias[d].length]);
   }
 
-  function tarjeta(n) {
+  const titular = gal => gal.anom == null ? "El Niño y el mar" : gal.anom >= 2 ? "El mar está muy caliente" : gal.anom >= 0.5 ? "El mar está más caliente que lo normal" : gal.anom <= -0.5 ? "El mar está más frío que lo normal" : "El mar está cerca de lo normal";
+
+  // Comunidad: lo que cambia en la vida diaria, sin índices ni avisos de método.
+  function tarjetaCorta(n) {
+    const gal = n.galapagos || {}, oni = (n.indices || {}).oni || [], uOni = oni[oni.length - 1];
+    const cifras = [];
+    if (gal.anom != null) cifras.push([`${num(gal.anom, 1, true)} °C`, `el mar en Galápagos, frente a lo normal${gal.fecha ? " · " + fecha(gal.fecha) : ""}`]);
+    if (gal.sla_cm != null) cifras.push([`${num(gal.sla_cm, 0, true)} cm`, "el nivel del mar, sobre el promedio"]);
+    if (uOni) cifras.push([`${num(uOni.anom, 1, true)} °C`, `ONI de la NOAA${n.categoria_oni ? ": " + esc(n.categoria_oni) : ""}`]);
+    const mas = gal.sla_cm != null && gal.sla_cm > 5;
+    return `<div class="n-corto"><p class="n-titular">${titular(gal)}</p>` +
+      (cifras.length ? `<div class="n-cc">${cifras.map(([v, t]) => `<div><b>${v}</b><span>${t}</span></div>`).join("")}</div>` : "") +
+      (mas ? `<p class="n-que"><b>Qué significa:</b> las pleamares suben más de lo que dice la tabla de mareas.</p>` : "") + `</div>`;
+  }
+
+  function tarjeta(n, ciencia) {
     const of = n.oficial, ix = n.indices || {}, gal = n.galapagos || {}, est = n.estado_noaa;
     const sstGal = promedioPuertos(n.puertos, "sst", 2), slaGal = promedioPuertos(n.puertos, "sla", 1);
     const oni = ix.oni || [], uOni = oni[oni.length - 1], dia = ix.diario, sem = ix.semanal || [];
-    let h = `<div class="n-card"><div class="n-cab"><div><div class="n-kick">El Niño 2026 · el mar alrededor de Galápagos</div><h2>${gal.anom == null ? "El Niño y el mar" : gal.anom >= 2 ? "El mar está muy caliente" : gal.anom >= 0.5 ? "El mar está más caliente que lo normal" : gal.anom <= -0.5 ? "El mar está más frío que lo normal" : "El mar está cerca de lo normal"}</h2>` +
+    let h = `<div class="n-card"><div class="n-cab"><div><div class="n-kick">El Niño 2026 · el mar alrededor de Galápagos</div><h2>${titular(gal)}</h2>` +
       `<p class="n-sub">Actualizado ${fechaHora(n.generado)} (hora de Galápagos)</p></div></div>`;
-    // voz oficial
-    if (of) {
+    // voz oficial (en Ciencia no: el boletín del ERFEN está en «Boletines oficiales», en Comunidad)
+    if (ciencia) { /* sin tarjeta del ERFEN */ } else if (of) {
       h += `<div class="n-of"><div class="ico">${ICON.escudo}</div><div><div class="inst"><b>ERFEN · VOZ OFICIAL</b><span>${esc(of.fuente || "Comité ERFEN")}${of.numero ? " · boletín " + esc(of.numero) : ""}${of.emitido ? " · " + fecha(of.emitido) : ""}</span>` +
         (of.nivel ? `<span class="niv">${esc(of.nivel)}</span>` : "") + `</div><p>${esc(of.resumen || of.titulo || "Hay un boletín ERFEN reciente.")}</p>` +
         (of.enlace ? `<a href="${esc(of.enlace)}" target="_blank" rel="noopener">Leer el boletín completo →</a>` : "") +
@@ -180,9 +198,11 @@
         `<p class="n-sub" style="margin-top:6px">Un pulso de nubes y lluvias que da la vuelta al trópico en 30 a 60 días. En las fases 8 y 1 (en rojo) pasa por el Pacífico este y puede sumar lluvias. Último dato ${fecha(mjo.ultimo.fecha)}.</p></div></div></div>`;
       h += `</div>`;
     }
-    h += `<div class="n-aviso">${ICON.info}<div>${esc(n.aviso || "")}</div></div>`;
-    const f = Object.entries(n.fuentes || {}).filter(([, ok]) => ok).map(([k]) => k);
-    if (f.length) h += `<div class="n-fuentes">Fuentes: ${f.map(esc).join(" · ")}.</div>`;
+    if (!ciencia) {
+      h += `<div class="n-aviso">${ICON.info}<div>${esc(n.aviso || "")}</div></div>`;
+      const f = Object.entries(n.fuentes || {}).filter(([, ok]) => ok).map(([k]) => k);
+      if (f.length) h += `<div class="n-fuentes">Fuentes: ${f.map(esc).join(" · ")}.</div>`;
+    }
     if (n.errores && Object.keys(n.errores).length) h += `<div class="n-error">Sin datos esta vez: ${Object.keys(n.errores).map(esc).join(", ")}.</div>`;
     return h + `</div>`;
   }
@@ -222,7 +242,16 @@
   }
   const coordTxt = (lat, lon) => `${num(Math.abs(lat), 1)}° ${lat >= 0 ? "N" : "S"} · ${num(Math.abs(lon), 1)}° O`;
 
-  function tarjetaMapa(m, z) {
+  // Ciencia: una sola nota de método para la tarjeta y el mapa.
+  function notaMetodo(n, z) {
+    const f = Object.entries((n && n.fuentes) || {}).filter(([, ok]) => ok).map(([k]) => k);
+    return `<div class="n-card n-metodo"><div class="n-aviso" style="margin-top:0">${ICON.info}<div><b>Método.</b> Temperatura y nivel del mar, índices Niño y boyas: datos de satélite y boyas de la NOAA. ` +
+      (z ? "La ZCIT y las ondas tropicales salen del análisis automático del Centro Nacional de Huracanes (NOAA), que llega hasta 3,4° S: una rama al sur del ecuador puede no aparecer. " : "") +
+      `La voz sobre El Niño en Ecuador es el comité ERFEN: su boletín está en «Boletines oficiales».</div></div>` +
+      (f.length ? `<div class="n-fuentes">Fuentes: ${f.map(esc).join(" · ")}.</div>` : "") + `</div>`;
+  }
+
+  function tarjetaMapa(m, z, ciencia) {
     let h = `<div class="n-card"><div class="n-mapa-cab"><div><div class="n-kick">Mapa · Pacífico este</div><h2>¿Cuánto más caliente está el mar?</h2>` +
       `<p class="n-sub">${m.sst_anom ? "Satélite del " + fecha(m.sst_anom.fecha) : ""}${z && z.analisis ? " · ZCIT y ondas del análisis de las " + fechaHora(z.analisis) : ""}</p></div>` +
       `<div class="n-capas" role="group" aria-label="Capa del mapa"><button class="on" data-capa="sst">Temperatura</button>${m.sla ? '<button data-capa="sla">Nivel del mar</button>' : ""}</div></div>` +
@@ -232,8 +261,8 @@
       if (z.resumen_ia && z.resumen_ia.texto) h += `<div class="ia">${esc(z.resumen_ia.texto)} <span class="n-sub">(resumen automático del texto del NHC)</span></div>`;
       h += `</div>`;
     }
-    h += `<div class="n-aviso">${ICON.info}<div>${esc(m.aviso || "")} ${z ? esc(z.aviso || "") : ""} El análisis de la ZCIT del NHC llega hasta 3,4° S: una rama al sur del ecuador puede no aparecer.</div></div></div>`;
-    return h;
+    if (!ciencia) h += `<div class="n-aviso">${ICON.info}<div>${esc(m.aviso || "")} ${z ? esc(z.aviso || "") : ""} El análisis de la ZCIT del NHC llega hasta 3,4° S: una rama al sur del ecuador puede no aparecer.</div></div>`;
+    return h + `</div>`;
   }
 
   function leyenda(el, capa) {
@@ -304,11 +333,19 @@
   async function montar(el, opciones = {}) {
     const base = opciones.base || "/riesgos/api/clima/", q = opciones.sinCache === false ? "" : "?t=" + Math.floor(Date.now() / 300e3);
     const leer = nombre => fetch(base + nombre + q, {cache: "no-cache"}).then(r => r.ok ? r.json() : null).catch(() => null);
+    const modo = opciones.modo || "completo", ciencia = modo === "ciencia";
     el.classList.add("nino");
+    if (modo === "comunidad") {
+      // Solo la tarjeta corta: no pide el mapa ni la ZCIT y no carga Leaflet.
+      el.innerHTML = `<p class="n-sub">Cargando El Niño…</p>`;
+      const n = await leer("nino.json");
+      el.innerHTML = n ? tarjetaCorta(n) : `<p class="n-sub">Los datos de El Niño no están disponibles ahora.</p>`;
+      return null;
+    }
     el.innerHTML = `<div class="n-card"><p class="n-sub">Cargando El Niño…</p></div>`;
     const [n, m, z] = await Promise.all([leer("nino.json"), leer("nino_mapa.json"), leer("zcit.json")]);
     if (!n && !m) { el.innerHTML = `<div class="n-card"><p class="n-sub">Los datos de El Niño no están disponibles ahora.</p></div>`; return null; }
-    el.innerHTML = (n ? tarjeta(n) : "") + (m ? tarjetaMapa(m, z) : "");
+    el.innerHTML = (n ? tarjeta(n, ciencia) : "") + (m ? tarjetaMapa(m, z, ciencia) : "") + (ciencia ? notaMetodo(n, z) : "");
     if (m && opciones.mapa !== false) {
       try { await cargarLeaflet(); return montarMapa(el, m, z); }
       catch (e) { const c = el.querySelector(".n-mapa"); if (c) c.innerHTML = `<p class="n-sub" style="padding:14px">No se pudo cargar el mapa.</p>`; }
@@ -316,5 +353,5 @@
     return null;
   }
 
-  window.NinoPanel = {montar, _interno: {color, linea, barras, valorEn}};
+  window.NinoPanel = {montar, _interno: {color, linea, barras, valorEn, tarjetaCorta}};
 })();

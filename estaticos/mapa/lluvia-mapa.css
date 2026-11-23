@@ -25,7 +25,6 @@
   background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;pointer-events:none}
 .lm-arriba>*{pointer-events:auto}
 .lm-titulo{padding:6px 10px;font-weight:800;font-size:13px;letter-spacing:.01em}
-.lm-titulo small{display:block;font-weight:400;font-size:11px;color:#5f6670;margin-top:1px}
 .lm-grupo{display:inline-flex;padding:2px;gap:2px}
 .lm-grupo button,.lm-boton{appearance:none;border:0;background:transparent;color:#3a3f45;font:inherit;font-size:12px;font-weight:600;
   padding:6px 10px;border-radius:7px;cursor:pointer;white-space:nowrap;min-height:30px}
@@ -82,5 +81,5 @@
 .lm-aviso{margin-top:5px;padding-top:5px;border-top:1px solid rgba(0,0,0,.1);font-size:11px;color:#3a3f45}
 .lm-aviso b{color:#9a4a00;font-weight:700}
 .lm-error{position:absolute;inset:0;display:grid;place-items:center;padding:20px;text-align:center;color:#3a3f45;z-index:900}
-@media (max-width:640px){.lm-titulo small{display:none}.lm-hora span{display:none}.lm-aviso{font-size:10.5px}}
+@media (max-width:640px){.lm-hora span{display:none}.lm-aviso{font-size:10.5px}}
 @media (prefers-reduced-motion:reduce){.lm-play{transition:none}}

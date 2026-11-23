@@ -220,13 +220,13 @@ def prueba_crear_aviso_de_coordinacion_con_titulo_fotos_y_plazo_largo(client, se
 
 @pytest.mark.django_db
 def prueba_el_mapa_trae_buscador_y_enlaces_del_pie(client):
-    """/riesgos/ es el mapa único: lleva el buscador, «Mis puntos» y, bajo la firma, los enlaces."""
+    """/riesgos/ es el mapa único: lleva el buscador, «Mis puntos», el menú del sitio y, bajo la firma, el código."""
     html = client.get("/riesgos/").content.decode()
     assert 'id="buscar-abrir"' in html and 'id="mis-puntos"' in html
     assert "mapa/buscar.js" in html
+    menu = html[html.index("data-sos-menu"):html.index("</nav>")]
+    assert 'href="/clima/"' in menu and 'href="/riesgos/descargas/"' in menu
     pie = html[html.index('class="firma"'):]
-    assert 'href="/clima/"' in pie
-    assert 'href="/riesgos/descargas/"' in pie
     assert "github.com/mayait/sosgalapagos-plataforma" in pie
     # El visor de /mapas ya no se enlaza: de /mapas/ solo se leen los datos.
     assert 'href="/mapas/"' not in html
@@ -242,8 +242,9 @@ def prueba_el_informe_se_llama_linea_del_tiempo(client):
 
 @pytest.mark.django_db
 def prueba_el_mapa_ofrece_ver_como_lista(client):
+    # La lista es la línea del tiempo, en el menú del sitio (antes, una píldora «Ver como lista»).
     html = client.get("/riesgos/").content.decode()
-    assert ">Ver como lista</a>" in html
+    assert '<a href="/riesgos/informe/">Línea del tiempo</a>' in html
 
 
 # ── Fase 2: puntos, contacto, daño en infraestructura, avisos ────────────────
@@ -464,3 +465,53 @@ def prueba_un_enlace_compartido_trae_titulo_y_boton(client):
     assert f'data-compartir="{r.id_publico}"' in client.get(f"/riesgos/r/{r.id_publico}/").content.decode()
     # un id que no existe muestra el mapa con los datos generales
     assert "Mapa de riesgos · SOS Galápagos" in client.get("/riesgos/?r=noexiste").content.decode()
+
+
+# ── Menú del sitio ───────────────────────────────────────────────────────────
+DESTINOS_MENU = [
+    ("Inicio", "/"), ("Mapa de riesgos", "/riesgos/"), ("Línea del tiempo", "/riesgos/informe/"), ("Clima", "/clima/"),
+    ("Lluvia y viento", "/riesgos/mapa-del-tiempo/"), ("Descargar capas", "/riesgos/descargas/"), ("Puntos", "/riesgos/puntos/"),
+]
+
+
+def _menu(html):
+    inicio = html.index("data-sos-menu")
+    return html[inicio:html.index("</nav>", inicio)]
+
+
+@pytest.mark.parametrize("ruta", ["/riesgos/", "/riesgos/informe/", "/riesgos/mapa-del-tiempo/", "/riesgos/descargas/", "/riesgos/puntos/"])
+def prueba_el_menu_esta_en_cada_pagina_con_sus_siete_destinos_en_orden(client, ruta):
+    menu = _menu(client.get(ruta).content.decode())
+    posiciones = [menu.index(f'<a href="{r}"') for _, r in DESTINOS_MENU]
+    assert posiciones == sorted(posiciones)
+    assert [n for n, _ in DESTINOS_MENU] == [menu[p:].split(">", 1)[1].split("<", 1)[0] for p in posiciones]
+    # La página actual se marca entera, no por prefijo: «Inicio» no se enciende en todas.
+    assert menu.count('aria-current="page"') == 1 and f'<a href="{ruta}" aria-current="page">' in menu
+    # El aviso general y el 911, siempre.
+    assert "Información de apoyo de SOS Galápagos (USFQ), no oficial." in menu and 'href="tel:911"' in menu
+    assert "albergue" not in menu.lower()
+
+
+def prueba_el_mapa_lleva_el_menu_flotante_sin_las_pildoras_viejas(client):
+    html = client.get("/riesgos/").content.decode()
+    assert 'data-sos-menu="flotante"' in html and 'class="atajos"' not in html and "Ver como lista" not in html
+
+
+def prueba_las_paginas_ya_no_llevan_migas_ni_mira_tambien(client):
+    for ruta in ["/riesgos/informe/", "/riesgos/mapa-del-tiempo/", "/riesgos/descargas/", "/riesgos/puntos/"]:
+        html = client.get(ruta).content.decode()
+        assert 'class="migas"' not in html and "Mira también" not in html
+        assert "su uso requiere permiso" in html  # la firma conserva el aviso del código
+
+
+def prueba_el_formulario_no_lleva_menu_pero_si_el_911(client):
+    html = client.get("/riesgos/reportar/").content.decode()
+    assert "data-sos-menu" not in html and 'class="form-911" href="tel:911"' in html and "no oficial" in html
+
+
+def prueba_el_componente_pinta_el_menu_con_la_lista_de_destinos(client):
+    import json as _json
+    codigo = client.get("/riesgos/app/").content.decode()
+    lista = _json.loads(codigo.split("const DESTINOS = ", 1)[1].split(";\n", 1)[0])
+    assert [(d["nombre"], d["ruta"]) for d in lista] == DESTINOS_MENU
+    assert "[data-sos-menu]" in codigo and "showModal" in codigo and "aria-expanded" in codigo

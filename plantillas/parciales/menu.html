@@ -1,0 +1,15 @@
+{# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec> · Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE). #}
+{% comment %}Menú del sitio: enlaces de respaldo (sin JavaScript también sirven). /riesgos/app.js los reemplaza al pintar la barra.
+   La altura la reserva estilos.css (.sos-menu), para que la página no salte cuando llega el componente.{% endcomment %}
+{% if variante == "nada" %}
+<p class="sos-menu-aviso sos-menu-suelto" role="note"><span class="sos-aviso-corto"><b>{{ aviso_titulo }}</b> Emergencias: <a class="sos-aviso-911" href="tel:911">911</a></span><span class="sos-aviso-largo"><b>{{ aviso_titulo }}</b> {{ aviso_resto }} Emergencias: <a class="sos-aviso-911" href="tel:911">911</a></span></p>
+{% else %}
+<nav data-sos-menu{% if variante == "flotante" %}="flotante"{% endif %} class="sos-menu{% if variante == "flotante" %} sos-menu-flotante{% endif %}" aria-label="SOS Galápagos">
+  <div class="sos-menu-barra">
+    <a class="sos-menu-marca" href="/">SOS Galápagos</a>
+    <ul class="sos-menu-enlaces">{% for d in destinos %}<li><a href="{{ d.ruta }}"{% if request.path == d.ruta %} aria-current="page"{% endif %}>{{ d.nombre }}</a></li>{% endfor %}</ul>
+    <a class="sos-menu-911" href="tel:911" aria-label="Emergencias: llamar al 911">911</a>
+  </div>
+  <p class="sos-menu-aviso" role="note"><span class="sos-aviso-corto"><b>{{ aviso_titulo }}</b> Emergencias: <a class="sos-aviso-911" href="tel:911">911</a></span><span class="sos-aviso-largo"><b>{{ aviso_titulo }}</b> {{ aviso_resto }} Emergencias: <a class="sos-aviso-911" href="tel:911">911</a></span></p>
+</nav>
+{% endif %}

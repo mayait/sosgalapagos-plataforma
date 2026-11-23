@@ -55,3 +55,15 @@ def metros(valor):
     if valor < 950:
         return f"{round(valor / 10) * 10:.0f} m"
     return f"{valor / 1000:.1f} km".replace(".", ",")
+
+
+@register.inclusion_tag("parciales/menu.html", takes_context=True)
+def menu_sitio(context, variante="barra"):
+    """Marcador del menú del sitio con sus enlaces de respaldo. El componente /riesgos/app.js lo pinta.
+
+    variante: «barra» (todas las páginas), «flotante» (el mapa: solo el botón ☰) o «nada»
+    (el formulario de reporte: solo el aviso general).
+    """
+    from reportes import menu
+
+    return {"request": context.get("request"), "variante": variante, "destinos": menu.destinos(), "aviso_titulo": menu.AVISO_TITULO, "aviso_resto": menu.AVISO_RESTO}
