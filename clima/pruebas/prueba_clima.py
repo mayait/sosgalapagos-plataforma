@@ -283,3 +283,18 @@ def prueba_la_tabla_del_inocar_se_pide_dia_por_dia(monkeypatch, settings):
     mar.actualizar_inocar(dias=9, hoy=date(2026, 11, 22))
     santa_cruz = sorted(u.rsplit("/", 1)[1] for u in pedidas if u.startswith("prueba://30/"))
     assert santa_cruz == [f"2026-11-{d}" for d in range(22, 31)]
+
+
+def prueba_el_encabezado_del_dia_con_una_celda_vacia_no_cambia_la_fecha():
+    """La página del INOCAR del 24-nov-2026 traía el día del medio como «24/11/2026Martes» y una celda vacía."""
+    from clima import mar
+
+    pagina = """<table>
+      <tr><td>23/11/2026Lunes</td></tr><tr><th>Hora (hh:mm)</th><th>Altura (metros)</th></tr>
+      <tr><td>19:36</td><td>0.37 B</td></tr>
+      <tr><td>24/11/2026Martes</td><td></td></tr><tr><th>Hora (hh:mm)</th><th>Altura (metros)</th></tr>
+      <tr><td>01:39</td><td>1.96 P</td></tr>
+    </table>"""
+    (b, *_), (p, *_) = mar.leer_tabla_inocar(pagina)
+    assert b.isoformat() == "2026-11-24T01:36:00+00:00"
+    assert p.isoformat() == "2026-11-24T07:39:00+00:00"
