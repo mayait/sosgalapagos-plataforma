@@ -358,7 +358,7 @@ def manifiesto_app(request):
             ],
             "shortcuts": [
                 {"name": "Reportar", "url": "/riesgos/reportar/"},
-                {"name": "Clima en vivo", "url": "/clima/"},
+                {"name": "Clima", "url": "/clima/"},
                 {"name": "Lluvia y viento", "url": "/riesgos/mapa-del-tiempo/"},
                 {"name": "Línea del tiempo", "url": "/riesgos/informe/"},
             ],
