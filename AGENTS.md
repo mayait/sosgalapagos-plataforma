@@ -20,6 +20,11 @@ Plataforma de reportes de riesgo de SOS Galápagos: un mapa único donde la gent
 8. **Se dice «refugio», nunca «albergue».**
 9. **Repositorio público.** Sin secretos, sin endpoints de las fuentes de clima y nada de los repositorios privados.
 10. **Se trabaja en ramas con pull request.**
+11. **«No oficial» se dice una vez por página.**
+    - El aviso general va en el menú del sitio (`reportes/menu.py`, `/riesgos/app.js`), y los documentos oficiales en su propia sección.
+    - Sin sellos ni frases de «no oficial» en cada tarjeta. Solo las advertencias que informan (cuánto subestima un modelo, qué no ve el satélite).
+    - Lo que sale de la página (mensajes de WhatsApp, PDF, descargas) sí lo dice.
+    - Decisión de Julián, 23-nov-2026.
 
 ## Convenciones
 
