@@ -64,6 +64,7 @@ def _configuracion():
         "pushSuscribir": reverse("reportes:push_suscribir"),
         "todos": "/riesgos/api/reportes/vivos.geojson?periodo=evento",
         "sucesos": "/riesgos/api/sucesos.json",
+        "historial": "/riesgos/api/reportes/historial.json",
         "lluviaHoraria": "/riesgos/api/lluvia.json",
     }
 

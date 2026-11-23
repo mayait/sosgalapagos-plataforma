@@ -555,6 +555,8 @@ textarea.nota { width: 100%; min-height: 64px; padding: 10px 12px; border: 2px s
 .hito.clase-buena::before { border-radius: 3px; background: #db2777; }
 .hito.clase-ayuda::before { background: #db2777; }
 .hito.clase-observa::before { background: #3d6a8c; }
+/* Historial de la coordinación anterior (1 al 4 de noviembre): gris, no está vigente. */
+.hito.clase-anterior::before { background: var(--blanco); border: 2px solid var(--por-verificar); }
 /* Sucesos sin punto en el mapa: avisos enviados, comunicados oficiales, noticias e informes. Marca cuadrada. */
 .hito.clase-aviso::before { border-radius: 2px; background: var(--negro); }
 .hito.clase-oficial::before { border-radius: 2px; background: #1d4ed8; }
