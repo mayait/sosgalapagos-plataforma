@@ -12,6 +12,10 @@
     </div>
   </header>
 
+  <div class="ficha-compartir">
+    <button type="button" class="boton" data-compartir="{{ r.id_publico }}" data-titulo="{{ r.nombre }}" data-texto="{{ r.nombre }}{% if r.tipo.clase == 'riesgo' %} · {{ r.get_gravedad_display }}{% endif %}{% if r.zona %} · {{ r.zona.nombre }}{% endif %}. Información ciudadana, no oficial.">Compartir</button>
+    <span class="ficha-compartido" role="status" hidden>Enlace copiado. <a href="#" target="_blank" rel="noopener" data-whatsapp>Enviar por WhatsApp</a></span>
+  </div>
   {% if mensaje %}<p class="ficha-mensaje" role="status">{{ mensaje }}</p>{% endif %}
 
   {% if r.foto and r.contenido_visible %}<button type="button" class="foto-grande" data-foto="{{ r.foto.url }}" data-pie="{{ r.nombre }} · {{ r.visto_en|date:'j M, H:i' }}"><img class="ficha-foto" src="{{ r.foto.url }}" alt="Foto del aviso" loading="lazy"></button>
