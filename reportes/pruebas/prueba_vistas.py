@@ -328,7 +328,7 @@ def prueba_sin_llaves_no_se_ofrecen_avisos_y_no_se_envia_nada(client, settings):
 
 def prueba_el_mapa_ofrece_la_app_y_los_puntos(client):
     html = client.get("/riesgos/").content.decode()
-    assert "data-sos-app" in html and 'src="/riesgos/app/"' in html and ">Puntos</a>" in html and 'href="/clima/"' in html
+    assert "data-sos-app" in html and 'src="/riesgos/app/"' in html and ">Top contributors</a>" in html and 'href="/clima/"' in html
     sw = client.get("/riesgos/sw.js").content.decode()
     assert "addEventListener('push'" in sw and "notificationclick" in sw
 
@@ -470,7 +470,8 @@ def prueba_un_enlace_compartido_trae_titulo_y_boton(client):
 # ── Menú del sitio ───────────────────────────────────────────────────────────
 DESTINOS_MENU = [
     ("Inicio", "/"), ("Mapa de riesgos", "/riesgos/"), ("Línea del tiempo", "/riesgos/informe/"), ("Clima", "/clima/"),
-    ("Lluvia y viento", "/riesgos/mapa-del-tiempo/"), ("Descargar capas", "/riesgos/descargas/"), ("Puntos", "/riesgos/puntos/"),
+    ("Lluvia y viento", "/riesgos/mapa-del-tiempo/"), ("Descargar capas", "/riesgos/descargas/"), ("Top contributors", "/riesgos/puntos/"),
+    ("Admin", "/riesgos/admin/"),
 ]
 
 

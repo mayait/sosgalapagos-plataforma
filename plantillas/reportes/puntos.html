@@ -1,10 +1,10 @@
 {# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec> · Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE). #}
 {% extends "base.html" %}
 {% load static reportes_extras %}
-{% block titulo %}Puntos{% endblock %}
+{% block titulo %}Top contributors{% endblock %}
 {% block contenido %}
 <main class="pagina">
-  <h1 class="form-titulo">Puntos</h1>
+  <h1 class="form-titulo">Top contributors</h1>
   <p class="form-ayuda">Cada aviso que publicas ayuda a tus vecinos, y suma. Aquí solo aparece el nombre o apodo que cada persona eligió.</p>
 
   {% if yo %}<div class="cifra mis-puntos"><span>Tus puntos en este teléfono</span><b>{{ yo.puntos }}</b><small>{{ yo.avisos }} aviso{{ yo.avisos|pluralize }} publicado{{ yo.avisos|pluralize }}{% if yo.nombre %} · {{ yo.nombre }}{% else %} · pon tu nombre al reportar para aparecer en la tabla{% endif %}</small></div>{% endif %}
