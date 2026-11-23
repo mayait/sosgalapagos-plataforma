@@ -358,7 +358,7 @@ def manifiesto_app(request):
             ],
             "shortcuts": [
                 {"name": "Reportar", "url": "/riesgos/reportar/"},
-                {"name": "Clima en vivo", "url": "/clima/"},
+                {"name": "Clima", "url": "/clima/"},
                 {"name": "Lluvia y viento", "url": "/riesgos/mapa-del-tiempo/"},
                 {"name": "Línea del tiempo", "url": "/riesgos/informe/"},
             ],
@@ -379,8 +379,9 @@ def app_cargador(request):
 
 
 def app_js(request):
-    """Componente «Instalar la app» y «Recibir avisos», para cualquier página del sitio."""
+    """Componente del menú del sitio, «Instalar la app» y «Recibir avisos», para cualquier página del sitio."""
     from clima import alertas
+    from reportes import menu
 
     respuesta = render(
         request,
@@ -391,6 +392,9 @@ def app_js(request):
             "manifiesto": reverse("reportes:manifiesto_app"),
             "temas": json.dumps([{"id": k, "nombre": v, "por_defecto": k in alertas.POR_DEFECTO} for k, v in alertas.TEMAS.items()], ensure_ascii=False),
             "zonas": json.dumps([{"id": k, "nombre": v} for k, v in alertas.ZONAS.items()], ensure_ascii=False),
+            "destinos": json.dumps(menu.destinos(), ensure_ascii=False),
+            "aviso_titulo": menu.AVISO_TITULO,
+            "aviso_resto": menu.AVISO_RESTO,
         },
         content_type="text/javascript",
     )

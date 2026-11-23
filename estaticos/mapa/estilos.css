@@ -25,7 +25,11 @@
   --por-verificar: #6b7280;
   --titulo: "Zalando Sans Expanded", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --texto: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
-  --aviso-alto: 26px;
+  /* Menú del sitio: barra de 48 px y aviso general de una línea (dos en el teléfono).
+     El componente /riesgos/app.js pinta la barra; aquí solo se reserva su sitio. */
+  --sos-barra-alto: 48px;
+  --sos-aviso-alto: 34px;
+  --aviso-alto: var(--sos-aviso-alto); /* lo que tapa el aviso en el mapa a pantalla completa */
   --panel-ancho: 400px;
   --sombra: 0 2px 10px rgba(0, 0, 0, 0.16);
   color-scheme: light;
@@ -44,17 +48,37 @@ a { color: inherit; }
 [x-cloak], [hidden] { display: none !important; }
 .solo-lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 
-/* ── Aviso fijo en todo el sitio ─────────────────────────────────────────── */
-.aviso {
-  position: fixed; inset: 0 0 auto 0; z-index: 60;
-  height: var(--aviso-alto);
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  padding: 0 10px;
+/* ── Menú del sitio y aviso general ──────────────────────────────────────────
+   El marcador <nav data-sos-menu> trae enlaces de respaldo (parciales/menu.html) y /riesgos/app.js
+   los reemplaza por la barra. Estas reglas reservan la misma caja antes y después: la página no salta.
+   Los estilos completos los pone el componente, igual en todas las páginas del sitio. */
+@media (min-width: 600px) { :root { --sos-aviso-alto: 26px; } }
+.sos-menu { display: block; position: relative; padding-top: var(--sos-barra-alto); }
+.sos-menu-barra {
+  position: fixed; inset: 0 0 auto 0; z-index: 1000; height: var(--sos-barra-alto);
+  display: flex; align-items: center; gap: 12px; padding: 0 8px 0 16px;
   background: var(--blanco); border-bottom: 1px solid var(--linea);
-  font-size: 11.5px; color: var(--gris); white-space: nowrap; overflow: hidden;
 }
-.aviso strong { color: var(--tinta); font-weight: 700; }
-.aviso a { color: var(--rojo); font-weight: 700; text-decoration: none; }
+.sos-menu:not(.sos-menu-listo) .sos-menu-marca { flex: none; font: 900 15px/1 var(--titulo); text-transform: uppercase; text-decoration: none; }
+.sos-menu:not(.sos-menu-listo) .sos-menu-enlaces { flex: 1; min-width: 0; display: flex; gap: 14px; margin: 0; padding: 0; list-style: none; overflow-x: auto; white-space: nowrap; font-size: 13.5px; scrollbar-width: none; }
+.sos-menu:not(.sos-menu-listo) .sos-menu-911 { flex: none; display: inline-grid; place-items: center; min-width: 56px; height: 44px; border-radius: 999px; background: var(--rojo); color: var(--blanco); font-weight: 800; text-decoration: none; }
+.sos-menu-aviso {
+  display: flex; align-items: center; justify-content: center; height: var(--sos-aviso-alto); margin: 0; padding: 0 12px;
+  overflow: hidden; background: var(--blanco); border-bottom: 1px solid var(--linea);
+  font-size: 11.5px; line-height: 1.3; color: var(--gris); text-align: center;
+}
+.sos-menu-aviso b { color: var(--tinta); }
+.sos-menu-aviso a { color: var(--rojo); font-weight: 800; text-decoration: none; }
+.sos-aviso-largo { display: none; }
+@media (min-width: 1024px) { .sos-aviso-corto { display: none; } .sos-aviso-largo { display: inline; } }
+/* En la barra ya está el botón 911: el aviso no lo repite (en el mapa flotante, sí). */
+.sos-menu:not(.sos-menu-flotante) .sos-menu-aviso .sos-aviso-tel { display:none }
+/* El mapa: sin barra. El aviso queda fijo arriba y el botón ☰ junto a «Capas». */
+.sos-menu-flotante { height: 0; padding: 0; --sos-flotante-arriba: calc(var(--sos-aviso-alto) + 10px); --sos-flotante-derecha: 10px; }
+.sos-menu-flotante .sos-menu-aviso { position: fixed; inset: 0 0 auto 0; z-index: 60; }
+.sos-menu-flotante:not(.sos-menu-listo) .sos-menu-barra { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+/* Con la foto a pantalla completa, el ☰ no tapa su botón de cerrar. */
+body:has(.visor:not([hidden])) .sos-menu-flotante .sos-menu-abrir { display: none; }
 
 /* ── Mapa ────────────────────────────────────────────────────────────────── */
 .pantalla { position: fixed; inset: var(--aviso-alto) 0 0 0; }
@@ -68,7 +92,7 @@ a { color: inherit; }
 
 /* Franja de lluvia y fichas de tiempo */
 .barra-superior {
-  position: absolute; z-index: 5; top: 10px; left: 10px; right: 126px;
+  position: absolute; z-index: 5; top: 10px; left: 10px; right: 176px;
   display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
   pointer-events: none;
 }
@@ -92,11 +116,11 @@ a { color: inherit; }
 
 /* Botón y panel de capas */
 .capas-boton {
-  position: absolute; z-index: 6; top: 10px; right: 10px;
+  position: absolute; z-index: 6; top: 10px; right: 62px;
   padding: 8px 12px; font-size: 12.5px; font-weight: 700;
 }
 .capas-panel {
-  position: absolute; z-index: 7; top: 10px; right: 10px;
+  position: absolute; z-index: 7; top: 62px; right: 10px; /* debajo del botón ☰ del menú */
   width: min(320px, calc(100% - 20px)); max-height: calc(100% - 20px);
   display: flex; flex-direction: column; overflow: hidden; border-radius: 12px;
 }
@@ -379,7 +403,11 @@ a { color: inherit; }
 /* Teléfonos: objetivos táctiles amplios y panel de capas a todo el ancho. */
 @media (max-width: 1023px) {
   .pantalla { inset: var(--aviso-alto) 0 0 0; height: calc(100dvh - var(--aviso-alto)); }
-  .capas-panel { width: calc(100% - 20px); max-height: calc(100% - 110px); }
+  .capas-panel { width: calc(100% - 20px); max-height: calc(100% - 162px); }
+  /* En el teléfono la franja de lluvia se queda a la izquierda de la lupa, Capas y ☰;
+     los botones de periodo van debajo y usan todo el ancho. */
+  .barra-superior { right: 10px; }
+  #lluvia { max-width: calc(100% - 168px); min-height: 37px; }
   .capa { padding: 8px 0; }
   .capa-descargas { gap: 8px 16px; font-size: 12.5px; padding: 4px 0; }
   .pildoras button { padding: 7px 13px; font-size: 13.5px; }
@@ -406,8 +434,10 @@ a { color: inherit; }
 /* ── Escritorio: mapa fijo y panel lateral ───────────────────────────────── */
 @media (min-width: 1024px) {
   #mapa { right: var(--panel-ancho); }
-  .barra-superior { right: calc(var(--panel-ancho) + 126px); }
-  .capas-boton, .capas-panel { right: calc(var(--panel-ancho) + 10px); }
+  .barra-superior { right: calc(var(--panel-ancho) + 176px); }
+  .capas-boton { right: calc(var(--panel-ancho) + 62px); }
+  .capas-panel { right: calc(var(--panel-ancho) + 10px); }
+  .sos-menu-flotante { --sos-flotante-derecha: calc(var(--panel-ancho) + 10px); }
   .ubicarme { right: calc(var(--panel-ancho) + 10px); bottom: 34px; }
   .relieve, .con-hoja .relieve { right: calc(var(--panel-ancho) + 10px); bottom: 86px; }
   .controles3d { right: calc(var(--panel-ancho) + 10px); bottom: 216px; }
@@ -433,9 +463,10 @@ a { color: inherit; }
 }
 
 /* ── Formulario de reporte ───────────────────────────────────────────────── */
-.formulario { max-width: 520px; margin: 0 auto; padding: calc(var(--aviso-alto) + 10px) 16px 110px; min-height: 100%; }
-.form-cabecera { display: flex; align-items: center; justify-content: space-between; height: 44px; }
-.form-cabecera a, .form-cabecera button { border: 0; background: none; padding: 8px 0; font-size: 14px; color: var(--gris); text-decoration: none; }
+.formulario { max-width: 520px; margin: 0 auto; padding: 6px 16px 110px; min-height: 100%; }
+.form-cabecera { display: flex; align-items: center; justify-content: space-between; height: 52px; }
+.form-cabecera a, .form-cabecera button { border: 0; background: none; padding: 8px 0; min-height: 44px; font-size: 14px; color: var(--gris); text-decoration: none; }
+.form-cabecera a.form-911 { display: inline-grid; place-items: center; min-width: 58px; height: 44px; padding: 0 14px; border-radius: 999px; background: var(--rojo); color: var(--blanco); font-weight: 800; font-size: 15px; }
 .pasos { display: flex; gap: 5px; margin: 2px 0 18px; }
 .pasos i { flex: 1; height: 4px; border-radius: 4px; background: var(--linea); }
 .pasos i.hecho { background: var(--rojo); }
@@ -488,10 +519,6 @@ textarea.nota { width: 100%; min-height: 64px; padding: 10px 12px; border: 2px s
 .listo svg { width: 64px; height: 64px; }
 
 /* Atajos del mapa hacia el informe y las descargas */
-.atajos { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 12px; }
-.atajos a { border: 1.5px solid var(--negro); border-radius: 999px; padding: 6px 12px; font-size: 12.5px; font-weight: 700; text-decoration: none; }
-.migas { display: flex; justify-content: space-between; gap: 12px; margin: 0 0 14px; font-size: 13.5px; }
-.migas a { color: var(--gris); text-decoration: none; }
 .pagina.ancha { max-width: 860px; }
 
 /* ── Informe ─────────────────────────────────────────────────────────────── */
@@ -557,16 +584,16 @@ textarea.nota { width: 100%; min-height: 64px; padding: 10px 12px; border: 2px s
 @media (min-width: 700px) { .descargas li { grid-template-columns: 1fr auto; align-items: center; } }
 
 /* Página suelta de la ficha */
-.pagina { max-width: 520px; margin: 0 auto; padding: calc(var(--aviso-alto) + 14px) 16px 40px; }
+.pagina { max-width: 520px; margin: 0 auto; padding: 18px 16px 40px; }
 
 /* ── Buscador: la lupa junto a «Capas» ───────────────────────────────────── */
 .buscar-boton {
-  position: absolute; z-index: 6; top: 10px; right: 80px;
+  position: absolute; z-index: 6; top: 10px; right: 132px;
   width: 36px; height: 35px; padding: 0; display: grid; place-items: center;
 }
 .buscar-boton svg { width: 17px; height: 17px; }
 .buscar {
-  position: absolute; z-index: 8; top: 10px; left: 10px; right: 10px;
+  position: absolute; z-index: 8; top: 10px; left: 10px; right: 62px;
   display: grid; grid-template-columns: 18px 1fr 30px; align-items: center; gap: 8px;
   padding: 4px 6px 4px 12px; border-radius: 12px;
 }
@@ -630,19 +657,18 @@ textarea.nota { width: 100%; min-height: 64px; padding: 10px 12px; border: 2px s
 .mi-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
 .mi-acciones .boton { flex: 1 1 130px; text-align: center; text-decoration: none; }
 
-/* Enlaces del pie, bajo la firma: pequeños */
-.firma-enlaces { display: flex; flex-direction: column; gap: 5px; margin-top: 14px; font-size: 12px; }
-.firma-enlaces span { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gris); }
-.firma-enlaces a { color: var(--tinta); text-underline-offset: 2px; }
+/* Pie, bajo la firma: el enlace al código */
+.firma .firma-codigo { margin-top: 14px; font-size: 12px; color: var(--gris); }
+.firma-codigo a { color: var(--tinta); text-underline-offset: 2px; }
 
 @media (min-width: 1024px) {
-  .buscar-boton { right: calc(var(--panel-ancho) + 80px); }
-  .buscar { left: auto; right: calc(var(--panel-ancho) + 10px); width: 360px; }
+  .buscar-boton { right: calc(var(--panel-ancho) + 132px); }
+  .buscar { left: auto; right: calc(var(--panel-ancho) + 62px); width: 360px; }
 }
 
 /* ── Línea del tiempo vertical: lluvia a un lado, reportes al otro ────────── */
 .navegador {
-  position: sticky; top: var(--aviso-alto); z-index: 4; margin: 0 -16px 10px; padding: 8px 16px 8px;
+  position: sticky; top: var(--sos-barra-alto); z-index: 4; margin: 0 -16px 10px; padding: 8px 16px 8px;
   background: var(--blanco); border-bottom: 1px solid var(--linea);
 }
 .navegador svg { display: block; width: 100%; height: auto; cursor: pointer; touch-action: manipulation; }
@@ -660,7 +686,7 @@ textarea.nota { width: 100%; min-height: 64px; padding: 10px 12px; border: 2px s
 .vertical-cabecera, .fila { display: grid; grid-template-columns: 88px 40px minmax(0, 1fr); column-gap: 8px; }
 .vertical-cabecera { margin-top: 4px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gris); }
 .vertical-cabecera span:first-child { text-align: right; }
-.dia-bloque, .calma { scroll-margin-top: calc(var(--aviso-alto) + 196px); }
+.dia-bloque, .calma { scroll-margin-top: calc(var(--sos-barra-alto) + 196px); }
 .dia { flex-wrap: wrap; position: relative; }
 .dia small { font: 600 12px/1.2 var(--texto); text-transform: none; color: var(--gris); }
 .vertical { list-style: none; margin: 0; padding: 0; }
@@ -734,7 +760,7 @@ textarea.nota { width: 100%; min-height: 64px; padding: 10px 12px; border: 2px s
 /* La app (instalar y avisos): el componente trae sus estilos; aquí solo su sitio en la página. */
 .app-en-hoja { margin: 0 0 14px; }
 .app-en-firma { margin-top: 14px; }
-.hoja .app-en-firma { display: none; } /* en el mapa ya está arriba, junto a los atajos */
+.hoja .app-en-firma { display: none; } /* en el mapa ya está arriba, en la hoja */
 
 /* Prototipo del mapa de Windy */
 .lluvia-mapa-caja { width: 100%; margin: 6px 0 10px; border-radius: 14px; overflow: hidden; }

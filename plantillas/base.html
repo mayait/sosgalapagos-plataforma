@@ -24,9 +24,8 @@
   <link rel="stylesheet" href="{% propio 'mapa/estilos.css' %}">
 </head>
 <body class="{% block clase_cuerpo %}{% endblock %}">
-  <div class="aviso" role="note">
-    <span><strong>Información ciudadana preliminar, no oficial.</strong> Emergencias: <a href="tel:911">911</a></span>
-  </div>
+  {# Menú del sitio y aviso general (reportes/menu.py). El mapa usa la variante flotante; el formulario, ninguna. #}
+  {% block menu %}{% menu_sitio %}{% endblock %}
   {% include "parciales/iconos.html" %}
   {% block contenido %}{% endblock %}
   {% block guiones %}{% endblock %}

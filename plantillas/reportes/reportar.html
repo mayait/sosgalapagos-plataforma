@@ -2,6 +2,7 @@
 {% extends "base.html" %}
 {% load static reportes_extras %}
 {% block titulo %}Reportar{% endblock %}
+{% block menu %}{% menu_sitio "nada" %}{% endblock %}
 {% block estilos %}<link rel="stylesheet" href="{% static 'terceros/maplibre-gl.css' %}">{% endblock %}
 
 {% block contenido %}
@@ -9,7 +10,7 @@
   <div class="form-cabecera">
     <a href="{% url 'reportes:mapa' %}" x-show="paso === 1">← Mapa</a>
     <button type="button" x-show="paso > 1 && paso < 5" @click="paso--">← Atrás</button>
-    <span></span>
+    <a class="form-911" href="tel:911" aria-label="Emergencias: llamar al 911">911</a>
   </div>
   <div class="pasos" x-show="paso < 5"><i :class="paso >= 1 && 'hecho'"></i><i :class="paso >= 2 && 'hecho'"></i><i :class="paso >= 3 && 'hecho'"></i><i :class="paso >= 4 && 'hecho'"></i></div>
 

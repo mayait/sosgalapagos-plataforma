@@ -254,7 +254,7 @@
     if (conReportes.length) lista.push(['Último reporte', conReportes[conReportes.length - 1].clave]);
     if (conLluvia.length) { const p = conLluvia.reduce((a, d) => (d.lluvia > a.lluvia ? d : a)); lista.push([`Lluvia más fuerte · ${diaCorto(p.t)}`, p.clave]); }
     if (conReportes.length) { const p = conReportes.reduce((a, d) => (d.reportes.length > a.reportes.length ? d : a)); lista.push([`Más reportes · ${diaCorto(p.t)}`, p.clave]); }
-    if (dias.length) lista.push([`Inicio · ${diaCorto(dias[0].t)}`, dias[0].clave]);
+    if (dias.length) lista.push([`Comienzo · ${diaCorto(dias[0].t)}`, dias[0].clave]);
     $('saltos').innerHTML = lista.map(([texto, clave]) => `<button type="button" data-ir="${clave}">${x(texto)}</button>`).join('');
   }
 

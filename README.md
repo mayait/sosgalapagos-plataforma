@@ -12,7 +12,7 @@ Un mapa único donde la gente reporta **lugares de riesgo o peligro con fecha**,
 
 - **Mapa** a pantalla completa en el teléfono y con panel lateral en el escritorio. Abre en calles con la capa de riesgo encima; sin señal usa una base gris propia de 5 MB.
 - **Reportar** sin cuenta: foto (de la cámara o de la galería), qué pasa, hasta dónde llega el agua y dónde es. Con una pulsación larga en el mapa se reporta en ese punto.
-- **Línea del tiempo** (`/riesgos/informe/`, «Ver como lista» en el mapa): todos los reportes en orden, hora por hora. Un navegador lleva a cualquier día y los días sin reportes se juntan en una fila. La lluvia no se dibuja: solo deja una nota («Llovió X mm») los días de lluvia fuerte. Filtros por isla, zona, clase y fechas.
+- **Línea del tiempo** (`/riesgos/informe/`, en el menú del sitio): todos los reportes en orden, hora por hora. Un navegador lleva a cualquier día y los días sin reportes se juntan en una fila. La lluvia no se dibuja: solo deja una nota («Llovió X mm») los días de lluvia fuerte. Filtros por isla, zona, clase y fechas.
 - **Descargar capas** (`/riesgos/descargas/`): todas las capas en Shapefile y GeoJSON.
 - **Tres clases de aviso:** un peligro, algo bueno (pin amarillo con corazón) y dónde donar o colaborar (pin negro con caja de regalo).
 - **Los reportes vencen solos.** Cada tipo tiene su plazo (de 6 a 72 horas). El pin se destiñe con la edad y desaparece al vencer.

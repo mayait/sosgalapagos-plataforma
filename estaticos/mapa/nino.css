@@ -93,3 +93,14 @@
 .nino .n-fuentes{margin-top:8px;font-size:12px;color:var(--n-mut)}
 .nino .n-error{font-size:13px;color:var(--warn,#9A5B00)}
 @media (max-width:560px){.nino .n-card{padding:14px}.nino .n-cif .v{font-size:30px}.nino .n-mjo svg{width:116px;height:116px}}
+
+/* Comunidad: tarjeta corta (NinoPanel.montar(el, {modo: "comunidad"})) */
+.nino .n-corto{margin-top:8px}
+.nino .n-titular{margin:0;font:900 22px/1.15 var(--n-titulo);letter-spacing:-.01em;text-wrap:balance}
+.nino .n-cc{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+.nino .n-cc div{padding:12px 14px;border-radius:12px;background:var(--n-soft)}
+.nino .n-cc b{display:block;font:900 26px/1 var(--n-titulo);letter-spacing:-.02em}
+.nino .n-cc span{display:block;margin-top:5px;font-size:13px;line-height:1.3;color:var(--n-ink2)}
+.nino .n-que{margin:12px 0 0;font-size:15px;line-height:1.45;text-wrap:pretty}
+/* Ciencia: la nota de método, una sola vez al final */
+.nino .n-metodo{padding:12px 14px}

@@ -9,11 +9,10 @@
    `actualizar_lluvia_mapa`; lo sirve /riesgos/api/clima/lluvia-mapa.json. Reemplaza al prototipo de Windy, cuya llave
    gratis es solo para desarrollo y no trae la capa de lluvia.{% endcomment %}
 <main class="pagina ancha">
-  <nav class="migas"><a href="{% url 'reportes:mapa' %}">← Mapa de riesgos</a><a href="/clima/">Clima en vivo</a></nav>
   <h1 class="form-titulo">Mapa de lluvia y viento</h1>
   <p class="form-ayuda">Lluvia y viento pronosticados por modelos globales para los próximos 5 días. <b>Es un pronóstico de modelo, no una medición ni un pronóstico oficial</b>: en islas pequeñas los modelos se quedan muy cortos con la lluvia. El pronóstico oficial es del INAMHI.</p>
   <div id="lluvia-mapa" class="lluvia-mapa-caja"></div>
-  <p class="ficha-pie">Toca el mapa para ver la lluvia y el viento en un punto. Lo que están midiendo las estaciones está en <a href="/clima/">Clima en vivo</a>.</p>
+  <p class="ficha-pie">Toca el mapa para ver la lluvia y el viento en un punto. Lo que están midiendo las estaciones está en <a href="/clima/">Clima</a>.</p>
   {% include "parciales/firma.html" %}
 </main>
 {% endblock %}

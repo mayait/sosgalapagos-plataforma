@@ -8,6 +8,12 @@
    (ese archivo es un cargador mínimo; el componente se sirve en /riesgos/app/, sin caché).
    No depende de nada más: trae sus estilos y su configuración.
 
+   Menú del sitio: la misma barra en todas las páginas, con los destinos de reportes/menu.py.
+     <nav data-sos-menu>…enlaces de respaldo…</nav>             barra fija arriba (☰ en el teléfono)
+     <nav data-sos-menu="flotante">…</nav>                       el mapa: solo el aviso y un botón ☰ redondo
+   La página reserva la altura (estilos.css o su propio CSS); este componente reemplaza los enlaces
+   de respaldo por la barra, el aviso general y el panel. Sin el marcador, no pinta nada.
+
    Instalar: en Android y en el computador el navegador ofrece la instalación; en iPhone no
    hay botón del sistema y se enseña el camino. Avisos: notificaciones del navegador (Web
    Push); en iPhone solo llegan a la app instalada. Nadie recibe avisos sin pedirlos. */
@@ -51,7 +57,59 @@
     dialog.sos-app-dialogo .opcion{display:flex;align-items:flex-start;gap:10px;padding:8px 0;font-size:14.5px;line-height:1.3;cursor:pointer}
     dialog.sos-app-dialogo .opcion input{flex:none;width:20px;height:20px;margin:0;accent-color:#e11b22}
     dialog.sos-app-dialogo button.secundario{background:none;color:#666;font-weight:600;text-decoration:underline;min-height:36px}
-    dialog.sos-app-dialogo .icono{display:inline-block;vertical-align:-4px;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}`;
+    dialog.sos-app-dialogo .icono{display:inline-block;vertical-align:-4px;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    :root{--sos-barra-alto:48px;--sos-aviso-alto:34px}
+    @media (min-width:600px){:root{--sos-aviso-alto:26px}}
+    .sos-menu{display:block;box-sizing:border-box;position:relative;padding-top:var(--sos-barra-alto);color:#1d1d1b;font-family:"Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;font-size:15px;line-height:1.3}
+    .sos-menu *,.sos-menu-panel *{box-sizing:border-box}
+    .sos-menu-barra{position:fixed;top:0;left:0;right:0;z-index:1000;height:var(--sos-barra-alto);display:flex;align-items:center;gap:6px;padding:0 max(6px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));background:#fff;border-bottom:1px solid #e5e5e5}
+    .sos-menu-marca{flex:none;display:inline-flex;align-items:center;gap:8px;min-height:44px;margin-right:auto;color:#000;text-decoration:none;font:900 15px/1 "Zalando Sans Expanded","Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:-.01em;text-transform:uppercase;white-space:nowrap}
+    .sos-menu-marca::before{content:"";flex:none;width:10px;height:10px;background:#e11b22}
+    .sos-menu-enlaces{display:none;list-style:none;margin:0;padding:0}
+    .sos-menu-911{order:1;flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:58px;height:44px;padding:0 14px;border-radius:999px;background:#e11b22;color:#fff;font:800 15px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:.02em;text-decoration:none}
+    .sos-menu-911:active{background:#b3141a}
+    .sos-menu-abrir{order:2;flex:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;width:44px;height:44px;padding:0;border:0;border-radius:10px;background:none;color:#000;font:600 14px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}
+    .sos-menu-abrir svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+    .sos-menu-abrir .sos-mas{display:none}
+    .sos-menu-abrir:focus-visible,.sos-menu a:focus-visible,.sos-menu-panel a:focus-visible,.sos-menu-panel button:focus-visible{outline:3px solid #e11b22;outline-offset:2px}
+    .sos-menu-aviso{box-sizing:border-box;display:flex;align-items:center;justify-content:center;height:var(--sos-aviso-alto);margin:0;padding:0 12px;overflow:hidden;background:#fff;border-bottom:1px solid #e5e5e5;color:#666;font-size:11.5px;line-height:1.3;text-align:center;text-wrap:balance}
+    .sos-menu-aviso b{color:#1d1d1b;font-weight:700}
+    .sos-menu:not(.sos-menu-flotante) .sos-menu-aviso .sos-aviso-tel{display:none}  /* la barra ya tiene el botón 911 */
+    .sos-aviso-largo{display:none}
+    .sos-aviso-911{position:relative;color:#e11b22;font-weight:800;text-decoration:none}
+    .sos-aviso-911::after{content:"";position:absolute;inset:-16px -14px}
+    .sos-menu-flotante{height:0;padding:0}
+    .sos-menu-flotante .sos-menu-aviso{position:fixed;top:0;left:0;right:0;z-index:60}
+    .sos-menu-flotante .sos-menu-abrir{position:fixed;z-index:20;top:var(--sos-flotante-arriba,calc(var(--sos-aviso-alto) + 10px));right:var(--sos-flotante-derecha,10px);border:1px solid #e5e5e5;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.16)}
+    @media (min-width:1024px){
+      .sos-menu-marca{margin-right:14px}
+      .sos-menu-enlaces{display:flex;gap:0;margin-right:auto;min-width:0}
+      .sos-menu-enlaces a{display:flex;align-items:center;height:48px;padding:0 10px;color:#1d1d1b;font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap;border-bottom:3px solid transparent;border-top:3px solid transparent}
+      .sos-menu-enlaces a:hover{color:#000;border-bottom-color:#d4d4d4}
+      .sos-menu-enlaces a[aria-current=page]{color:#000;border-bottom-color:#e11b22}
+      .sos-menu-911{order:3}
+      .sos-menu:not(.sos-menu-flotante) .sos-menu-abrir{width:auto;padding:0 12px;border:1.5px solid #e5e5e5;border-radius:999px}
+      .sos-menu:not(.sos-menu-flotante) .sos-menu-abrir svg{display:none}
+      .sos-menu:not(.sos-menu-flotante) .sos-menu-abrir .sos-mas{display:inline}
+      .sos-aviso-corto{display:none}
+      .sos-aviso-largo{display:inline}
+    }
+    dialog.sos-menu-panel{position:fixed;inset:0;width:100%;max-width:100%;height:100%;max-height:100%;margin:0;padding:0 0 env(safe-area-inset-bottom);border:0;background:#fff;color:#1d1d1b;overflow-y:auto;overscroll-behavior:contain;font:400 15px/1.4 "Helvetica Neue",Helvetica,Arial,system-ui,sans-serif}
+    dialog.sos-menu-panel::backdrop{background:rgba(0,0,0,.4)}
+    html:has(dialog.sos-menu-panel[open]){overflow:hidden}
+    @media (min-width:700px){dialog.sos-menu-panel{left:auto;right:0;width:380px;box-shadow:-8px 0 30px rgba(0,0,0,.18)}}
+    .sos-panel-cab{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:6px;height:var(--sos-barra-alto);padding:0 max(6px,env(safe-area-inset-right)) 0 16px;background:#fff;border-bottom:1px solid #e5e5e5}
+    .sos-panel-cerrar{flex:none;width:44px;height:44px;padding:0;border:0;border-radius:10px;background:none;color:#000;font:300 34px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;cursor:pointer}
+    .sos-panel-lista{list-style:none;margin:0;padding:8px 0}
+    .sos-panel-lista a{display:flex;align-items:center;min-height:48px;padding:0 20px 0 16px;border-left:4px solid transparent;color:#000;text-decoration:none;font:800 17px/1.2 "Zalando Sans Expanded","Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:-.01em}
+    .sos-panel-lista a::after{content:"›";margin-left:auto;padding-left:12px;color:#8a8a8a;font:400 22px/1 "Helvetica Neue",Helvetica,Arial,sans-serif}
+    .sos-panel-lista a:active{background:#f5f5f5}
+    .sos-panel-lista a[aria-current=page]{border-left-color:#e11b22;background:#fdecec}
+    .sos-panel-bloque{margin:0;padding:14px 20px;border-top:1px solid #e5e5e5}
+    .sos-panel-titulo{margin:0 0 10px;color:#666;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+    .sos-panel-911{display:flex;align-items:center;justify-content:center;min-height:48px;border-radius:12px;background:#e11b22;color:#fff;font:800 16px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;text-decoration:none}
+    .sos-panel-pie{margin:0;padding:4px 20px 24px;color:#666;font-size:13px;line-height:1.45}
+    .sos-panel-pie b{color:#1d1d1b}`;
   document.head.appendChild(estilo);
 
   const ICONO = {
@@ -179,6 +237,60 @@
     }, { once: true });
   }
 
+  // ── Menú del sitio ────────────────────────────────────────────────────────
+  // Los destinos y el aviso salen de reportes/menu.py: es la única lista del sitio.
+  const DESTINOS = {{ destinos|safe }};
+  const AVISO = { titulo: '{{ aviso_titulo|escapejs }}', resto: '{{ aviso_resto|escapejs }}' };
+  const ICONO_MENU = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
+  // La página actual se compara entera, no por prefijo: si no, «Inicio» y «Mapa» se encenderían en todas.
+  const rutaActual = () => { let r = location.pathname.replace(/index\.html$/, ''); if (!r.endsWith('/')) r += '/'; return r; };
+  const aviso911 = '<a class="sos-aviso-911" href="tel:911">911</a>';
+  const avisoLinea = () => `<span class="sos-aviso-corto"><b>${AVISO.titulo}</b><span class="sos-aviso-tel"> Emergencias: ${aviso911}</span></span><span class="sos-aviso-largo"><b>${AVISO.titulo}</b> ${AVISO.resto}<span class="sos-aviso-tel"> Emergencias: ${aviso911}</span></span>`;
+  let menus = 0;
+  function pintarMenus() {
+    const actual = rutaActual();
+    const enlace = (d) => `<a href="${d.ruta}"${d.ruta === actual ? ' aria-current="page"' : ''}>${d.nombre}</a>`;
+    for (const nav of document.querySelectorAll('[data-sos-menu]:not(.sos-menu-listo)')) {
+      const flotante = nav.dataset.sosMenu === 'flotante', id = 'sos-menu-panel-' + (++menus);
+      const abrir = `<button type="button" class="sos-menu-abrir" aria-expanded="false" aria-controls="${id}" aria-haspopup="dialog" aria-label="Menú del sitio">${ICONO_MENU}<span class="sos-mas" aria-hidden="true">Más</span></button>`;
+      nav.classList.add('sos-menu', 'sos-menu-listo');
+      if (flotante) nav.classList.add('sos-menu-flotante');
+      if (!nav.getAttribute('aria-label')) nav.setAttribute('aria-label', 'SOS Galápagos');
+      nav.innerHTML = (flotante ? '' : `<div class="sos-menu-barra"><a class="sos-menu-marca" href="/">SOS Galápagos</a>` +
+          `<ul class="sos-menu-enlaces">${DESTINOS.filter((d) => d.barra).map((d) => `<li>${enlace(d)}</li>`).join('')}</ul>` +
+          `${abrir}<a class="sos-menu-911" href="tel:911" aria-label="Emergencias: llamar al 911">911</a></div>`) +
+        `<p class="sos-menu-aviso" role="note">${avisoLinea()}</p>` + (flotante ? abrir : '') +
+        `<dialog class="sos-menu-panel" id="${id}" aria-label="Menú del sitio">` +
+          `<div class="sos-panel-cab"><a class="sos-menu-marca" href="/">SOS Galápagos</a><button type="button" class="sos-panel-cerrar" aria-label="Cerrar el menú" autofocus>×</button></div>` +
+          `<nav aria-label="Páginas del sitio"><ul class="sos-panel-lista">${DESTINOS.map((d) => `<li>${enlace(d)}</li>`).join('')}</ul></nav>` +
+          `<div class="sos-panel-bloque"><p class="sos-panel-titulo">La app en el teléfono</p><div data-sos-app></div></div>` +
+          `<div class="sos-panel-bloque"><a class="sos-panel-911" href="tel:911">Emergencias: llamar al 911</a></div>` +
+          `<p class="sos-panel-pie"><b>${AVISO.titulo}</b> ${AVISO.resto}</p>` +
+        `</dialog>`;
+      const panel = nav.querySelector('dialog'), boton = nav.querySelector('.sos-menu-abrir');
+      panel.addEventListener('close', () => { boton.setAttribute('aria-expanded', 'false'); boton.focus(); });
+      // Foco atrapado: con showModal() lo de atrás queda inerte; además el tabulador da la vuelta dentro del panel.
+      panel.addEventListener('keydown', (e) => {
+        if (e.key !== 'Tab') return;
+        const f = [...panel.querySelectorAll('a[href], button:not(:disabled)')].filter((x) => x.offsetParent !== null);
+        if (!f.length) return;
+        if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+        else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+      });
+    }
+  }
+  document.addEventListener('click', (e) => {
+    const abrir = e.target.closest('.sos-menu-abrir');
+    if (abrir) {
+      const panel = document.getElementById(abrir.getAttribute('aria-controls'));
+      if (panel && !panel.open) { if (panel.showModal) panel.showModal(); else panel.setAttribute('open', ''); abrir.setAttribute('aria-expanded', 'true'); }
+      return;
+    }
+    const panel = e.target.closest('dialog.sos-menu-panel');
+    // Se cierra con ×, con Esc (lo da el navegador) o tocando fuera del panel.
+    if (panel && (e.target === panel || e.target.closest('.sos-panel-cerrar'))) panel.close();
+  });
+
   // ── Botones ───────────────────────────────────────────────────────────────
   function pintar() {
     let h = '';
@@ -193,12 +305,16 @@
   });
 
   function iniciar() {
+    pintarMenus();
     pintar();
     if (conPush()) {
       navigator.serviceWorker.getRegistration('/riesgos/').then((r) => r && r.pushManager.getSubscription()).then((s) => { suscripcion = s || null; pintar(); }).catch(() => {});
     }
     // Las páginas que pintan su contenido después (la portada) añaden el hueco más tarde.
-    new MutationObserver(() => { if ([...document.querySelectorAll('[data-sos-app]')].some((c) => !c.classList.contains('sos-app'))) pintar(); }).observe(document.body, { childList: true, subtree: true });
+    new MutationObserver(() => {
+      if (document.querySelector('[data-sos-menu]:not(.sos-menu-listo)')) pintarMenus();
+      if ([...document.querySelectorAll('[data-sos-app]')].some((c) => !c.classList.contains('sos-app'))) pintar();
+    }).observe(document.body, { childList: true, subtree: true });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar); else iniciar();
 })();
