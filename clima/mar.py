@@ -68,7 +68,9 @@ def actualizar_inocar(dias=9, hoy=None):
     t0, total, error = time.monotonic(), 0, ""
     hoy = hoy or datetime.now(GALAPAGOS).date()
     for puerto, p in PUERTOS.items():
-        for salto in range(0, dias, 3):  # cada página trae tres días
+        # Una página por día. Dicen traer ayer, hoy y mañana, pero no siempre: la del 25-nov-2026 empezaba
+        # el 25, y con una página cada tres días el 24 quedó sin pedir y la curva de marea salía cortada.
+        for salto in range(0, dias):
             fecha = hoy + timedelta(days=salto)
             try:
                 pagina = _bajar(settings.CLIMA_INOCAR_MAREAS_URL.format(cp=p["inocar"], fecha=fecha.isoformat())).decode("utf-8", "replace")
