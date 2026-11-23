@@ -14,6 +14,7 @@ Los umbrales están en plataforma/ajustes.py y son preliminares.
 """
 import hashlib
 import hmac
+import re
 from dataclasses import dataclass
 from datetime import timedelta
 
@@ -91,12 +92,22 @@ def buscar_duplicado(tipo, punto, ahora=None):
     )
 
 
+# Siete o más dígitos seguidos (con espacios, puntos o guiones): un teléfono o una cédula.
+NUMERO_PERSONAL = re.compile(r"\+?\d(?:[\s.\-]?\d){6,}")
+
+
+def ocultar_numeros(texto):
+    """Lo que la gente escribe se publica al instante; los teléfonos y cédulas no."""
+    return NUMERO_PERSONAL.sub("[número oculto]", texto or "")
+
+
 @transaction.atomic
 def crear_reporte(*, tipo, punto, huella, fuente=Fuente.VECINO, visto_en=None, ahora=None, vence_en=None, nombre_autor="", **campos):
     """Crea un reporte o, si ya hay uno igual muy cerca, lo confirma.
 
-    Los reportes de vecinos y de WhatsApp entran «por verificar» y con la foto y
-    la nota ocultas. Los de coordinación e instituciones entran confirmados.
+    Los reportes de vecinos y de WhatsApp entran «por verificar», con la foto y la nota
+    ya publicadas (los números largos de la nota se ocultan). Los de coordinación e
+    instituciones entran confirmados.
     """
     ahora = ahora or timezone.now()
     visto_en = visto_en or ahora
@@ -112,6 +123,8 @@ def crear_reporte(*, tipo, punto, huella, fuente=Fuente.VECINO, visto_en=None, a
         return Resultado(existente, duplicado=True, puntos=puntos, colaborador=colaborador_de(huella))
 
     de_confianza = fuente in (Fuente.COORDINADOR, Fuente.INSTITUCION)
+    if not de_confianza and campos.get("nota"):
+        campos["nota"] = ocultar_numeros(campos["nota"])
     reporte = Reporte(
         tipo=tipo,
         punto=punto,
@@ -121,7 +134,8 @@ def crear_reporte(*, tipo, punto, huella, fuente=Fuente.VECINO, visto_en=None, a
         # Coordinación puede fijar el vencimiento (un centro de acopio dura más que su plazo por defecto).
         vence_en=vence_en or calcular_vence(visto_en, tipo.plazo_horas),
         estado=Estado.CONFIRMADO if de_confianza else Estado.POR_VERIFICAR,
-        contenido_visible=de_confianza,
+        # Todo se publica al instante (decisión de Julián, 23-nov-2026); coordinación oculta o corrige después.
+        contenido_visible=True,
         **campos,
     )
     puntos = settings.PUNTOS["reporte"] + (settings.PUNTOS["foto"] if campos.get("foto") else 0)

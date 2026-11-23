@@ -23,7 +23,7 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
   - **Algo bueno:** pin amarillo con corazón; vive 48 h.
   - **Dónde donar o colaborar:** pin negro con caja de regalo; vive 72 h y se renueva con «sigue ahí».
   - En esas dos clases no se pregunta profundidad ni si se puede pasar, y el segundo botón dice «Ya no está».
-  - Siguen las mismas reglas: entran «por verificar», el texto se publica cuando coordinación lo revisa y se retiran solos.
+  - Siguen las mismas reglas: entran «por verificar» y se retiran solos. Desde el 23-nov-2026 la foto y el texto se publican al instante (ver AGENTS.md, regla 6).
 - **Sigue sin usarse el verde en los pines.** Lo bueno va en amarillo, no en verde, para que nadie lo lea como «aquí es seguro».
 
 - **Muchos puntos no decían qué eran (lo pidió Julián: un «mouseover chiquito y simple»).** Había que tocar cada punto para saberlo. *Qué se hace:* al pasar el ratón sale una pista de dos líneas: qué es y su clase («Punto de inundación · Prioridad media · SC-020»). Vale para los puntos y las líneas de las capas y para los pines de los reportes. Los códigos no encabezan la pista, porque no explican nada. Las áreas no dan pista: cubren casi todo el mapa. En el teléfono no hay ratón: ahí se toca el punto.
@@ -200,3 +200,5 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 - **No todo ocurre en un punto.** Un comunicado, una noticia o una suspensión de clases son de una zona o de todo Galápagos. Los sucesos de la línea del tiempo llevan zona, no coordenadas (`reportes.Suceso`, `reportes/cronica.py`).
 - **Para corregir un modelo hacen falta los «aquí no pasó».** Solo con reportes de daño no se sabe dónde el mapa de riesgo exagera. Hay tres tipos de observación (aquí se inundó, aquí no se inundó, aquí siempre se inunda), que no son peligros ni disparan avisos.
 
+
+- **Todo lo que publica la gente sale al instante (decisión de Julián, 23-nov-2026).** Antes la foto y la nota de un vecino esperaban a que coordinación las revisara en el admin, y muchas nunca se veían. *Qué se hace:* `crear_reporte` las publica de una vez; el admin tiene «Ocultar foto y nota» para lo que no deba verse. En la nota, siete o más dígitos seguidos (un teléfono o una cédula) se cambian por «[número oculto]». Las caras y los nombres no se pueden detectar solos: si aparecen, coordinación los oculta.

@@ -116,7 +116,7 @@
 
     <div class="campo-titulo" x-text="clase === 'riesgo' ? 'Nota (opcional)' : 'Cuéntalo en una línea'"></div>
     <textarea class="nota" maxlength="280" x-model="nota" :placeholder="ejemploDeNota"></textarea>
-    <p class="nota-ayuda">No escribas nombres, teléfonos ni cédulas. La foto y la nota se publican cuando coordinación las revise; el punto aparece de inmediato.</p>
+    <p class="nota-ayuda">No escribas nombres, teléfonos ni cédulas: todo se publica al instante. Si escribes un número largo, se oculta.</p>
 
     <div x-show="pideContacto">
       <div class="campo-titulo">Teléfono de contacto del lugar</div>

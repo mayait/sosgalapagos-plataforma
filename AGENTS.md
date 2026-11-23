@@ -15,7 +15,7 @@ Plataforma de reportes de riesgo de SOS Galápagos: un mapa único donde la gent
    - Ningún dato personal público. Nunca nombres de menores ni cédulas.
    - Las fotos se guardan sin metadatos (`reportes/fotos.py`).
    - Los teléfonos nunca en claro: solo un resumen con clave.
-   - La foto y la nota de un vecino no se publican hasta que coordinación las revise.
+   - Todo lo que la gente publica (punto, foto y nota) sale al instante, sin pasar por el admin (decisión de Julián, 23-nov-2026). Coordinación solo entra para corregir u ocultar. En la nota, los números de 7 o más dígitos (teléfonos, cédulas) se ocultan solos.
 7. **El mapa nunca dice «zona segura».** Donde no hay reportes dice «sin reportes activos». Hay una prueba que lo vigila.
 8. **Se dice «refugio», nunca «albergue».**
 9. **Repositorio público.** Sin secretos, sin endpoints de las fuentes de clima y nada de los repositorios privados.

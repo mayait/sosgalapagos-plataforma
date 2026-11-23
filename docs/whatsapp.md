@@ -42,7 +42,7 @@ Si el modelo falla o tarda, se usa la extracción con reglas y el servicio sigue
 - **Lo que no pasa el filtro no se guarda** ni se manda a ningún modelo.
 - **El número nunca queda en claro.** Se guarda su resumen con clave (para reconocer a la persona) y el identificador del chat cifrado (para poder responderle).
 - **El texto de los mensajes se borra a los 7 días**, y las conversaciones también.
-- **La foto, el texto y el teléfono de contacto no se ven en el mapa** hasta que coordinación los revise, igual que en el formulario. El punto sí aparece de inmediato, como «por verificar».
+- **El punto, la foto y el texto se publican al instante**, como en el formulario, y el punto sale como «por verificar». En el texto se ocultan los números de 7 o más dígitos. Coordinación oculta desde el admin lo que no deba verse (desde el 23-nov-2026).
 - En un grupo no se responde salvo con `WHATSAPP_RESPONDER_EN_GRUPOS=1`.
 
 ## 4. Probar sin WhatsApp

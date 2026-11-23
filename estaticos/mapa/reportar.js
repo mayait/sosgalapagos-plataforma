@@ -212,8 +212,8 @@
         this.textoFinal = datos.duplicado
           ? 'Alguien ya había avisado de esto aquí mismo. Tu aviso confirma que sigue ahí y renueva el plazo.'
           : 'Ya aparece en el mapa como «por verificar». Se retira solo cuando pase su plazo.';
-        if (this.clase !== 'riesgo' && !datos.duplicado) this.textoFinal = 'Gracias. Ya aparece en el mapa; el texto se publica cuando coordinación lo revise.';
-        if (this.clase === 'observa' && !datos.duplicado) this.textoFinal = 'Gracias. Con lo que viste se corrige el mapa de riesgo. Ya aparece en el mapa; la foto y el texto se publican cuando coordinación los revise.';
+        if (this.clase !== 'riesgo' && !datos.duplicado) this.textoFinal = 'Gracias. Ya aparece en el mapa.';
+        if (this.clase === 'observa' && !datos.duplicado) this.textoFinal = 'Gracias. Con lo que viste se corrige el mapa de riesgo. Ya aparece en el mapa.';
         this.enlaceFinal = '/riesgos/?r=' + datos.id;
         this.puntos = datos.puntos || 0;
         this.textoPuntos = `Ganaste ${this.puntos} puntos${datos.nombre ? ', ' + datos.nombre : ''}. Llevas ${datos.total || this.puntos}.`
