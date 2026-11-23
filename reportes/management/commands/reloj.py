@@ -5,12 +5,13 @@
 El marco de tareas de Django no trae un planificador, así que este proceso hace
 solo eso: poner en la cola. Si se cae, el mapa sigue retirando lo vencido.
 """
+import datetime as dt
 import time
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from clima.tareas import actualizar_lluvia_mapa, actualizar_mar, actualizar_nino, actualizar_oficiales, ciclo_clima, guardar_pronostico, publicar_descargas, recalibrar_pronostico, revisar_alertas
+from clima.tareas import actualizar_lluvia_mapa, actualizar_mar, actualizar_nino, actualizar_oficiales, ciclo_clima, guardar_pronostico, publicar_descargas, publicar_todo, recalibrar_pronostico, revisar_alertas
 from entradas.tareas import purgar
 from reportes.tareas import cerrar_vencidos
 
@@ -20,6 +21,7 @@ class Command(BaseCommand):
 
     def handle(self, **opciones):
         vuelta = 0
+        todo_hecho = None  # día de Galápagos en que ya se armó el ZIP con todo
         while True:
             cerrar_vencidos.enqueue()
             if settings.CLIMA_RECOGER and vuelta % 5 == 0:  # cada cinco minutos: fuentes, nivel y panel
@@ -32,6 +34,10 @@ class Command(BaseCommand):
                 revisar_alertas.enqueue()
             if settings.CLIMA_RECOGER and settings.CLIMA_SALIDA and vuelta % 60 == 17:
                 publicar_descargas.enqueue()
+            hoy = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=6)).date()  # hora de Galápagos
+            if settings.CLIMA_RECOGER and settings.CLIMA_SALIDA and todo_hecho != hoy and (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=6)).hour >= 2:
+                publicar_todo.enqueue()  # cada noche, desde las 02:00 (y al arrancar, si ya pasó esa hora)
+                todo_hecho = hoy
             if vuelta % 60 == 13:     # cada hora: pronóstico del INAMHI y boletines nuevos
                 actualizar_oficiales.enqueue()
             if vuelta % 720 == 20:    # dos veces al día: mareas y oleaje (Stormglass da 10 llamadas diarias por llave)

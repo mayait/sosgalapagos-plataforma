@@ -34,6 +34,14 @@ def publicar_descargas():
 
 
 @task
+def publicar_todo():
+    """Cada noche: clima_galapagos_todo.zip, con todo lo del clima en un archivo."""
+    from . import descargas
+
+    return descargas.publicar_todo()
+
+
+@task
 def guardar_pronostico():
     """Cada hora: lo que dijo cada modelo y lo que se publicó, para poder verificarlo después."""
     from . import pronostico

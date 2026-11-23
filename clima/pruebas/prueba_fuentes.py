@@ -320,6 +320,32 @@ def prueba_las_descargas_llevan_los_datos_y_la_licencia_de_cada_fuente(tmp_path)
     assert (carpeta / "clima_galapagos_2026-10.zip").stat().st_mtime_ns == marca
 
 
+def prueba_el_zip_con_todo_junta_mediciones_y_estimaciones(tmp_path):
+    import zipfile
+
+    from clima import descargas
+    from clima.models import NivelZona
+
+    base.estacion("ierse", "n1", "Los Guayabillos", "Santa Cruz", -0.6991, -90.342, 178, "IERSE-WSN")
+    t = datetime(2026, 11, 21, 11, 0, tzinfo=UTC)
+    base.guardar("ierse", [("n1", "lluvia_mm", t, 3.2)])
+    base.guardar("goes", [("la-cascada", "frio_pct", t, 40.0)])
+    base.resumir()
+    NivelZona.objects.create(zona="la-cascada", calculado=t, nivel="muy alto", instantaneo="alto", lluvia={"R1h": 43.0, "R3h": 110.0, "R24h": 173.0})
+    assert descargas.publicar_todo(tmp_path) > 0
+    carpeta = tmp_path / "descargas"
+    with zipfile.ZipFile(carpeta / "clima_galapagos_todo.zip") as z:
+        nombres = set(z.namelist())
+        assert {"LEEME.txt", "estaciones.csv", "historico_lluvia_diaria.csv", "mediciones/clima_galapagos_2026-11.csv",
+                "estimaciones/nivel_zona.csv", "estimaciones/satelite_goes.csv", "estimaciones/pronostico_publicado.csv"} <= nombres
+        assert z.read("mediciones/clima_galapagos_2026-11.csv").decode().splitlines()[1] == "2026-11-21T11:00:00Z,ierse,n1,lluvia_mm,3.2"  # el satélite va aparte
+        assert z.read("estimaciones/nivel_zona.csv").decode().splitlines()[1] == "la-cascada,2026-11-21T11:00:00Z,muy alto,alto,False,43.0,110.0,173.0,"
+        assert z.read("estimaciones/satelite_goes.csv").decode().splitlines()[1] == "2026-11-21T11:00:00Z,la-cascada,frio_pct,40.0"
+        assert "NO son datos oficiales" in z.read("LEEME.txt").decode()
+    assert "clima_galapagos_todo.zip" in {a["archivo"] for a in json.loads((carpeta / "indice.json").read_text())["archivos"]}
+    assert not list(carpeta.glob(".*.tmp"))
+
+
 # ── Satélite ─────────────────────────────────────────────────────────────────
 def prueba_el_satelite_agrega_por_zona_y_deja_el_resumen_en_la_base():
     import numpy as np

@@ -1,9 +1,11 @@
 # SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
 # Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito.
-"""Descargas de datos del clima: un ZIP por mes con las mediciones crudas de las estaciones.
+"""Descargas de datos del clima: un ZIP por mes con las mediciones crudas de las estaciones,
+y cada noche un ZIP con todo (clima_galapagos_todo.zip): todas las mediciones y las
+estimaciones propias (nivel por zona, pronóstico publicado, modelos, satélite y mar modelado).
 
-Van a CLIMA_SALIDA/descargas, que el servidor publica en /clima/datos/descargas/. Se rehacen
-cada hora; los meses cerrados no se vuelven a escribir.
+Van a CLIMA_SALIDA/descargas, que el servidor publica en /clima/datos/descargas/. Los ZIP del
+mes se rehacen cada hora; los meses cerrados no se vuelven a escribir.
 
 Se publican con permiso de cada operador (IERSE, GSC-USFQ, Fundación Charles Darwin e INAMHI:
 confirmado por Julián Maya el 22-nov-2026). Cada fuente conserva SU licencia, que va escrita en
@@ -26,7 +28,7 @@ from .fuentes import DE_ESTACION
 UTC = dt.timezone.utc
 
 LEEME = """Datos meteorológicos de Galápagos reunidos por SOS Galápagos
-Actualizado: {generado} (se regenera cada hora)
+Actualizado: {generado} (los ZIP del mes, cada hora; clima_galapagos_todo.zip, cada noche)
 https://sosgalapagos.org/clima/
 
 DATOS CRUDOS: cada valor está tal como llegó de su fuente, sin control de calidad ni
@@ -61,7 +63,24 @@ CC BY 4.0: se puede copiar, adaptar y usar, también con fines comerciales, dand
 <jamaya@usfq.edu.ec>. Licencia CC BY 4.0». Donde la licencia de una fuente sea más
 restrictiva, manda la de la fuente.
 
+- Estimaciones propias de SOS Galápagos (solo en clima_galapagos_todo.zip): nivel de lluvia
+  peligrosa por zona, probabilidad publicada, lluvia de los modelos (Open-Meteo, CC BY 4.0),
+  señal del satélite GOES-19 (NOAA, dominio público) y mar modelado. NO son datos oficiales:
+  son modelos propios o de terceros, sin calibrar del todo. Lo oficial es del INAMHI, el
+  INOCAR, la SNGR y el ECU 911. No se incluyen el oleaje de Stormglass (su licencia no permite
+  redistribuirlo) ni la tabla de mareas del INOCAR (consúltela en su página).
+
 ARCHIVOS
+clima_galapagos_todo.zip         TODO en un archivo, se rehace cada noche (~02:00 de Galápagos):
+    LEEME.txt, estaciones.csv, historico_lluvia_diaria.csv
+    mediciones/clima_galapagos_AAAA-MM.csv   lo mismo que los ZIP del mes (ver abajo)
+    estimaciones/nivel_zona.csv              nivel calculado cada 5 min: zona, calculado_utc,
+                                             nivel, instantaneo, silencio, R1h, R3h, R24h, R72h (mm)
+    estimaciones/nivel_manual.csv            niveles subidos a mano por reportes de campo
+    estimaciones/pronostico_publicado.csv    probabilidad de superar 10, 20 y 50 mm en el día
+    estimaciones/pronostico_modelos.csv      lluvia del día que dio cada modelo (mm de modelo)
+    estimaciones/satelite_goes.csv           agregados por zona del GOES-19 (topes fríos, RRQPE, rayos)
+    estimaciones/mar_modelo.csv              nivel del mar y oleaje modelados (Open-Meteo Marine)
 clima_galapagos_AAAA-MM.zip      todas las mediciones de estaciones del mes (un CSV dentro)
     ts_utc     hora en UTC (Galápagos = UTC-6)
     fuente     ierse | gsc | inamhi | ioc | metar | weatherlink | tempest | ambient | wunderground
@@ -114,6 +133,76 @@ def _texto(ruta, contenido):
     os.chmod(ruta, 0o644)
 
 
+def _csv(z, nombre, encabezado, sql, params=()):
+    """Una consulta a un CSV dentro del ZIP, por partes para no cargarla entera en memoria."""
+    with z.open(nombre, "w") as crudo, io.TextIOWrapper(crudo, encoding="utf-8", newline="") as f, connection.cursor() as c:
+        w = csv.writer(f)
+        w.writerow(encabezado)
+        c.execute(sql, params)
+        while filas := c.fetchmany(20000):
+            w.writerows(filas)
+
+
+def _indice(destino):
+    archivos = sorted(p for p in destino.iterdir() if p.is_file() and not p.name.startswith(".") and p.suffix in (".zip", ".csv", ".txt"))
+    _texto(destino / "indice.json", json.dumps({"generado": _z(dt.datetime.now(UTC)), "archivos": [
+        {"archivo": p.name, "bytes": p.stat().st_size, "actualizado": _z(dt.datetime.fromtimestamp(p.stat().st_mtime, UTC))} for p in archivos]},
+        ensure_ascii=False, separators=(",", ":")))
+
+
+TS = """to_char({} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')"""
+
+
+def publicar_todo(carpeta=None):
+    """Cada noche: clima_galapagos_todo.zip con todas las mediciones y las estimaciones propias.
+
+    Primero rehace las descargas del mes (así el LEEME y las listas van al día) y después junta
+    todo en un ZIP. Se escribe aparte y se cambia de un golpe: nadie baja un archivo a medias.
+    """
+    from .models import MarHora, NivelManual, NivelZona, PronosticoEmitido, PronosticoModelo
+
+    publicar(carpeta)
+    destino = Path(carpeta or settings.CLIMA_SALIDA) / "descargas"
+    ruta = destino / "clima_galapagos_todo.zip"
+    tmp = ruta.with_name(f".{ruta.name}.{os.getpid()}.tmp")
+    with connection.cursor() as c:
+        c.execute("""SELECT DISTINCT date_trunc('month', h.hora AT TIME ZONE 'UTC')::date FROM clima_horaria h
+                     JOIN clima_estacion e ON e.id = h.estacion_id WHERE e.fuente = ANY(%s)""", [list(DE_ESTACION)])
+        meses = sorted(m for (m,) in c.fetchall())
+    t = lambda m: m._meta.db_table  # noqa: E731
+    with zipfile.ZipFile(tmp, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as z:
+        for nombre in ("LEEME.txt", "estaciones.csv", "historico_lluvia_diaria.csv"):
+            z.write(destino / nombre, nombre)
+        for mes in meses:
+            inicio = dt.datetime(mes.year, mes.month, 1, tzinfo=UTC)
+            fin = dt.datetime.combine(_mes_siguiente(mes), dt.time(), UTC)
+            _csv(z, f"mediciones/clima_galapagos_{mes:%Y-%m}.csv", ["ts_utc", "fuente", "estacion", "variable", "valor"],
+                 f"""SELECT {TS.format("o.ts")}, e.fuente, e.codigo, o.variable, o.valor FROM clima_observacion o JOIN clima_estacion e ON e.id = o.estacion_id
+                     WHERE o.ts >= %s AND o.ts < %s AND e.fuente = ANY(%s) AND o.variable <> 'lluvia_dia_mm'
+                     ORDER BY o.ts, e.fuente, e.codigo, o.variable""", [inicio, fin, list(DE_ESTACION)])
+        _csv(z, "estimaciones/nivel_zona.csv", ["zona", "calculado_utc", "nivel", "instantaneo", "silencio", "R1h", "R3h", "R24h", "R72h"],
+             f"""SELECT zona, {TS.format("calculado")}, nivel, instantaneo, silencio, lluvia->>'R1h', lluvia->>'R3h', lluvia->>'R24h', lluvia->>'R72h'
+                 FROM {t(NivelZona)} ORDER BY calculado, zona""")
+        _csv(z, "estimaciones/nivel_manual.csv", ["zona", "nivel", "desde_utc", "hasta_utc"],
+             f"SELECT zona, nivel, {TS.format('desde')}, {TS.format('hasta')} FROM {t(NivelManual)} ORDER BY desde")
+        _csv(z, "estimaciones/pronostico_publicado.csv", ["punto", "emitido_utc", "fecha", "anticipacion_dias", "prob10", "prob20", "prob50", "consenso", "n_modelos", "mediana_mm", "nivel", "calibrado"],
+             f"""SELECT punto, {TS.format("emitido")}, fecha, anticipacion, prob10, prob20, prob50, consenso, n_modelos, mediana_mm, nivel, calibrado
+                 FROM {t(PronosticoEmitido)} ORDER BY emitido, punto, fecha""")
+        _csv(z, "estimaciones/pronostico_modelos.csv", ["punto", "modelo", "obtenido_utc", "fecha", "anticipacion_dias", "mm", "miembros"],
+             f"""SELECT punto, modelo, {TS.format("obtenido")}, fecha, anticipacion, mm, miembros
+                 FROM {t(PronosticoModelo)} ORDER BY obtenido, punto, modelo, fecha""")
+        _csv(z, "estimaciones/satelite_goes.csv", ["ts_utc", "zona", "variable", "valor"],
+             f"""SELECT {TS.format("o.ts")}, e.codigo, o.variable, o.valor FROM clima_observacion o JOIN clima_estacion e ON e.id = o.estacion_id
+                 WHERE e.fuente = 'goes' ORDER BY o.ts, e.codigo, o.variable""")
+        _csv(z, "estimaciones/mar_modelo.csv", ["puerto", "hora_utc", "nivel_m", "ola_m", "fondo_m", "periodo_s", "direccion", "viento_ms", "agua_c"],
+             f"""SELECT puerto, {TS.format("hora")}, nivel_m, ola_m, fondo_m, periodo_s, direccion, viento_ms, agua_c
+                 FROM {t(MarHora)} WHERE fuente = 'openmeteo' ORDER BY hora, puerto""")
+    os.chmod(tmp, 0o644)
+    os.replace(tmp, ruta)
+    _indice(destino)
+    return ruta.stat().st_size
+
+
 def publicar(carpeta=None, meses_abiertos=2, hoy=None):
     """Rehace las descargas. Devuelve cuántos ZIP hay."""
     destino = Path(carpeta or settings.CLIMA_SALIDA) / "descargas"
@@ -145,10 +234,6 @@ def publicar(carpeta=None, meses_abiertos=2, hoy=None):
 
     marcadas = [f"- {k}: {x.get('motivo') or 'dañada'} (desde {x['desde']}; variables: {', '.join(x['variables'])})." for k, x in danadas.vigentes().items()]
     aviso = ("\nESTACIONES MARCADAS CON ERRORES (sus datos siguen aquí, pero la página no los usa):\n" + "\n".join(marcadas) + "\n") if marcadas else ""
-    ahora = dt.datetime.now(UTC)
-    _texto(destino / "LEEME.txt", LEEME.format(generado=_z(ahora), danadas=aviso))
-    archivos = sorted(p for p in destino.iterdir() if p.is_file() and not p.name.startswith(".") and p.suffix in (".zip", ".csv", ".txt"))
-    _texto(destino / "indice.json", json.dumps({"generado": _z(ahora), "archivos": [
-        {"archivo": p.name, "bytes": p.stat().st_size, "actualizado": _z(dt.datetime.fromtimestamp(p.stat().st_mtime, UTC))} for p in archivos]},
-        ensure_ascii=False, separators=(",", ":")))
-    return len(list(destino.glob("*.zip")))
+    _texto(destino / "LEEME.txt", LEEME.format(generado=_z(dt.datetime.now(UTC)), danadas=aviso))
+    _indice(destino)
+    return len(list(destino.glob("clima_galapagos_????-??.zip")))
