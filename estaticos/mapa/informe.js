@@ -20,8 +20,8 @@
   const UTC_GALAPAGOS = -6; // Galápagos no cambia de hora
   const COLOR = { lluvia: '#2f6fb3', reportes: '#c8151b' }; // par validado (daltonismo y contraste)
   const CLASES = { campo: 'Reporte de campo', buena: 'Buena noticia o ayuda (de campo)', riesgo: 'Peligro', bueno: 'Algo bueno', ayuda: 'Donar o colaborar', observa: 'Observación para el mapa',
-    aviso: 'Aviso a los teléfonos', oficial: 'Oficial', noticia: 'Noticia', informe: 'Informe', nota: 'Nota de coordinación' };
-  const SUCESOS = ['aviso', 'oficial', 'noticia', 'informe', 'nota']; // sin punto en el mapa
+    aviso: 'Aviso a los teléfonos', oficial: 'Oficial', noticia: 'Noticia', informe: 'Informe', nota: 'Nota de coordinación', barrio: 'Informe comunitario' };
+  const SUCESOS = ['aviso', 'oficial', 'noticia', 'informe', 'nota', 'barrio']; // sin punto en el mapa
   const ESTACION_POR_ISLA = { 'Santa Cruz': 'ambient/evolucion', 'San Cristóbal': 'gsc/mirador', Isabela: 'darwin/puerto_villamil' };
 
   const $ = (id) => document.getElementById(id);
