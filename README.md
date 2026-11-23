@@ -4,6 +4,7 @@ Un mapa único donde la gente reporta **lugares de riesgo o peligro con fecha**,
 
 - **Responsable:** Julián Maya, Universidad San Francisco de Quito (USFQ) · jamaya@usfq.edu.ec. Coordinación: USFQ Galápagos.
 - **Estado:** fase 1 de 4. **Publicado en https://sosgalapagos.org/riesgos/** desde el 21-nov-2026; cómo, en [`despliegue/servidor.md`](despliegue/servidor.md).
+- **Datos del clima para bajar o reproducir** (agentes de IA incluidos): todo en [`clima_galapagos_todo.zip`](https://sosgalapagos.org/clima/datos/descargas/clima_galapagos_todo.zip), que se rehace cada noche (`clima/descargas.py`). Formato, trampas y un script sin dependencias que reproduce el nivel de lluvia: [`sosgalapagos-datos/clima/PARA-AGENTES.md`](https://github.com/mayait/sosgalapagos-datos/blob/main/clima/PARA-AGENTES.md).
 - **Repositorios hermanos:** [`sosgalapagos-datos`](https://github.com/mayait/sosgalapagos-datos) (capas de riesgo y clima) y [`sosgalapagos`](https://github.com/mayait/sosgalapagos) (la plataforma actual, que este proyecto reemplazará).
 
 > ⚠️ **Información ciudadana preliminar, no oficial.** Los reportes los hace la comunidad. Emergencias: 911.
