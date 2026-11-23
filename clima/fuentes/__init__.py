@@ -39,7 +39,7 @@ REGISTRO = {
 # Nombre con que se muestra cada fuente en el panel y en las descargas.
 OPERADOR = {"ierse": "IERSE-WSN", "gsc": "GSC-USFQ", "inamhi": "INAMHI", "ioc": "IOC", "metar": "Aeropuertos (METAR)",
             "weatherlink": "WeatherLink", "tempest": "Tempest", "ambient": "Ambient Weather", "wunderground": "Weather Underground",
-            "mar_modelo": "Modelo de nivel del mar", "pronostico": "Pronóstico (modelos)", "goes": "Satélite GOES-19", "fcd": "Fundación Charles Darwin"}
+            "mar_modelo": "Modelo de nivel del mar", "pronostico": "Pronóstico (modelos)", "goes": "Satélite GOES-19", "pdirnow": "Lluvia estimada PDIR-Now (satélite)", "fcd": "Fundación Charles Darwin"}
 # Fuentes con estaciones que miden: las que entran en las descargas públicas.
 DE_ESTACION = ("ierse", "gsc", "inamhi", "ioc", "metar", "weatherlink", "tempest", "ambient", "wunderground")
 

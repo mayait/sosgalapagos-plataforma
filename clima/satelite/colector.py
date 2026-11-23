@@ -16,10 +16,14 @@ Es una ESTIMACIÓN SATELITAL: no es lluvia medida, no cambia el nivel de lluvia 
 oficial. No ve la lluvia de nubes bajas.
 
 Horas en UTC. La hora de una fila de ABI es el inicio del barrido; la del GLM, el inicio del intervalo.
-Dependencias: numpy y h5py. En el entorno: CLIMA_GOES_S3.
+4. Si toca, baja la última hora de PDIR-Now (lluvia estimada por infrarrojo, CHRS) y rehace pdirnow.json
+   en CLIMA_SALIDA (ver pdir.py). Solo se muestra en el panel: no entra en la vigilancia.
+
+Dependencias: numpy y h5py. En el entorno: CLIMA_GOES_S3 y, para PDIR-Now, CLIMA_PDIRNOW_URL.
 """
 import datetime as dt
 import logging
+import os
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -28,7 +32,7 @@ from django.db import connection
 
 from ..fuentes import anotar, base
 from ..models import Estado
-from . import goes, vigilancia
+from . import goes, pdir, vigilancia
 
 registro = logging.getLogger(__name__)
 UTC = dt.timezone.utc
@@ -290,9 +294,15 @@ def resumen(zonas, ahora, ultimo, corrida):
     }
 
 
-def pasada(ahora=None, horas=1.0, con_glm=True):
-    """Una pasada completa. Devuelve el estado de la corrida ({ts, segundos, ok, errores})."""
+def pasada(ahora=None, horas=1.0, con_glm=True, salida=None):
+    """Una pasada completa. Devuelve el estado de la corrida ({ts, segundos, ok, errores}).
+
+    Con CLIMA_PDIRNOW_URL y una carpeta de salida (CLIMA_SALIDA), también rehace pdirnow.json: la lluvia
+    estimada de PDIR-Now, que solo se muestra (no entra en la vigilancia)."""
+    from django.conf import settings
+
     ahora = ahora or dt.datetime.now(UTC)
+    salida = salida if salida is not None else settings.CLIMA_SALIDA
     t0, plazo, errores = time.monotonic(), Plazo(PLAZO_S), []
     zonas = goes.zonas()
     ultimo = leer_estado("satelite_abi", {})
@@ -307,6 +317,14 @@ def pasada(ahora=None, horas=1.0, con_glm=True):
         except Exception as e:
             registro.exception("Falló GLM")
             errores.append(f"glm: {str(e)[:150]}")
+    if salida and os.environ.get("CLIMA_PDIRNOW_URL"):  # aparte: sus errores no tocan la salud de «goes»
+        t_pdir = time.monotonic()
+        try:
+            r = pdir.actualizar(salida, zonas, ahora)
+            anotar("pdirnow", t_pdir, len(r["nuevas"]), error="; ".join(r["errores"]))
+        except Exception as e:
+            registro.exception("Falló PDIR-Now")
+            anotar("pdirnow", t_pdir, error=f"{type(e).__name__}: {str(e)[:150]}")
     corrida = {"ts": iso(ahora), "segundos": round(time.monotonic() - t0, 1), "ok": not errores, "errores": errores}
     escribir_estado("satelite", resumen(zonas, ahora, ultimo, corrida), ahora)
     anotar(FUENTE, t0, error="; ".join(errores))
