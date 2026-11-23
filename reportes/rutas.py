@@ -17,6 +17,7 @@ urlpatterns = [
     path("avisos/suscribir/", vistas.push_suscribir, name="push_suscribir"),
     path("r/<str:id_publico>/", vistas.ficha, name="ficha"),
     path("r/<str:id_publico>/confirmar/", vistas.confirmar, name="confirmar"),
+    path("r/<str:id_publico>/mover/", vistas.mover, name="mover"),
     path("documento/<int:pk>/", vistas.documento, name="documento"),
     path("app.webmanifest", vistas.manifiesto_app, name="manifiesto_app"),
     path("sw.js", vistas.service_worker, name="service_worker"),

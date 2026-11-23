@@ -39,5 +39,11 @@
     <button class="boton" hx-post="{% url 'reportes:confirmar' r.id_publico %}" hx-vals='{"tipo":"ya_bajo"}' hx-target="#detalle">{% if r.tipo.clase == "riesgo" %}Ya bajó<small>Ya se puede pasar</small>{% else %}Ya no está<small>Ya terminó o cerró</small>{% endif %}</button>
   </div>
   {% endif %}
+  {% if request.user.is_staff %}
+  <div class="ficha-coordinacion">
+    <button type="button" class="boton" data-corregir-ubicacion="{{ r.id_publico }}" data-lon="{{ r.punto.x|stringformat:'f' }}" data-lat="{{ r.punto.y|stringformat:'f' }}">Corregir ubicación<small>Solo coordinación</small></button>
+    <a class="boton" href="{% url 'admin:reportes_reporte_change' r.pk %}" target="_blank" rel="noopener">Editar todo en el admin<small>Título, nota, tipo, documentos</small></a>
+  </div>
+  {% endif %}
   <p class="ficha-pie">Reporte {{ r.id_publico }}. {% if r.fuente == "coordinador" %}Lo publicó la coordinación de SOS Galápagos{% elif r.fuente == "institucion" %}Lo publicó una institución{% elif r.fuente == "comunitario" %}Viene de un informe comunitario, un documento público del barrio{% else %}Lo hizo la comunidad{% endif %}; no es un dato oficial.{% if r.tipo.clase == "riesgo" %} Si hay peligro de vida, llama al 911.{% endif %}</p>
 </article>
