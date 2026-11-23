@@ -16,7 +16,8 @@ DESTINOS = [
     ("Clima", "/clima/", True),
     ("Lluvia y viento", "/riesgos/mapa-del-tiempo/", True),
     ("Descargar capas", "/riesgos/descargas/", True),
-    ("Puntos", "/riesgos/puntos/", False),
+    ("Top contributors", "/riesgos/puntos/", False),
+    ("Admin", "/riesgos/admin/", False),  # para coordinación: pide usuario y contraseña
 ]
 
 # Aviso general, igual en todas las páginas. El corto cabe en la línea del teléfono; el largo va
