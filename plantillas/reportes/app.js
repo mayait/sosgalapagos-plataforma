@@ -74,6 +74,7 @@
     .sos-menu-abrir:focus-visible,.sos-menu a:focus-visible,.sos-menu-panel a:focus-visible,.sos-menu-panel button:focus-visible{outline:3px solid #e11b22;outline-offset:2px}
     .sos-menu-aviso{box-sizing:border-box;display:flex;align-items:center;justify-content:center;height:var(--sos-aviso-alto);margin:0;padding:0 12px;overflow:hidden;background:#fff;border-bottom:1px solid #e5e5e5;color:#666;font-size:11.5px;line-height:1.3;text-align:center;text-wrap:balance}
     .sos-menu-aviso b{color:#1d1d1b;font-weight:700}
+    .sos-menu:not(.sos-menu-flotante) .sos-menu-aviso .sos-aviso-tel{display:none}  /* la barra ya tiene el botón 911 */
     .sos-aviso-largo{display:none}
     .sos-aviso-911{position:relative;color:#e11b22;font-weight:800;text-decoration:none}
     .sos-aviso-911::after{content:"";position:absolute;inset:-16px -14px}
@@ -244,7 +245,7 @@
   // La página actual se compara entera, no por prefijo: si no, «Inicio» y «Mapa» se encenderían en todas.
   const rutaActual = () => { let r = location.pathname.replace(/index\.html$/, ''); if (!r.endsWith('/')) r += '/'; return r; };
   const aviso911 = '<a class="sos-aviso-911" href="tel:911">911</a>';
-  const avisoLinea = () => `<span class="sos-aviso-corto"><b>${AVISO.titulo}</b> Emergencias: ${aviso911}</span><span class="sos-aviso-largo"><b>${AVISO.titulo}</b> ${AVISO.resto} Emergencias: ${aviso911}</span>`;
+  const avisoLinea = () => `<span class="sos-aviso-corto"><b>${AVISO.titulo}</b><span class="sos-aviso-tel"> Emergencias: ${aviso911}</span></span><span class="sos-aviso-largo"><b>${AVISO.titulo}</b> ${AVISO.resto}<span class="sos-aviso-tel"> Emergencias: ${aviso911}</span></span>`;
   let menus = 0;
   function pintarMenus() {
     const actual = rutaActual();

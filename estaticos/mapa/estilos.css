@@ -71,6 +71,8 @@ a { color: inherit; }
 .sos-menu-aviso a { color: var(--rojo); font-weight: 800; text-decoration: none; }
 .sos-aviso-largo { display: none; }
 @media (min-width: 1024px) { .sos-aviso-corto { display: none; } .sos-aviso-largo { display: inline; } }
+/* En la barra ya está el botón 911: el aviso no lo repite (en el mapa flotante, sí). */
+.sos-menu:not(.sos-menu-flotante) .sos-menu-aviso .sos-aviso-tel { display:none }
 /* El mapa: sin barra. El aviso queda fijo arriba y el botón ☰ junto a «Capas». */
 .sos-menu-flotante { height: 0; padding: 0; --sos-flotante-arriba: calc(var(--sos-aviso-alto) + 10px); --sos-flotante-derecha: 10px; }
 .sos-menu-flotante .sos-menu-aviso { position: fixed; inset: 0 0 auto 0; z-index: 60; }
