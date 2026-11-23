@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>El Niño · demostración</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="../../estaticos/mapa/nino.css">
+<style>
+/* Lo mínimo del panel de /clima/ para ver el componente suelto. */
+:root{--bg:#fff;--ink:#1D1D1B;--ink2:#3D3D3D;--mut:#666;--line:#E3E3E3;--soft:#F5F5F5;--red:#E11B22;--red2:#B5161C;--redsoft:#FDECEC;--hatch:#9A9A9A;--warn:#9A5B00}
+html,body{margin:0;background:#fff;color:var(--ink);font:16px/1.45 "Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:16px 16px 64px}
+.demo{font-size:13px;color:var(--mut);border:1px dashed var(--line);border-radius:10px;padding:8px 12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="demo">Demostración del componente <code>estaticos/mapa/nino.js</code> con datos de muestra (<code>docs/demo-nino/muestras/</code>, 22-nov-2026). Se abre sirviendo la raíz del repositorio, por ejemplo con <code>python3 -m http.server</code>, en <code>/docs/demo-nino/</code>. El boletín ERFEN de esta página es un texto de relleno.</p>
+  <section id="nino"></section>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="../../estaticos/mapa/nino.js"></script>
+<script>NinoPanel.montar(document.getElementById("nino"), {base: "muestras/"});</script>
+</body>
+</html>

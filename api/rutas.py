@@ -259,6 +259,37 @@ def clima_lluvia_mapa(request):
     return FileResponse(open(ruta, "rb"), content_type="application/json", headers={"Cache-Control": "public, max-age=300"})
 
 
+def _archivo_clima(request, nombre, falta):
+    """Sirve un JSON que la plataforma dejó en CLIMA_SALIDA (el servidor web no deja pasar archivos nuevos bajo /clima/)."""
+    from pathlib import Path
+
+    from django.conf import settings
+    from django.http import FileResponse
+
+    ruta = Path(settings.CLIMA_SALIDA or ".") / nombre
+    if not settings.CLIMA_SALIDA or not ruta.exists():
+        return api.create_response(request, {"error": falta}, status=404)
+    return FileResponse(open(ruta, "rb"), content_type="application/json", headers={"Cache-Control": "public, max-age=900"})
+
+
+@api.get("/clima/nino.json", summary="El Niño: índices de la NOAA, mar alrededor de Galápagos, boyas, MJO y el último boletín ERFEN", tags=["clima"])
+def clima_nino(request):
+    """Lo genera clima/nino.py cada seis horas. Los índices y el satélite son contexto; la voz oficial es el ERFEN."""
+    return _archivo_clima(request, "nino.json", "todavía no hay datos de El Niño")
+
+
+@api.get("/clima/nino_mapa.json", summary="Rejillas de anomalía de temperatura y nivel del mar para el mapa de El Niño", tags=["clima"])
+def clima_nino_mapa(request):
+    """Lo genera clima/nino.py. Datos de satélite de la NOAA: contexto, no dato oficial."""
+    return _archivo_clima(request, "nino_mapa.json", "todavía no hay mapa de El Niño")
+
+
+@api.get("/clima/zcit.json", summary="ZCIT y ondas tropicales cerca de Galápagos (discusión del NHC)", tags=["clima"])
+def clima_zcit(request):
+    """Lo genera clima/zcit.py con la discusión del Centro Nacional de Huracanes de la NOAA. Contexto, no aviso oficial."""
+    return _archivo_clima(request, "zcit.json", "todavía no hay análisis de la ZCIT")
+
+
 @api.get("/clima/nivel", summary="Nivel de lluvia peligrosa por zona", tags=["clima"])
 def clima_nivel(request):
     """El nivel vigente de cada zona. Es una estimación propia y preliminar, no una alerta oficial."""

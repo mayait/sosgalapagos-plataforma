@@ -79,7 +79,6 @@ def actualizar_mar(stormglass=True):
     return r
 
 
-
 @task
 def actualizar_lluvia_mapa():
     """Cada hora: el mapa de lluvia de los modelos, solo si hay una corrida nueva del IFS (unas 957 llamadas)."""
@@ -90,3 +89,20 @@ def actualizar_lluvia_mapa():
     if not settings.CLIMA_SALIDA or not lluvia_mapa.hay_corrida_nueva(settings.CLIMA_SALIDA):
         return {"lluvia_mapa": "sin corrida nueva"}
     return {"lluvia_mapa": str(lluvia_mapa.exportar(settings.CLIMA_SALIDA))}
+
+
+@task
+def actualizar_nino():
+    """El Niño (índices, mar, boyas, MJO) y la ZCIT del NHC: escribe nino.json, nino_mapa.json y zcit.json (cada seis horas)."""
+    from django.conf import settings
+
+    from . import nino, zcit
+
+    if not settings.CLIMA_SALIDA:
+        return {}
+    r = {"nino": nino.exportar(settings.CLIMA_SALIDA)}
+    try:
+        r["zcit"] = zcit.exportar(settings.CLIMA_SALIDA)
+    except Exception as e:  # la discusión del NHC falla a veces: El Niño ya quedó escrito
+        r["zcit"] = {"error": type(e).__name__}
+    return r
