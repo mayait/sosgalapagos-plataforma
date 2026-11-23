@@ -255,6 +255,36 @@
     const fila = e.target.closest('[data-abrir-ficha]');
     if (fila) centrarEn([Number(fila.dataset.lon), Number(fila.dataset.lat)]);
   });
+  // ── Corregir la ubicación de un reporte (solo coordinación: el botón solo sale con sesión) ──
+  const mira = document.createElement('div');
+  mira.className = 'corregir-mira'; mira.hidden = true;
+  const barraCorregir = document.createElement('div');
+  barraCorregir.className = 'corregir-barra'; barraCorregir.hidden = true;
+  barraCorregir.innerHTML = '<p>Mueve el mapa hasta que la mira quede en el lugar correcto.</p>'
+    + '<div><button type="button" class="boton lleno" data-guardar-ubicacion>Guardar aquí</button>'
+    + '<button type="button" class="boton" data-cancelar-ubicacion>Cancelar</button></div>';
+  mapa.getContainer().append(mira, barraCorregir);
+  let corrigiendo = null;
+  const salirDeCorregir = () => { corrigiendo = null; mira.hidden = true; barraCorregir.hidden = true; };
+  document.body.addEventListener('click', (e) => {
+    const boton = e.target.closest('[data-corregir-ubicacion]');
+    if (boton) {
+      corrigiendo = boton.dataset.corregirUbicacion;
+      abrirHoja(false);
+      mapa.jumpTo({ center: [Number(boton.dataset.lon), Number(boton.dataset.lat)], zoom: Math.max(mapa.getZoom(), 18) });
+      mira.hidden = false; barraCorregir.hidden = false;
+      return;
+    }
+    if (e.target.closest('[data-cancelar-ubicacion]')) { salirDeCorregir(); abrirHoja(true); return; }
+    if (e.target.closest('[data-guardar-ubicacion]') && corrigiendo) {
+      const c = mapa.getCenter();
+      htmx.ajax('POST', cfg.ficha + corrigiendo + '/mover/', {
+        target: '#detalle', swap: 'innerHTML', values: { lat: c.lat.toFixed(6), lon: c.lng.toFixed(6) },
+      });
+      salirDeCorregir();
+    }
+  });
+
   // ── Visor de fotos ────────────────────────────────────────────────────────
   const visor = document.getElementById('visor');
   let fotos = [], actual = 0;

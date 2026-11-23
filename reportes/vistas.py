@@ -209,6 +209,35 @@ def ficha(request, id_publico):
     return render(request, plantilla, _contexto_ficha(reporte))
 
 
+@require_POST
+def mover(request, id_publico):
+    """Coordinación corrige la ubicación de un reporte desde el mapa. Queda en el historial del admin."""
+    if not (request.user.is_authenticated and request.user.is_staff):
+        raise Http404
+    reporte = get_object_or_404(Reporte, id_publico=id_publico)
+    try:
+        lat, lon = float(request.POST["lat"]), float(request.POST["lon"])
+    except (KeyError, ValueError):
+        return HttpResponse("Falta la ubicación.", status=400)
+    if not (-2 <= lat <= 2 and -93 < lon < -88):
+        return HttpResponse("La ubicación queda fuera de Galápagos.", status=400)
+    antes = (reporte.punto.y, reporte.punto.x)
+    reporte.punto = Point(lon, lat, srid=4326)
+    reporte.zona = zona_de(reporte.punto)
+    reporte.save(update_fields=["punto", "zona"])
+    from django.contrib.admin.models import CHANGE, LogEntry
+    from django.contrib.contenttypes.models import ContentType
+
+    LogEntry.objects.create(
+        user=request.user, content_type=ContentType.objects.get_for_model(Reporte), object_id=str(reporte.pk),
+        object_repr=str(reporte)[:200], action_flag=CHANGE,
+        change_message=f"Ubicación corregida en el mapa: de {antes[0]:.6f}, {antes[1]:.6f} a {lat:.6f}, {lon:.6f}")
+    reporte = Reporte.objects.select_related("tipo", "zona").get(pk=reporte.pk)
+    respuesta = render(request, "parciales/ficha.html", _contexto_ficha(reporte, mensaje="Ubicación corregida."))
+    respuesta["HX-Trigger"] = "reportes-cambiaron"
+    return respuesta
+
+
 @require_GET
 def documento(request, pk):
     """Baja el PDF de un reporte. Si es privado, solo con sesión de coordinación; si no, como si no existiera."""

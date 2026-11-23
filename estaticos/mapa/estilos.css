@@ -738,3 +738,15 @@ textarea.nota { width: 100%; min-height: 64px; padding: 10px 12px; border: 2px s
 
 /* Prototipo del mapa de Windy */
 .lluvia-mapa-caja { width: 100%; margin: 6px 0 10px; border-radius: 14px; overflow: hidden; }
+
+/* Corregir la ubicación de un reporte (coordinación) */
+.ficha-coordinacion { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 6px 0 8px; }
+.ficha-coordinacion a.boton { text-decoration: none; text-align: center; }
+.corregir-mira { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border: 3px solid #E11B22;
+  border-radius: 50%; box-shadow: 0 0 0 2px #fff; pointer-events: none; z-index: 5; }
+.corregir-mira::after { content: ""; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #E11B22; }
+.corregir-barra { position: absolute; left: 50%; top: 72px; transform: translateX(-50%); width: min(420px, calc(100% - 32px)); z-index: 6;
+  background: var(--blanco, #fff); border-radius: 12px; padding: 10px 12px; box-shadow: 0 4px 16px rgba(0, 0, 0, .18); }
+.corregir-barra p { margin: 0 0 8px; font-size: 14px; }
+.corregir-barra div { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.corregir-mira[hidden], .corregir-barra[hidden] { display: none; }

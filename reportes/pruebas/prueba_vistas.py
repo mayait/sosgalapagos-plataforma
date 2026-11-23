@@ -425,3 +425,30 @@ def prueba_solo_se_aceptan_pdf(settings, tmp_path):
     d = DocumentoReporte(reporte=r, titulo="No es PDF", archivo=SimpleUploadedFile("x.pdf", b"hola", content_type="application/pdf"))
     with pytest.raises(ValidationError):
         d.full_clean()
+
+
+# ── Corregir la ubicación desde el mapa ──────────────────────────────────────
+def _reporte_simple():
+    from django.contrib.gis.geos import Point
+    from reportes.models import TipoRiesgo
+
+    return Reporte.objects.create(tipo=TipoRiesgo.objects.get(codigo="agua_via"), punto=Point(-90.3145, -0.7435, srid=4326))
+
+
+def prueba_solo_coordinacion_corrige_la_ubicacion(client, admin_client):
+    from django.contrib.admin.models import LogEntry
+
+    r = _reporte_simple()
+    assert "Corregir ubicación" not in client.get(f"/riesgos/r/{r.id_publico}/").content.decode()
+    assert client.post(f"/riesgos/r/{r.id_publico}/mover/", {"lat": "-0.7400", "lon": "-90.3100"}).status_code == 404
+    assert "Corregir ubicación" in admin_client.get(f"/riesgos/r/{r.id_publico}/").content.decode()
+    resp = admin_client.post(f"/riesgos/r/{r.id_publico}/mover/", {"lat": "-0.740000", "lon": "-90.310000"})
+    assert resp.status_code == 200 and "Ubicación corregida" in resp.content.decode()
+    r.refresh_from_db()
+    assert (round(r.punto.y, 6), round(r.punto.x, 6)) == (-0.74, -90.31)
+    assert LogEntry.objects.filter(object_id=str(r.pk), change_message__contains="-0.743500, -90.314500").exists()
+
+
+def prueba_no_se_mueve_fuera_de_galapagos(admin_client):
+    r = _reporte_simple()
+    assert admin_client.post(f"/riesgos/r/{r.id_publico}/mover/", {"lat": "40.4", "lon": "-3.7"}).status_code == 400
