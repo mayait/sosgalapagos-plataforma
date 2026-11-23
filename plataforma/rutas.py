@@ -2,9 +2,10 @@
 # Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito.
 """Rutas de la plataforma.
 
-Todo vive bajo /riesgos/ (páginas, API, administración, estáticos y fotos). Así en el
-servidor basta una sola ruta nueva en Caddy y nada choca con el sitio actual, que ya
-usa /api y /admin.
+El mapa de riesgos y el clima viven bajo /riesgos/ (páginas, API, administración, estáticos y
+fotos). Desde el 23-nov-2026 la plataforma sirve también la raíz del sitio: la portada (/), la
+privacidad (/privacidad), robots, sitemap y las redirecciones de la plataforma anterior
+(portada/rutas.py). /mapas, /clima, /descargas y /backend los sigue sirviendo Caddy.
 """
 from django.conf import settings
 from django.contrib import admin
@@ -22,12 +23,12 @@ urlpatterns = [
     # documentos/ y oficiales/ no se sirven aquí: esos PDF pasan por reportes.vistas (documento y oficial).
     re_path(r"^riesgos/medios/(?!documentos/|oficiales/)(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
     re_path(r"^riesgos/relieve3d/(?P<ruta>[\w./-]+)$", relieve),
+    # La privacidad es una sola para todo el sitio.
+    path("riesgos/privacidad/", RedirectView.as_view(url="/privacidad", permanent=True)),
     path("riesgos/", include("reportes.rutas")),
+    path("", include("portada.rutas")),
 ]
 
 if settings.DEBUG:
-    # Solo en la Mac: la portada lleva al mapa, y /mapas es una copia de lo publicado.
-    urlpatterns += [
-        path("", RedirectView.as_view(url="/riesgos/")),
-        re_path(r"^mapas/(?P<ruta>.*)$", copia_de_mapas),
-    ]
+    # Solo en la Mac: /mapas es una copia de lo publicado.
+    urlpatterns += [re_path(r"^mapas/(?P<ruta>.*)$", copia_de_mapas)]

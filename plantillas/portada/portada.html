@@ -1,0 +1,177 @@
+{# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec> · Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito. #}
+{% extends "base.html" %}
+{% load static reportes_extras %}
+{% block titulo %}Inundaciones en Santa Cruz{% endblock %}
+{% block descripcion %}Coordinación de la ayuda por las inundaciones en Santa Cruz, Galápagos: situación, refugio, cómo ayudar, mapa de riesgos, clima y línea del tiempo. Emergencias: 911.{% endblock %}
+{% block estilos_despues %}<link rel="stylesheet" href="{% propio 'portada/portada.css' %}">{% endblock %}
+{% block clase_cuerpo %}con-portada{% endblock %}
+{% block contenido %}
+<main class="pt" id="inicio">
+
+  {# 1 · Portada: qué es, el 911 y los accesos grandes, con los nombres del menú #}
+  <header class="pt-portada">
+    <p class="pt-antetitulo">Inundaciones · Santa Cruz, Galápagos</p>
+    <h1 class="pt-titulo">Gestión de emergencias<span>Sociedad Civil Galápagos</span></h1>
+    <p class="pt-frase">Un solo lugar para coordinar la ayuda por las inundaciones en Santa Cruz. Trabajamos junto a organizaciones de la sociedad civil y en coordinación con el COE.</p>
+    <a class="pt-911" href="tel:911"><span>En una emergencia, llama al</span> <b>911</b></a>
+    <nav class="pt-accesos" aria-label="Accesos principales">
+      {% for a in cont.ACCESOS %}
+      <a class="pt-acceso{% if a.principal %} principal{% endif %}" href="{{ a.ruta }}">
+        <svg aria-hidden="true"><use href="#i-{{ a.icono }}"/></svg>
+        <span><b>{{ a.nombre }}</b><small>{{ a.texto }}</small></span>
+      </a>
+      {% endfor %}
+    </nav>
+  </header>
+
+  {# 2 · Aviso destacado de coordinación (admin). Se oculta solo al vencer. #}
+  {% if aviso %}
+  <aside class="pt-aviso" role="note" id="aviso">
+    <p class="pt-aviso-titulo">{{ aviso.titulo }}</p>
+    {% if aviso.texto %}<p>{{ aviso.texto|linebreaksbr }}</p>{% endif %}
+  </aside>
+  {% endif %}
+
+  {# 3 · Advertencia oficial vigente del INAMHI, automática (app clima) #}
+  {% if advertencia %}
+  <section class="pt-advertencia" id="advertencia" aria-labelledby="advertencia-titulo">
+    <p class="pt-etiqueta">Advertencia oficial · {{ advertencia.fuente }}</p>
+    <h2 id="advertencia-titulo">{% if advertencia.titulo %}{{ advertencia.titulo }}{% else %}Advertencia meteorológica{% endif %}{% if advertencia.numero and advertencia.numero not in advertencia.titulo %} n.º {{ advertencia.numero }}{% endif %}</h2>
+    {% if advertencia.nivel %}<p class="pt-nivel">Nivel para Galápagos: <b>{{ advertencia.nivel }}</b></p>{% endif %}
+    {% if advertencia.hasta_txt %}<p class="pt-vigencia">Vigente{% if advertencia.desde_txt %} desde el {{ advertencia.desde_txt }}{% endif %} hasta el {{ advertencia.hasta_txt }}, hora de Galápagos.</p>{% endif %}
+    {% if advertencia.resumen %}<p>{{ advertencia.resumen }}</p>{% endif %}
+    {% if not advertencia.revisado %}<p class="pt-nota">Resumen automático del documento: puede tener errores. Lee siempre el documento del {{ advertencia.fuente }}.</p>{% endif %}
+    <div class="pt-botones">
+      {% if advertencia.enlace %}<a class="pt-boton lleno" href="{{ advertencia.enlace }}" target="_blank" rel="noopener">Ver el documento del {{ advertencia.fuente }} ↗</a>{% endif %}
+      <a class="pt-boton" href="/clima/">Ver la lluvia en vivo</a>
+    </div>
+  </section>
+  {% endif %}
+
+  {# 4 · Situación hoy (admin) #}
+  {% if situacion %}
+  <section class="pt-seccion" id="situacion" aria-labelledby="situacion-titulo">
+    <h2 class="pt-h2" id="situacion-titulo">Situación hoy</h2>
+    <p class="pt-intro">Revisado el {{ situacion_fecha }} (hora de Galápagos).</p>
+    <dl class="pt-situacion">
+      {% for s in situacion %}<div><dt>{{ s.tema }}</dt><dd>{{ s.texto }}</dd></div>{% endfor %}
+    </dl>
+  </section>
+  {% endif %}
+
+  {# 5 · Si necesitas ayuda / Si quieres ayudar #}
+  <section class="pt-seccion pt-dos" id="ayuda">
+    <div class="pt-caja">
+      <h2 class="pt-h2">Si necesitas ayuda</h2>
+      <p>Regístrate como damnificado en el GAD Municipal de Santa Cruz. Si tu vida corre peligro, llama al 911.</p>
+      <div class="pt-botones">
+        <a class="pt-boton lleno" href="{{ cont.REGISTRO_GAD }}" target="_blank" rel="noopener">Registro de damnificados (GAD) ↗</a>
+        <a class="pt-boton" href="{{ cont.FORMULARIO_COE }}" target="_blank" rel="noopener">Formulario del COE ↗</a>
+        <a class="pt-boton" href="tel:911">Llamar al 911</a>
+      </div>
+    </div>
+    <div class="pt-caja">
+      <h2 class="pt-h2">Si quieres ayudar</h2>
+      <p><b>No envíes donaciones físicas desde el continente.</b> Ponen en riesgo la bioseguridad de las islas y saturan una logística que hoy necesitamos para medicinas y agua. Dona dinero a organizaciones con trazabilidad.</p>
+      <div class="pt-botones">
+        <a class="pt-boton lleno" href="#organizaciones">Dónde donar ↓</a>
+        <a class="pt-boton" href="#mascotas">Mascotas ↓</a>
+        <a class="pt-boton" href="#grupos-whatsapp">Unirme a una brigada ↓</a>
+      </div>
+    </div>
+  </section>
+
+  {# 6 · Mapas y clima #}
+  <section class="pt-seccion" id="mapas" aria-labelledby="mapas-titulo">
+    <h2 class="pt-h2" id="mapas-titulo">Mapas y clima</h2>
+    <p class="pt-intro">Información abierta para entender qué pasó y dónde está el riesgo. Sirve a vecinos, voluntarios, técnicos y autoridades.</p>
+    <ul class="pt-tarjetas">
+      {% for t in cont.CONSULTA %}
+      <li><a class="pt-tarjeta" href="{{ t.ruta }}">
+        <b>{{ t.titulo }}</b>
+        <span class="pt-ruta">sosgalapagos.org{{ t.ruta }}</span>
+        <span>{{ t.resumen }}</span>
+        <ul>{% for x in t.contenido %}<li>{{ x }}</li>{% endfor %}</ul>
+        <span class="pt-abrir">Abrir →</span>
+      </a></li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  {# 7 · Informes y mapas para descargar: el índice que publica sosgalapagos-datos en /srv/sosgalapagos-descargas #}
+  <section class="pt-seccion" id="informes" aria-labelledby="informes-titulo">
+    <h2 class="pt-h2" id="informes-titulo">Informes y mapas para descargar</h2>
+    <p class="pt-intro">Mapas e informes en PDF listos para imprimir o compartir. Son <b>estimaciones propias de SOS Galápagos</b>: sirven para priorizar y deben verificarse en campo.</p>
+    {% if informes %}
+    <ul class="pt-informes">
+      {% for i in informes %}
+      <li><a class="pt-informe" href="{{ informes_url }}{{ i.archivo }}" target="_blank" rel="noopener">
+        {% if i.portada %}<img src="{{ informes_url }}{{ i.portada }}" alt="" loading="lazy" width="72" height="96">{% else %}<span class="pt-sin-portada">PDF</span>{% endif %}
+        <span class="pt-informe-texto">
+          <b>{{ i.titulo }}</b>
+          <small>{{ i.fecha_txt }} · {{ i.formato|default:"PDF" }}{% if i.paginas %} · {{ i.paginas }} pág.{% endif %}{% if i.tamano %} · {{ i.tamano }}{% endif %}</small>
+          {% if i.resumen %}<span>{{ i.resumen }}</span>{% endif %}
+          <span class="pt-abrir">Descargar PDF ↓</span>
+        </span>
+      </a></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="pt-vacio">Todavía no hay informes publicados aquí. Las capas de riesgo se pueden <a href="/riesgos/descargas/">descargar una por una</a>.</p>
+    {% endif %}
+    <h3 class="pt-h3">Publicaciones científicas de referencia</h3>
+    <ul class="pt-referencias">
+      {% for r in cont.REFERENCIAS %}
+      <li>{{ r.autores }} ({{ r.anio }}). <i>{{ r.titulo }}</i>. {{ r.revista }}, {{ r.detalle }}. <a href="https://doi.org/{{ r.doi }}" target="_blank" rel="noopener">doi.org/{{ r.doi }} ↗</a>{% if r.nota %} <span>{{ r.nota }}</span>{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  {# 8 · Apoyo ante violencia y grupos de WhatsApp. Solo instituciones: ningún teléfono personal. #}
+  <section class="pt-seccion pt-violencia" id="apoyo-violencia" aria-labelledby="violencia-titulo">
+    <img class="pt-qr" src="{% static 'portada/qr/apoyo-violencia.svg' %}" alt="Código QR para escribir a {{ cont.APOYO_VIOLENCIA.organizacion }} por WhatsApp" width="112" height="112">
+    <div>
+      <h2 class="pt-h2" id="violencia-titulo">Apoyo ante violencia de género</h2>
+      <p>Si tú o una mujer cercana vive violencia física, psicológica, sexual o económica, escribe por WhatsApp a <a href="{{ cont.APOYO_VIOLENCIA.instagram }}" target="_blank" rel="noopener">{{ cont.APOYO_VIOLENCIA.organizacion }}</a>. Te escuchan y te orientan.</p>
+      <p class="pt-nota">Si hay peligro inmediato, llama al 911.</p>
+      <a class="pt-boton lleno" href="{{ cont.APOYO_VIOLENCIA.whatsapp }}" target="_blank" rel="noopener">Pedir apoyo por WhatsApp</a>
+    </div>
+  </section>
+
+  <section class="pt-seccion" id="grupos-whatsapp" aria-labelledby="grupos-titulo">
+    <h2 class="pt-h2" id="grupos-titulo">Grupos de coordinación por WhatsApp</h2>
+    <p class="pt-intro">Escanea el código o, si estás en el celular, toca el botón.</p>
+    <ul class="pt-grupos">
+      {% for g in cont.GRUPOS_WHATSAPP %}
+      <li class="pt-grupo">
+        <img class="pt-qr" src="{% static g.qr %}" alt="Código QR para unirse a {{ g.nombre }}" width="112" height="112">
+        <div>
+          <b>{{ g.nombre }}</b>
+          {% if g.descripcion %}<p>{{ g.descripcion }}</p>{% endif %}
+          {% if g.grupos %}<ul class="pt-chips" aria-label="Grupos de {{ g.nombre }}">{% for n in g.grupos %}<li>{{ n }}</li>{% endfor %}</ul>{% endif %}
+          <a class="pt-boton lleno" href="{{ g.url }}" target="_blank" rel="noopener">{{ g.boton }}</a>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  {# 9 · Organizaciones aliadas y ayuda para mascotas (admin) #}
+  <section class="pt-seccion" id="organizaciones" aria-labelledby="org-titulo">
+    <h2 class="pt-h2" id="org-titulo">Organizaciones aliadas</h2>
+    <p class="pt-intro">Si quieres donar dinero, hazlo a organizaciones con trazabilidad y por sus canales oficiales. <b>No dones a cuentas personales.</b> Todo se coordina con el COE.</p>
+    <ul class="pt-orgs">{% for o in aliadas %}{% include "portada/organizacion.html" %}{% endfor %}</ul>
+  </section>
+
+  {% if mascotas %}
+  <section class="pt-seccion" id="mascotas" aria-labelledby="mascotas-titulo">
+    <h2 class="pt-h2" id="mascotas-titulo">Ayuda para mascotas</h2>
+    <p class="pt-intro">Los perros y gatos de las familias damnificadas y los refugios de animales también lo perdieron todo. Se necesita alimento para perros y gatos, collares, correas, transportadoras, toallas y dinero. Estas organizaciones de Santa Cruz los están atendiendo.</p>
+    <ul class="pt-orgs">{% for o in mascotas %}{% include "portada/organizacion.html" %}{% endfor %}</ul>
+    <p class="pt-nota">Datos de donación compartidos por la coordinación de SOS Galápagos y por las propias fundaciones.</p>
+  </section>
+  {% endif %}
+
+  {% include "parciales/firma.html" %}
+</main>
+{% endblock %}

@@ -1,0 +1,14 @@
+{# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec> · Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito. #}
+{# Una organización con sus canales oficiales. Los datos los edita coordinación en el admin. #}
+<li class="pt-org">
+  <b>{{ o.nombre }}</b>
+  {% if o.detalle %}<p>{{ o.detalle }}</p>{% endif %}
+  {% if o.pago %}<p class="pt-pago">{{ o.pago }}</p>{% endif %}
+  <div class="pt-org-enlaces">
+    {% if o.instagram %}<a href="https://www.instagram.com/{{ o.instagram }}/" target="_blank" rel="noopener">Instagram @{{ o.instagram }} ↗</a>{% endif %}
+    {% if o.facebook %}<a href="{{ o.facebook }}" target="_blank" rel="noopener">Facebook ↗</a>{% endif %}
+    {% if o.enlace %}<a href="{{ o.enlace }}" target="_blank" rel="noopener">{{ o.enlace_texto|default:"Sitio oficial" }} ↗</a>{% endif %}
+    {% if not o.instagram and not o.facebook and not o.enlace and not o.donar and not o.pago %}<span>Contáctala por sus canales oficiales.</span>{% endif %}
+  </div>
+  {% if o.donar %}<a class="pt-boton lleno" href="{{ o.donar }}" target="_blank" rel="noopener">{{ o.donar_texto|default:"Donar" }} ↗</a>{% endif %}
+</li>

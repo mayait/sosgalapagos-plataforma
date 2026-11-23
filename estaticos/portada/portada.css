@@ -1,0 +1,156 @@
+/* SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+   Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito. */
+/* Portada (sosgalapagos.org/) y política de privacidad.
+   Sistema USFQ «WE WANT MORE»: rojo, negro y blanco, fondo blanco, títulos en Zalando Sans Expanded.
+   Teléfono primero: una columna a 360 px; dos o tres en el escritorio. Botones de 44 px o más. */
+
+.con-portada { height: auto; overscroll-behavior: auto; }
+.pt { max-width: 1080px; margin: 0 auto; padding: 18px 16px 40px; overflow-wrap: anywhere; }
+.pt a { text-underline-offset: 2px; }
+.pt-h2 { margin: 0 0 6px; font: 900 21px/1.05 var(--titulo); letter-spacing: -0.01em; text-transform: uppercase; }
+.pt-h3 { margin: 22px 0 8px; font: 800 13px/1.1 var(--titulo); letter-spacing: 0.04em; text-transform: uppercase; }
+.pt-intro { margin: 0 0 14px; color: var(--gris); font-size: 14.5px; line-height: 1.45; max-width: 68ch; }
+.pt-nota { margin: 8px 0 0; font-size: 12.5px; color: var(--gris); }
+.pt-seccion { margin-top: 34px; scroll-margin-top: 96px; }
+.pt-seccion p { line-height: 1.45; }
+
+/* Botones */
+.pt-botones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.pt-boton {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 16px;
+  border: 2px solid var(--negro); border-radius: 12px; background: var(--blanco); color: var(--negro);
+  font: 800 12.5px/1.15 var(--titulo); text-transform: uppercase; text-decoration: none; text-align: center;
+}
+.pt-boton.lleno { background: var(--negro); color: var(--blanco); }
+.pt-boton:focus-visible, .pt-acceso:focus-visible, .pt-tarjeta:focus-visible, .pt-informe:focus-visible { outline: 3px solid var(--rojo); outline-offset: 2px; }
+
+/* 1 · Portada */
+.pt-portada { padding-top: 6px; }
+.pt-antetitulo { margin: 0 0 10px; font: 800 11.5px/1.2 var(--titulo); letter-spacing: 0.06em; text-transform: uppercase; color: var(--rojo); }
+.pt-titulo { margin: 0; font: 900 31px/0.95 var(--titulo); letter-spacing: -0.015em; text-transform: uppercase; }
+.pt-titulo span { display: block; margin-top: 8px; font-size: 17px; font-weight: 700; letter-spacing: 0; color: var(--gris); }
+.pt-frase { margin: 14px 0 0; font-size: 15.5px; line-height: 1.45; max-width: 60ch; }
+.pt-911 {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; margin: 16px 0 0; padding: 8px 8px 8px 16px;
+  border-radius: 14px; background: var(--rojo); color: var(--blanco); text-decoration: none; font-weight: 700;
+}
+.pt-911 b { display: inline-grid; place-items: center; min-width: 76px; height: 44px; border-radius: 10px; background: var(--blanco); color: var(--rojo); font: 900 22px/1 var(--titulo); }
+.pt-accesos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.pt-acceso {
+  display: flex; flex-direction: column; gap: 8px; min-height: 88px; padding: 12px; border: 2px solid var(--negro); border-radius: 14px;
+  background: var(--blanco); color: var(--negro); text-decoration: none;
+}
+.pt-acceso svg { width: 26px; height: 26px; flex: none; }
+.pt-acceso b { display: block; font: 800 13.5px/1.1 var(--titulo); text-transform: uppercase; }
+.pt-acceso small { display: block; margin-top: 3px; font-size: 12px; line-height: 1.3; color: var(--gris); }
+.pt-acceso.principal { background: var(--negro); color: var(--blanco); }
+.pt-acceso.principal small { color: #cfcfcf; }
+.pt-acceso:first-child { grid-column: 1 / -1; flex-direction: row; align-items: center; background: var(--rojo); border-color: var(--rojo); }
+.pt-acceso:first-child small { color: #ffe3e4; }
+
+/* 2 · Aviso destacado */
+.pt-aviso { margin-top: 22px; padding: 14px 16px; border-radius: 14px; background: var(--rojo); color: var(--blanco); }
+.pt-aviso p { margin: 6px 0 0; font-size: 14.5px; line-height: 1.45; }
+.pt-aviso .pt-aviso-titulo { margin: 0; font: 900 18px/1.1 var(--titulo); text-transform: uppercase; }
+
+/* 3 · Advertencia oficial */
+.pt-advertencia { margin-top: 22px; padding: 16px; border: 2px solid var(--negro); border-left-width: 8px; border-radius: 14px; scroll-margin-top: 96px; }
+.pt-advertencia h2 { margin: 4px 0 6px; font: 900 18px/1.1 var(--titulo); text-transform: uppercase; }
+.pt-advertencia p { margin: 6px 0 0; font-size: 14.5px; }
+.pt-etiqueta { font: 800 11px/1.2 var(--titulo); letter-spacing: 0.06em; text-transform: uppercase; color: var(--gris); }
+.pt-advertencia .pt-etiqueta { margin: 0; }
+.pt-nivel b { display: inline-block; padding: 2px 8px; border-radius: 6px; background: var(--negro); color: var(--blanco); text-transform: uppercase; font-size: 13px; }
+.pt-vigencia { font-weight: 600; }
+
+/* 4 · Situación hoy */
+.pt-situacion { margin: 0; display: grid; gap: 0; border-top: 1px solid var(--linea); }
+.pt-situacion > div { display: grid; gap: 2px; padding: 11px 0; border-bottom: 1px solid var(--linea); }
+.pt-situacion dt { font: 800 12.5px/1.2 var(--titulo); text-transform: uppercase; }
+.pt-situacion dd { margin: 0; font-size: 14.5px; line-height: 1.45; }
+
+/* 5 · Ayuda */
+.pt-dos { display: grid; gap: 12px; }
+.pt-caja { padding: 16px; border: 1px solid var(--linea); border-radius: 14px; background: var(--fondo-suave); }
+.pt-caja p { margin: 6px 0 0; font-size: 14.5px; }
+.pt-caja .pt-boton { flex: 1 1 100%; }
+
+/* 6 · Tarjetas */
+.pt-tarjetas, .pt-informes, .pt-grupos, .pt-orgs, .pt-referencias { list-style: none; margin: 0; padding: 0; }
+.pt-tarjetas { display: grid; gap: 10px; }
+.pt-tarjeta { display: grid; gap: 4px; height: 100%; padding: 14px 16px; border: 1px solid var(--linea); border-radius: 14px; text-decoration: none; font-size: 14px; line-height: 1.4; }
+.pt-tarjeta > b { font: 800 15px/1.1 var(--titulo); text-transform: uppercase; }
+.pt-ruta { font-size: 12px; color: var(--gris); }
+.pt-tarjeta ul { margin: 4px 0 0; padding-left: 18px; color: var(--gris); font-size: 13px; }
+.pt-abrir { margin-top: 4px; font-weight: 800; color: var(--rojo); }
+.pt-tarjeta:hover, .pt-informe:hover { border-color: var(--negro); }
+
+/* 7 · Informes */
+.pt-informes { display: grid; gap: 10px; }
+.pt-informe { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border: 1px solid var(--linea); border-radius: 14px; text-decoration: none; }
+.pt-informe img, .pt-sin-portada { flex: none; width: 72px; height: 96px; object-fit: cover; border-radius: 6px; border: 1px solid var(--linea); background: var(--fondo-suave); }
+.pt-sin-portada { display: grid; place-items: center; font: 800 12px/1 var(--titulo); color: var(--gris); }
+.pt-informe-texto { display: grid; gap: 3px; min-width: 0; font-size: 13px; line-height: 1.4; }
+.pt-informe-texto b { font-size: 14.5px; line-height: 1.25; }
+.pt-informe-texto small { color: var(--gris); }
+.pt-vacio { padding: 14px 16px; border: 1px dashed var(--linea); border-radius: 14px; color: var(--gris); font-size: 14px; }
+.pt-referencias li { font-size: 13px; line-height: 1.45; color: var(--tinta); }
+.pt-referencias span { display: block; margin-top: 2px; color: var(--gris); }
+
+/* 8 · Violencia y WhatsApp */
+.pt-qr { flex: none; width: 112px; height: 112px; padding: 8px; border: 1px solid var(--linea); border-radius: 10px; background: var(--blanco); box-sizing: content-box; }
+.pt-violencia { display: flex; gap: 16px; align-items: flex-start; padding: 16px; border: 1px solid var(--linea); border-left: 6px solid var(--rojo); border-radius: 14px; }
+.pt-violencia p { margin: 6px 0 0; font-size: 14.5px; }
+.pt-violencia .pt-boton { margin-top: 12px; }
+.pt-grupos { display: grid; gap: 10px; }
+.pt-grupo { display: flex; gap: 14px; align-items: flex-start; padding: 14px; border: 1px solid var(--linea); border-radius: 14px; }
+.pt-grupo > div { display: grid; gap: 6px; min-width: 0; justify-items: start; }
+.pt-grupo p { margin: 0; font-size: 13px; color: var(--gris); }
+.pt-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.pt-chips li { padding: 2px 7px; border: 1px solid var(--linea); border-radius: 6px; background: var(--fondo-suave); font-size: 11.5px; font-weight: 600; }
+/* En el teléfono el QR no sirve (se toca el botón): se ve pequeño, o nada a 360 px. */
+@media (max-width: 599px) {
+  .pt-qr { width: 72px; height: 72px; padding: 5px; }
+}
+@media (max-width: 379px) {
+  .pt-qr { display: none; }
+}
+
+/* 9 · Organizaciones */
+.pt-orgs { display: grid; gap: 10px; }
+.pt-org { display: grid; gap: 6px; align-content: start; justify-items: start; padding: 14px 16px; border: 1px solid var(--linea); border-radius: 14px; font-size: 13.5px; }
+.pt-org > b { font-size: 15px; line-height: 1.25; }
+.pt-org p { margin: 0; line-height: 1.45; }
+.pt-pago { padding: 8px 10px; border-radius: 8px; background: var(--fondo-suave); white-space: pre-line; font-size: 13px; }
+.pt-org-enlaces { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.pt-org-enlaces a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; }
+.pt-org-enlaces span { color: var(--gris); }
+
+/* Privacidad */
+.politica h2 { margin: 26px 0 8px; font: 800 14px/1.15 var(--titulo); letter-spacing: 0.03em; text-transform: uppercase; }
+.politica p, .politica li { font-size: 14.5px; line-height: 1.5; }
+.politica .ficha-datos { gap: 10px; }
+.politica .ficha-datos span { display: block; min-width: 0; color: var(--tinta); font-weight: 700; }
+.politica-indice { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 4px; padding: 0; list-style: none; }
+.politica-indice a { display: inline-flex; align-items: center; min-height: 36px; padding: 4px 10px; border: 1px solid var(--linea); border-radius: 999px; font-size: 12.5px; text-decoration: none; }
+.politica [id] { scroll-margin-top: 96px; }
+
+@media (min-width: 700px) {
+  .pt { padding-top: 28px; }
+  .pt-titulo { font-size: 48px; }
+  .pt-titulo span { font-size: 22px; }
+  .pt-911 { display: inline-flex; padding-right: 8px; }
+  .pt-accesos { grid-template-columns: repeat(5, 1fr); }
+  .pt-acceso:first-child { grid-column: auto; flex-direction: column; align-items: flex-start; }
+  .pt-dos { grid-template-columns: 1fr 1fr; }
+  .pt-caja .pt-boton { flex: 0 1 auto; }
+  .pt-tarjetas, .pt-orgs { grid-template-columns: repeat(2, 1fr); }
+  .pt-informes { grid-template-columns: repeat(2, 1fr); }
+  .pt-grupos { grid-template-columns: repeat(3, 1fr); }
+  .pt-grupo { flex-direction: column; align-items: center; text-align: center; }
+  .pt-grupo > div { justify-items: center; }
+  .pt-chips { justify-content: center; }
+  .pt-h2 { font-size: 24px; }
+}
+@media (min-width: 1000px) {
+  .pt-tarjetas, .pt-orgs { grid-template-columns: repeat(3, 1fr); }
+}
