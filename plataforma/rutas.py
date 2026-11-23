@@ -19,7 +19,8 @@ urlpatterns = [
     path("riesgos/api/", api.urls),
     path("riesgos/admin/", admin.site.urls),
     # Fotos de los reportes. Son pocas y pequeñas: las sirve Django, sin tocar los volúmenes de Caddy.
-    re_path(r"^riesgos/medios/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
+    # documentos/ no se sirve aquí: los PDF de los reportes pasan por reportes.vistas.documento.
+    re_path(r"^riesgos/medios/(?!documentos/)(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
     re_path(r"^riesgos/relieve3d/(?P<ruta>[\w./-]+)$", relieve),
     path("riesgos/", include("reportes.rutas")),
 ]

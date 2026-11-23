@@ -209,6 +209,24 @@ def ficha(request, id_publico):
     return render(request, plantilla, _contexto_ficha(reporte))
 
 
+@require_GET
+def documento(request, pk):
+    """Baja el PDF de un reporte. Si es privado, solo con sesión de coordinación; si no, como si no existiera."""
+    from django.http import FileResponse
+
+    from .models import DocumentoReporte
+
+    doc = get_object_or_404(DocumentoReporte, pk=pk)
+    if not doc.publico and not (request.user.is_authenticated and request.user.is_staff):
+        raise Http404
+    nombre = "".join(c if c.isalnum() or c in " -_" else "_" for c in doc.titulo).strip() or "documento"
+    respuesta = FileResponse(doc.archivo.open("rb"), content_type="application/pdf", filename=f"{nombre}.pdf")
+    respuesta["Content-Disposition"] = respuesta["Content-Disposition"].replace("attachment", "inline")
+    respuesta["Cache-Control"] = "public, max-age=3600" if doc.publico else "private, no-store"
+    respuesta["X-Robots-Tag"] = "noindex"
+    return respuesta
+
+
 @require_POST
 def confirmar(request, id_publico):
     reporte = get_object_or_404(Reporte, id_publico=id_publico)
