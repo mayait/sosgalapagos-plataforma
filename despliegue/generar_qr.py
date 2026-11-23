@@ -19,5 +19,5 @@ SALIDA.mkdir(parents=True, exist_ok=True)
 enlaces = {f"grupo-{i}": g["url"] for i, g in enumerate(contenido.GRUPOS_WHATSAPP, start=1)}
 enlaces["apoyo-violencia"] = contenido.APOYO_VIOLENCIA["whatsapp"]
 for nombre, url in enlaces.items():
-    segno.make(url, error="m").save(SALIDA / f"{nombre}.svg", scale=4, border=0, dark="#000000", light=None, xmldecl=False, svgns=True)
+    segno.make(url, error="m").save(SALIDA / f"{nombre}.svg", scale=4, border=0, omitsize=True, dark="#000000", light=None, xmldecl=False, svgns=True)
     print(SALIDA / f"{nombre}.svg")

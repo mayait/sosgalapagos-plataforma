@@ -98,6 +98,9 @@ def mapa(request):
     rid = request.GET.get("r", "")
     if rid:
         reporte = Reporte.objects.select_related("tipo", "zona").filter(id_publico=rid).first()
+        if reporte and reporte.fuente == "anterior":
+            # El historial de la coordinación anterior no sale en el mapa: su enlace lleva a la ficha.
+            return HttpResponseRedirect(reverse("reportes:ficha", args=[reporte.id_publico]))
         if reporte:
             contexto["compartir"] = _compartir(request, reporte)
     return render(request, "reportes/mapa.html", contexto)

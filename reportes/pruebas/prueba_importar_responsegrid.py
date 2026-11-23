@@ -106,3 +106,5 @@ def prueba_lo_importado_no_vuelve_al_mapa_con_una_confirmacion(archivo, client):
     assert not Reporte.objects.vivos().filter(pk=r.pk).exists()
     ficha = client.get(f"/riesgos/r/{r.id_publico}/").content.decode()
     assert "coordinación anterior" in ficha and "Ver en el mapa" not in ficha
+    assert f'data-url="/riesgos/r/{r.id_publico}/"' in ficha  # compartir lleva a la ficha, no al mapa
+    assert client.get(f"/riesgos/?r={r.id_publico}")["Location"] == f"/riesgos/r/{r.id_publico}/"

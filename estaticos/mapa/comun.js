@@ -103,7 +103,7 @@
 document.addEventListener('click', async (e) => {
   const boton = e.target.closest('[data-compartir]');
   if (!boton) return;
-  const url = new URL('/riesgos/?r=' + encodeURIComponent(boton.dataset.compartir), location.origin).href;
+  const url = new URL(boton.dataset.url || '/riesgos/?r=' + encodeURIComponent(boton.dataset.compartir), location.origin).href;
   const texto = boton.dataset.texto || boton.dataset.titulo || '';
   if (navigator.share) {
     try { await navigator.share({ title: boton.dataset.titulo, text: texto, url }); } catch (err) { /* la persona cerró el menú */ }

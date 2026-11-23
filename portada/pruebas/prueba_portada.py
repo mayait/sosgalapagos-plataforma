@@ -80,7 +80,7 @@ def prueba_una_sola_privacidad(client):
     pagina = client.get("/privacidad").content.decode()
     for texto in ("Julián Maya", "jamaya@usfq.edu.ec", "Qué datos recogemos", "Con quién los compartimos", "Cuánto tiempo",
                   "Tus derechos", "Superintendencia de Protección de Datos Personales", "fines comerciales", "No te vamos a contactar",
-                  "Cloudflare", "OpenStreetMap", "Esri", "NASA GIBS", "modelo de lenguaje", "ResponseGrid", "fuera de línea", 'id="derechos"'):
+                  "Cloudflare", "OpenStreetMap", "Esri", "NASA GIBS", "modelo de lenguaje", "ResponseGrid", "fuera de línea", 'id="derechos"', "En grupos de WhatsApp"):
         assert texto in pagina, texto
     assert "Human Centric" not in pagina
     assert client.get("/riesgos/privacidad/")["Location"] == "/privacidad"
