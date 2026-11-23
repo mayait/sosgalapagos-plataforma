@@ -1,25 +1,31 @@
 SOS Galápagos — plataforma de reportes de riesgo
 
-Copyright 2026 Universidad San Francisco de Quito (USFQ)
+Copyright © 2026 Universidad San Francisco de Quito (USFQ) · SOS Galápagos
 
 Desarrollado en USFQ Galápagos.
-Responsable: Julián Maya (jamaya@usfq.edu.ec), Universidad San Francisco de Quito (USFQ).
 Repositorio: https://github.com/mayait/sosgalapagos-plataforma
 
-Autor: Julián Maya (jamaya@usfq.edu.ec).
+Autor y responsable: Julián Maya <jamaya@usfq.edu.ec>.
 
-Desde el 22-nov-2026 el código tiene todos los derechos reservados: se puede
-leer, pero usarlo, copiarlo, modificarlo o crear productos a partir de él
-requiere permiso escrito del autor (archivo LICENSE). Toda cita o uso
-autorizado debe nombrar a SOS Galápagos, a la USFQ y a Julián Maya, y conservar
-este aviso.
+El código se distribuye bajo la Licencia Apache, versión 2.0 (archivo LICENSE).
+Según su sección 4(d), toda redistribución o trabajo derivado debe conservar
+este aviso NOTICE y los avisos de autoría de cada archivo.
 
-Los datos, los modelos y los textos propios se distribuyen bajo Creative
-Commons Atribución-NoComercial-SinDerivadas 4.0 (CC BY-NC-ND 4.0). Los datos de
-terceros conservan la licencia de cada fuente (archivo LICENCIA-DATOS.md).
+Los datos, modelos, textos, figuras, mapas y capas propios se distribuyen bajo
+Creative Commons Atribución 4.0 Internacional (CC BY 4.0;
+https://creativecommons.org/licenses/by/4.0/deed.es; ver LICENCIA-DATOS.md),
+con este crédito:
 
-Las versiones anteriores al 22-nov-2026 se publicaron bajo Apache 2.0 y
-CC BY 4.0 (Archivo/licencias-anteriores/).
+  SOS Galápagos · Universidad San Francisco de Quito (USFQ) ·
+  Julián Maya <jamaya@usfq.edu.ec>. Licencia CC BY 4.0.
+
+Los datos de terceros conservan la licencia de su fuente, que prevalece sobre
+CC BY 4.0 (archivo LICENCIA-DATOS.md).
+
+Historia: hasta el 22-nov-2026, Apache 2.0 y CC BY 4.0; del 22 al 23-nov-2026,
+código con todos los derechos reservados y contenido propio bajo CC BY-NC-ND
+4.0; desde el 23-nov-2026, de nuevo Apache 2.0 y CC BY 4.0
+(Archivo/licencias-anteriores/).
 
 Los reportes los hace la comunidad. Son información preliminar, no oficial.
 

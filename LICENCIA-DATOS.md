@@ -2,23 +2,21 @@
 
 © 2026 **Universidad San Francisco de Quito (USFQ) · SOS Galápagos**. Autor y responsable: **Julián Maya** (jamaya@usfq.edu.ec).
 
-El **código** se rige por [`LICENSE`](LICENSE): se puede leer; usarlo requiere permiso. Este archivo trata de todo lo demás.
+El **código** se rige por la [Licencia Apache 2.0](LICENSE): se puede usar, copiar, modificar y redistribuir conservando el [`NOTICE`](NOTICE) y el aviso de autoría de cada archivo. Este archivo trata de todo lo demás.
 
 ## Lo propio
 
-Los textos, los mapas, los reportes ciudadanos publicados (sin datos personales), el nivel de lluvia, la señal del pronóstico, las calibraciones, la estacionalidad y cualquier otra salida de los modelos de SOS Galápagos se distribuyen bajo **[Creative Commons Atribución-NoComercial-SinDerivadas 4.0 Internacional (CC BY-NC-ND 4.0)](https://creativecommons.org/licenses/by-nc-nd/4.0/deed.es)**:
+Los textos, los mapas, los reportes ciudadanos publicados (sin datos personales), el nivel de lluvia, la señal del pronóstico, las calibraciones, la estacionalidad y cualquier otra salida de los modelos de SOS Galápagos se distribuyen bajo **[Creative Commons Atribución 4.0 Internacional (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/deed.es)**: se pueden copiar, compartir, adaptar y usar, también con fines comerciales, **dando crédito**.
 
-- **Atribución.** Hay que nombrar a «SOS Galápagos · Universidad San Francisco de Quito (USFQ) · autor: Julián Maya (jamaya@usfq.edu.ec)» y enlazar la fuente.
-- **No comercial.** No se puede usar con fines comerciales.
-- **Sin obras derivadas.** Se puede copiar y compartir tal cual; no se puede publicar una versión transformada.
+**Atribución.** Hay que nombrar a SOS Galápagos, a la USFQ y al autor, enlazar la fuente e indicar si se hicieron cambios. Use esta forma:
 
-Para cualquier otro uso (comercial, derivado, integrarlo en otro producto), pida permiso por escrito a jamaya@usfq.edu.ec.
+> SOS Galápagos · Universidad San Francisco de Quito (USFQ) · Julián Maya <jamaya@usfq.edu.ec>. https://sosgalapagos.org/riesgos/. Licencia CC BY 4.0.
 
 **Modelo no es dato oficial.** El nivel de lluvia, el pronóstico, las mareas predichas, la estacionalidad y la estimación por satélite son modelos o estimaciones propias. No son alertas ni datos oficiales, y así debe decirlo quien los reproduzca.
 
 ## Lo de terceros
 
-Cada fuente es de su operador y **conserva su licencia**. SOS Galápagos publica sus datos con permiso de cada una (confirmado por Julián Maya el 22-nov-2026). Donde la licencia de una fuente sea más restrictiva que la nuestra, manda la de la fuente.
+Cada fuente es de su operador y **conserva su licencia**. SOS Galápagos publica sus datos con permiso de cada una (confirmado por Julián Maya el 22-nov-2026). Donde la licencia de una fuente sea más restrictiva que CC BY 4.0, manda la de la fuente.
 
 | Fuente | Licencia o condición | Cómo citar |
 |---|---|---|
@@ -41,6 +39,10 @@ Las capas de riesgo y las demás fuentes geográficas se detallan en el reposito
 
 Los reportes no publican nombres de menores, cédulas ni teléfonos. Las fotos se publican sin sus metadatos. Nada de esto se licencia para identificar a personas.
 
-## Versiones anteriores
+## Sin garantía
 
-Hasta el 22-nov-2026 el contenido propio se publicó bajo CC BY 4.0. Quien obtuvo esas versiones conserva, para ellas, esas condiciones (`Archivo/licencias-anteriores/`).
+Todo se entrega **tal cual, sin garantía de ningún tipo** y sin responsabilidad del autor ni de la USFQ por su uso: para el código, según la Licencia Apache 2.0, secciones 7 (exclusión de garantía) y 8 (limitación de responsabilidad); para el contenido propio, según CC BY 4.0, sección 5. Los reportes son información ciudadana preliminar y los modelos, estimaciones propias: **no son datos oficiales**.
+
+## Historia
+
+Hasta el 22-nov-2026 el código salió bajo Apache 2.0 y el contenido propio bajo CC BY 4.0. Del 22 al 23-nov-2026 el código tuvo todos los derechos reservados y lo propio, CC BY-NC-ND 4.0. Desde el 23-nov-2026 vuelven Apache 2.0 y CC BY 4.0. Los textos anteriores están en `Archivo/licencias-anteriores/`.
