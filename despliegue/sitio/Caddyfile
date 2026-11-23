@@ -1,0 +1,151 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito.
+# Proxy de origen detrás de Cloudflare.
+# Certificado de Let's Encrypt (HTTP-01 a través de Cloudflare). En Cloudflare,
+# SSL/TLS debe estar en «Full (strict)».
+{
+	servers {
+		# Solo Cloudflare llega a este servidor (ver firewall-cloudflare.sh).
+		trusted_proxies static 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
+		client_ip_headers Cf-Connecting-Ip
+	}
+}
+
+www.{$SITE_DOMAIN} {
+	redir https://{$SITE_DOMAIN}{uri} permanent
+}
+
+{$SITE_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options SAMEORIGIN
+		Permissions-Policy "camera=(), microphone=(), geolocation=(self)"
+		-Server
+	}
+
+	# La API de la antigua plataforma de coordinación (ResponseGrid) se retiró el 23-nov-2026.
+	handle /backend/* {
+		respond "La plataforma de coordinación anterior se retiró. Ver https://sosgalapagos.org/" 410
+	}
+
+	# Capas del mapa y logos: cacheables en el navegador y en Cloudflare.
+	# «>» reemplaza el Cache-Control que manda Next (max-age=0) en vez de
+	# duplicarlo. /_next/static ya llega como immutable desde Next.
+	@estaticos path /capas/* /marca/* /videos/*
+	header @estaticos >Cache-Control "public, max-age=3600, stale-while-revalidate=86400"
+
+	# Capas y descargas: archivos estáticos fuera del repo, en /srv/sosgalapagos-mapas
+	# (los publica sosgalapagos-datos: servidores/publicar.sh mapas).
+	# Desde el 21-nov-2026 el mapa único es /riesgos/: quien entra a /mapas/ va allí.
+	# Solo se redirige la página; el manifiesto, las capas, las descargas y las teselas
+	# de /mapas/… se siguen sirviendo, porque /riesgos/ las lee de aquí. La redirección
+	# es temporal (302) para poder volver atrás, y el navegador conserva lo que va tras «#».
+	redir /mapas /riesgos/ 302
+	handle_path /mapas/* {
+		root * /srv/mapas
+		@visor path / /index.html
+		redir @visor /riesgos/ 302
+		# La página y sus índices se revalidan siempre (ETag): un cambio se ve al instante.
+		@indices path / /index.html *.json
+		header @indices Cache-Control "no-cache"
+		@archivos not path / /index.html *.json
+		header @archivos Cache-Control "public, max-age=600, stale-while-revalidate=86400"
+		@geojson path *.geojson
+		header @geojson Content-Type "application/geo+json; charset=utf-8"
+		@zip path *.zip
+		header @zip Content-Type application/zip
+		file_server {
+			precompressed gzip
+		}
+	}
+
+	# Estudios técnicos (páginas estáticas en /srv/sosgalapagos-estudios, publicadas con
+	# geodatos/scripts/publicar_estudios.sh) y su API de comentarios.
+	handle_path /estudios/api/* {
+		reverse_proxy comentarios:8080
+	}
+	# /estudios/ publica solo la lista de informes técnicos en PDF (sosgalapagos-datos: informes/publicar.sh).
+	# /informes es un alias.
+	redir /informes /estudios/ permanent
+	redir /informes/* /estudios/ permanent
+	redir /estudios /estudios/ permanent
+	handle_path /estudios/* {
+		root * /srv/estudios
+		@paginas path / *.html */ *.json
+		header @paginas Cache-Control "no-cache"
+		@recursos not path / *.html */ *.json
+		header @recursos Cache-Control "public, max-age=600, stale-while-revalidate=86400"
+		@geojson path *.geojson
+		header @geojson Content-Type "application/geo+json; charset=utf-8"
+		file_server {
+			precompressed gzip
+		}
+	}
+
+	# Clima en vivo: dashboard estático + los JSON agregados que reescribe cada
+	# 5 min el recolector del host (systemd sosgalapagos-clima.timer). Se sirven
+	# la página, esos JSON y, desde el 12-nov-2026, las descargas de datos crudos
+	# (/datos/descargas/: CSV mensuales, estaciones, LEEME e índice), que el
+	# recolector regenera cada hora. Todo lo demás da 404.
+	redir /clima /clima/ permanent
+	handle_path /clima/* {
+		root * /srv/clima
+		header X-Robots-Tag "noindex, nofollow"
+		header Cache-Control "no-cache"
+		@permitido path / /index.html /datos/estado.json /datos/horario.json /datos/diario.json
+		handle @permitido {
+			file_server
+		}
+		@descargas path_regexp ^/datos/descargas/[A-Za-z0-9_.-]+\.(csv|csv\.gz|zip|txt|json)$
+		handle @descargas {
+			file_server
+		}
+		handle {
+			respond 404
+		}
+	}
+
+	# Mapa de riesgos: reportes ciudadanos con vencimiento (repo mayait/sosgalapagos-plataforma).
+	# Corre en un Compose aparte («sosgalapagos-plataforma»), unido a esta red. Todo lo suyo
+	# vive bajo /riesgos/ (páginas, API, administración, estáticos y fotos).
+	redir /riesgos /riesgos/ permanent
+	handle /riesgos/* {
+		reverse_proxy plataforma:8000
+	}
+	# La dirección anterior, /mapa/, estuvo activa unas horas el 21-nov: lleva a la nueva.
+	redir /mapa /riesgos/ permanent
+	redir /mapa/* /riesgos/ permanent
+
+	# Informes y mapas descargables de la portada: PDF y sus miniaturas, fuera del
+	# repo, en /srv/sosgalapagos-descargas (los publica sosgalapagos-datos:
+	# servidores/publicar.sh descargas). Solo se sirven .pdf, .jpg y .png de la
+	# raíz de esa carpeta; el índice lo lee la web por dentro, no se publica.
+	redir /descargas /#informes
+	redir /descargas/ /#informes
+	handle_path /descargas/* {
+		root * /srv/descargas
+		@archivo path_regexp ^/[A-Za-z0-9][A-Za-z0-9_.-]*\.(pdf|jpg|png)$
+		handle @archivo {
+			header Cache-Control "public, max-age=600, stale-while-revalidate=86400"
+			file_server
+		}
+		handle {
+			respond 404
+		}
+	}
+
+	# Sitios privados con contraseña que no viven en este repositorio. Cada archivo
+	# /srv/sosgalapagos-privado/caddy/*.caddy del servidor define su ruta, su usuario
+	# y el hash de su contraseña, y sirve archivos de /srv/sosgalapagos-privado/sitios.
+	# Si no hay ninguno, no se publica nada.
+	import /etc/caddy/privado/*.caddy
+
+	# Todo lo demás (la portada «/», /privacidad, robots.txt, sitemap.xml…) lo sirve la plataforma.
+	handle {
+		reverse_proxy plataforma:8000
+	}
+}

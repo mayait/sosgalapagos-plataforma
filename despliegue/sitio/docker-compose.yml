@@ -1,0 +1,45 @@
+# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
+# Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito.
+#
+# El frente del sitio sosgalapagos.org: Caddy (HTTPS detrás de Cloudflare) y los comentarios de /estudios.
+# Todo lo dinámico (la portada, /riesgos/, la API del clima) lo sirve la plataforma, que es otro Compose
+# (despliegue/produccion/) unido a esta red. /mapas/, /clima/, /estudios/ y /descargas/ son carpetas del
+# servidor que publica sosgalapagos-datos.
+#
+# El nombre del proyecto se mantiene («sosgalapagos»): así se conservan los volúmenes de antes (certificados
+# de Caddy y comentarios) y la red «sosgalapagos_default», a la que se une la plataforma.
+name: sosgalapagos
+
+services:
+  comentarios:
+    build: ./comentarios
+    restart: unless-stopped
+    volumes:
+      - comentariosdata:/datos
+    expose:
+      - '8080'
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      - comentarios
+    ports:
+      - '0.0.0.0:80:80'
+      - '0.0.0.0:443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - /srv/sosgalapagos-mapas:/srv/mapas:ro
+      - /srv/sosgalapagos-clima:/srv/clima:ro
+      - /srv/sosgalapagos-estudios:/srv/estudios:ro
+      - /srv/sosgalapagos-descargas:/srv/descargas:ro
+      - caddydata:/data
+      - caddyconfig:/config
+      - /srv/sosgalapagos-privado/caddy:/etc/caddy/privado:ro
+      - /srv/sosgalapagos-privado/sitios:/srv/privado:ro
+
+volumes:
+  comentariosdata:
+  caddydata:
+  caddyconfig:
