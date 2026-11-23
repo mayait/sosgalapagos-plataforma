@@ -1,5 +1,5 @@
 # SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
-# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
+# Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito.
 """Los datos que lee el panel de /clima/: estado.json, horario.json, diario.json y pronostico.json.
 
 Todo sale de PostgreSQL: de los resúmenes por hora y de consultas acotadas, no de recorrer toda

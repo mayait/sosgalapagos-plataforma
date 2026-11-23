@@ -1,5 +1,5 @@
 # SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
-# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
+# Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito.
 """Clima: todo lo que se mide, se pronostica y se avisa, en la misma base que el mapa (PostgreSQL).
 
 Las fuentes (clima/fuentes/) escriben aquí directamente; no hay otra base ni archivos intermedios.

@@ -1,5 +1,5 @@
 # SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
-# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
+# Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito.
 """Informe comunitario en la línea del tiempo y el tipo de aviso «Encañada obstruida».
 
 La encañada obstruida es un peligro que dura hasta que se limpia: plazo de un año y la coordinación lo

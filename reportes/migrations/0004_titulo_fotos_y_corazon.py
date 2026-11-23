@@ -1,5 +1,5 @@
 # SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
-# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
+# Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito.
 """Título propio y fotos adicionales en los avisos; «Dónde donar o colaborar» pasa a llevar un corazón."""
 import django.db.models.deletion
 from django.db import migrations, models

@@ -1,5 +1,5 @@
 # SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
-# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
+# Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito.
 """Mapa de lluvia y viento de los modelos (tipo Windy) para el panel de /clima/.
 
 Baja de Open-Meteo una rejilla regular sobre Galápagos (por defecto 0,125°) con la lluvia cada 3 horas

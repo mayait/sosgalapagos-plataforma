@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SOS Galápagos · relevo de IERSE.
 # © 2026 Universidad San Francisco de Quito (USFQ) · SOS Galápagos · Julián Maya <jamaya@usfq.edu.ec>
-# Uso, copia o modificación solo con permiso escrito del autor (ver LICENCIA en la raíz del repositorio).
+# Licencia Apache 2.0 (ver LICENSE y NOTICE en la raíz del repositorio): puede reutilizarse dando crédito.
 """Relevo: pide a IERSE lo que la plataforma le indica y le devuelve las respuestas tal cual.
 
 Por qué existe: el servidor de IERSE (Universidad del Azuay) solo responde a conexiones desde

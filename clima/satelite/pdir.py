@@ -1,5 +1,5 @@
 # SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
-# Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE).
+# Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito.
 """Lluvia estimada por satélite PDIR-Now (CHRS, Universidad de California, Irvine), recortada a Galápagos.
 
 PDIR-Now es una ESTIMACIÓN POR INFRARROJO, como el RRQPE de la NOAA: no es lluvia medida ni un dato

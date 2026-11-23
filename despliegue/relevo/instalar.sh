@@ -1,6 +1,6 @@
 #!/bin/sh
 # SOS Galápagos · instala el relevo de IERSE en una máquina que esté en Ecuador (Mac o Linux).
-# © 2026 USFQ · SOS Galápagos · Julián Maya <jamaya@usfq.edu.ec>. Uso solo con permiso del autor (ver LICENCIA).
+# © 2026 USFQ · SOS Galápagos · Julián Maya <jamaya@usfq.edu.ec>. Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito.
 #
 # Uso:   sh instalar.sh            (pide la llave)
 #        RELEVO_LLAVE=… sh instalar.sh

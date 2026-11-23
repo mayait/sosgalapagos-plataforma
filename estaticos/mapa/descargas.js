@@ -1,5 +1,5 @@
 /* SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
-   Todos los derechos reservados. Usar, copiar, modificar o derivar de este código requiere permiso escrito del autor (ver LICENSE). */
+   Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito. */
 /* Página «Descargar capas»: la misma lista que publica /mapas (capas.json y descargas.json),
    capa por capa, con sus enlaces en Shapefile y GeoJSON. No hay lista propia: una capa nueva
    que publique el repo de datos aparece aquí sola. */
