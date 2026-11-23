@@ -95,6 +95,23 @@ def prueba_el_dia_del_modelo_es_el_de_galapagos():
     assert bloques["2026-11-10T00"] == [6.0, 12.0] and "2026-11-11T06" not in bloques
 
 
+def prueba_el_cape_se_guarda_como_maximo_del_dia():
+    from clima.fuentes import modelos
+
+    # El CAPE es instantáneo: la hora t cuenta para el día local de t (06:00 UTC = 00:00 en Galápagos).
+    inicio = datetime(2026, 11, 10, 6, 0, tzinfo=timezone.utc)
+    horas = [(inicio + timedelta(hours=i)).strftime("%Y-%m-%dT%H:%M") for i in range(30)]
+    cape = [100.0 * i for i in range(30)]
+    cape[5] = None
+    assert modelos.maximos_diarios(horas, cape) == {"2026-11-10": 2300}  # el día siguiente, con 6 horas, no cuenta
+
+    respuesta = [{"hourly": {"time": horas, "precipitation_gfs_seamless": [1.0] * 30, "cape_gfs_seamless": cape,
+                             "precipitation_ecmwf_aifs025_single": [1.0] * 30, "cape_ecmwf_aifs025_single": [None] * 30}}] * 7
+    gfs = modelos.resumen_determinista("gfs_seamless", respuesta)["puerto-ayora"]
+    assert gfs["cape_max"] == {"2026-11-10": 2300} and "dias" in gfs
+    assert "cape_max" not in modelos.resumen_determinista("ecmwf_aifs025_single", respuesta)["puerto-ayora"]  # AIFS no da CAPE
+
+
 def prueba_guarda_solo_lo_que_cambia_y_verifica(cargada):
     from clima import pronostico
     from clima.fuentes import modelos

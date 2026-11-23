@@ -115,7 +115,8 @@ class PronosticoCorrida(models.Model):
 
     `datos` es {punto: {dias: {fecha: mm}, …}}: en un determinista, un valor por día (y el detalle por
     hora del modelo de 9 km); en un conjunto, la lista con el valor de cada miembro, por día y por
-    bloque de 6 horas.
+    bloque de 6 horas. Los deterministas que dan CAPE guardan además `cape_max`: {fecha: J/kg}, el
+    máximo del día (aún no entra en la señal; no hace falta migración, va dentro de `datos`).
     """
 
     modelo = models.CharField(max_length=40)
