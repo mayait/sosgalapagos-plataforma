@@ -342,6 +342,8 @@ def prueba_el_zip_con_todo_junta_mediciones_y_estimaciones(tmp_path):
         assert z.read("estimaciones/nivel_zona.csv").decode().splitlines()[1] == "la-cascada,2026-11-21T11:00:00Z,muy alto,alto,False,43.0,110.0,173.0,"
         assert z.read("estimaciones/satelite_goes.csv").decode().splitlines()[1] == "2026-11-21T11:00:00Z,la-cascada,frio_pct,40.0"
         assert "NO son datos oficiales" in z.read("LEEME.txt").decode()
+        assert {"regla/umbrales_inundacion.json", "regla/estaciones_danadas.csv"} <= nombres
+        assert all(i.date_time[0] >= 2026 for i in z.infolist())
     assert "clima_galapagos_todo.zip" in {a["archivo"] for a in json.loads((carpeta / "indice.json").read_text())["archivos"]}
     assert not list(carpeta.glob(".*.tmp"))
 

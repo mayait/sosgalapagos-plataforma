@@ -81,6 +81,12 @@ clima_galapagos_todo.zip         TODO en un archivo, se rehace cada noche (~02:0
     estimaciones/pronostico_modelos.csv      lluvia del día que dio cada modelo (mm de modelo)
     estimaciones/satelite_goes.csv           agregados por zona del GOES-19 (topes fríos, RRQPE, rayos)
     estimaciones/mar_modelo.csv              nivel del mar y oleaje modelados (Open-Meteo Marine)
+    regla/umbrales_inundacion.json           la regla del nivel: zonas, estaciones y pesos, umbrales,
+                                             humedad previa, persistencia (la misma que usa la página)
+    regla/estaciones_danadas.csv             pluviómetros marcados con errores y desde cuándo
+    regla/pronostico_*.json, zonas_geo.json, mareas_prediccion.json   reglas y calibraciones propias
+    Para reproducir el nivel con estos archivos: clima/replicar/ en
+    https://github.com/mayait/sosgalapagos-datos (Python sin dependencias).
 clima_galapagos_AAAA-MM.zip      todas las mediciones de estaciones del mes (un CSV dentro)
     ts_utc     hora en UTC (Galápagos = UTC-6)
     fuente     ierse | gsc | inamhi | ioc | metar | weatherlink | tempest | ambient | wunderground
@@ -133,9 +139,17 @@ def _texto(ruta, contenido):
     os.chmod(ruta, 0o644)
 
 
+def _miembro(nombre):
+    """Entrada del ZIP con la fecha de hoy (z.open sin fecha la deja en 1980)."""
+    zi = zipfile.ZipInfo(nombre, date_time=dt.datetime.now(UTC).timetuple()[:6])
+    zi.compress_type = zipfile.ZIP_DEFLATED
+    zi.external_attr = 0o644 << 16
+    return zi
+
+
 def _csv(z, nombre, encabezado, sql, params=()):
     """Una consulta a un CSV dentro del ZIP, por partes para no cargarla entera en memoria."""
-    with z.open(nombre, "w") as crudo, io.TextIOWrapper(crudo, encoding="utf-8", newline="") as f, connection.cursor() as c:
+    with z.open(_miembro(nombre), "w") as crudo, io.TextIOWrapper(crudo, encoding="utf-8", newline="") as f, connection.cursor() as c:
         w = csv.writer(f)
         w.writerow(encabezado)
         c.execute(sql, params)
@@ -159,7 +173,7 @@ def publicar_todo(carpeta=None):
     Primero rehace las descargas del mes (así el LEEME y las listas van al día) y después junta
     todo en un ZIP. Se escribe aparte y se cambia de un golpe: nadie baja un archivo a medias.
     """
-    from .models import MarHora, NivelManual, NivelZona, PronosticoEmitido, PronosticoModelo
+    from .models import EstacionDanada, MarHora, NivelManual, NivelZona, PronosticoEmitido, PronosticoModelo
 
     publicar(carpeta)
     destino = Path(carpeta or settings.CLIMA_SALIDA) / "descargas"
@@ -197,6 +211,11 @@ def publicar_todo(carpeta=None):
         _csv(z, "estimaciones/mar_modelo.csv", ["puerto", "hora_utc", "nivel_m", "ola_m", "fondo_m", "periodo_s", "direccion", "viento_ms", "agua_c"],
              f"""SELECT puerto, {TS.format("hora")}, nivel_m, ola_m, fondo_m, periodo_s, direccion, viento_ms, agua_c
                  FROM {t(MarHora)} WHERE fuente = 'openmeteo' ORDER BY hora, puerto""")
+        for regla in sorted((Path(__file__).resolve().parent / "datos").glob("*.json")):
+            z.write(regla, f"regla/{regla.name}")
+        _csv(z, "regla/estaciones_danadas.csv", ["fuente", "estacion", "variable", "desde_utc", "hasta_utc", "motivo"],
+             f"""SELECT e.fuente, e.codigo, d.variable, {TS.format("d.desde")}, {TS.format("d.hasta")}, d.motivo
+                 FROM {t(EstacionDanada)} d JOIN clima_estacion e ON e.id = d.estacion_id ORDER BY d.desde""")
     os.chmod(tmp, 0o644)
     os.replace(tmp, ruta)
     _indice(destino)
