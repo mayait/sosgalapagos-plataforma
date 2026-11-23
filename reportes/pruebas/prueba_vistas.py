@@ -70,11 +70,11 @@ def prueba_la_foto_se_guarda_sin_metadatos_y_da_la_ubicacion(client, settings, t
     assert not guardada.getexif()  # ni ubicación ni modelo de teléfono
 
 
-def prueba_la_ficha_oculta_la_nota_hasta_que_coordinacion_la_ve(client):
-    ident = client.post("/riesgos/reportar/", {**DATOS, "nota": "Vive la familia Pérez"}).json()["id"]
-    assert "Pérez" not in client.get(f"/riesgos/r/{ident}/").content.decode()
-    Reporte.objects.update(contenido_visible=True)
-    assert "Pérez" in client.get(f"/riesgos/r/{ident}/").content.decode()
+def prueba_la_nota_se_publica_al_instante_y_coordinacion_puede_ocultarla(client):
+    ident = client.post("/riesgos/reportar/", {**DATOS, "nota": "El agua llega a la rodilla"}).json()["id"]
+    assert "llega a la rodilla" in client.get(f"/riesgos/r/{ident}/").content.decode()
+    Reporte.objects.update(contenido_visible=False)
+    assert "llega a la rodilla" not in client.get(f"/riesgos/r/{ident}/").content.decode()
 
 
 def prueba_dos_ya_bajo_desde_dos_telefonos_cierran_el_reporte(client):
@@ -276,10 +276,10 @@ def prueba_un_lugar_de_donacion_pide_telefono_de_contacto(client):
     con = client.post("/riesgos/reportar/", {"tipo": "donar_colaborar", "lat": "-0.7428", "lon": "-90.3108", "contacto": "099-123-4567"})
     r = Reporte.objects.get(id_publico=con.json()["id"])
     assert r.contacto == "0991234567"
-    # El teléfono, como la nota, no se ve hasta que coordinación lo revisa.
-    assert "0991234567" not in client.get(f"/riesgos/r/{r.id_publico}/").content.decode()
-    Reporte.objects.filter(pk=r.pk).update(contenido_visible=True)
+    # El teléfono del lugar se publica al instante, con la nota; coordinación puede ocultarlo.
     assert 'href="tel:0991234567"' in client.get(f"/riesgos/r/{r.id_publico}/").content.decode()
+    Reporte.objects.filter(pk=r.pk).update(contenido_visible=False)
+    assert "0991234567" not in client.get(f"/riesgos/r/{r.id_publico}/").content.decode()
 
 
 def prueba_un_peligro_no_guarda_contacto(client):

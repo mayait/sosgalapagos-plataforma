@@ -48,7 +48,7 @@ class ReporteAdmin(admin.GISModelAdmin):
     search_fields = ("id_publico", "titulo", "nota")
     readonly_fields = ("id_publico", "vence_en", "huella", "creado_en", "cerrado_en", "motivo_cierre")
     inlines = [DocumentoEnLinea, FotoEnLinea, ConfirmacionEnLinea]
-    actions = ["verificar", "publicar_contenido", "avisar", "cerrar"]
+    actions = ["verificar", "ocultar_contenido", "publicar_contenido", "avisar", "cerrar"]
 
     # Un reporte nunca se borra: se cierra y queda en el archivo.
     def has_delete_permission(self, request, obj=None):
@@ -71,9 +71,13 @@ class ReporteAdmin(admin.GISModelAdmin):
         for reporte in queryset.exclude(estado=Estado.CERRADO)[:5]:
             avisar_reporte.enqueue(reporte.pk)
 
-    @admin.action(description="Publicar foto y nota (ya revisadas)")
+    @admin.action(description="Volver a publicar foto y nota")
     def publicar_contenido(self, request, queryset):
         queryset.update(contenido_visible=True)
+
+    @admin.action(description="Ocultar foto y nota")
+    def ocultar_contenido(self, request, queryset):
+        queryset.update(contenido_visible=False)
 
     @admin.action(description="Cerrar (pasa al archivo)")
     def cerrar(self, request, queryset):

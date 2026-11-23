@@ -306,7 +306,7 @@ def _publicar(conversacion, mensaje, tipo, b):
     else:
         partes = [
             f"✅ Publicado: *{r.nombre}*{' · ' + r.zona.nombre if r.zona else ''}\n{enlace}",
-            "Ya aparece en el mapa como «por verificar». La foto y el texto se ven cuando coordinación los revise."
+            "Ya aparece en el mapa, con tu foto y tu texto, como «por verificar»."
             + (" La ubicación es aproximada: si puedes, mándame el punto exacto." if aproximado else ""),
         ]
     total = colaborador.puntos if colaborador else resultado.puntos

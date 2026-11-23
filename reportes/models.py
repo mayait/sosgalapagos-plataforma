@@ -177,9 +177,10 @@ class Reporte(models.Model):
     nota = models.CharField(max_length=280, blank=True)
     # La foto y la nota de un vecino no se publican hasta que coordinación las ve:
     # así un nombre, una cédula o la cara de un menor no llegan al mapa sin revisión.
-    contenido_visible = models.BooleanField("foto y nota públicas", default=False)
+    contenido_visible = models.BooleanField("foto y nota públicas", default=True,
+                                            help_text="Todo se publica al instante. Desmárcalo para ocultar la foto y la nota.")
     # Teléfono de un lugar que recibe donaciones o de una institución. Se publica con la nota,
-    # cuando coordinación lo revisa. Nunca el teléfono de quien reporta.
+    # al instante; coordinación lo oculta si no corresponde. Nunca el teléfono de quien reporta.
     contacto = models.CharField("teléfono de contacto del lugar", max_length=40, blank=True)
     autor = models.ForeignKey("Colaborador", null=True, blank=True, on_delete=models.SET_NULL, related_name="reportes")
     zona = models.ForeignKey("zonas.Zona", null=True, blank=True, on_delete=models.SET_NULL, related_name="reportes")

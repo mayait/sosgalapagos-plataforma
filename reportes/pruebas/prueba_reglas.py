@@ -67,10 +67,16 @@ def prueba_cerrar_vencidos_no_toca_los_vigentes(agua):
     assert reglas.cerrar_vencidos(ahora + timedelta(hours=1)) == 0
 
 
-def prueba_un_vecino_entra_por_verificar_y_con_el_contenido_oculto(agua):
+def prueba_un_vecino_entra_por_verificar_y_con_el_contenido_publicado(agua):
     r = crear(agua, nota="frente a la tienda").reporte
     assert r.estado == Estado.POR_VERIFICAR
-    assert r.contenido_visible is False
+    assert r.contenido_visible is True
+
+
+def prueba_la_nota_de_un_vecino_no_publica_telefonos_ni_cedulas(agua):
+    r = crear(agua, nota="llamar al 099 123 4567 o al +593987654321, cédula 2000045357; casa 12").reporte
+    assert "4567" not in r.nota and "987654321" not in r.nota and "2000045357" not in r.nota
+    assert r.nota.count("[número oculto]") == 3 and "casa 12" in r.nota
 
 
 def prueba_un_coordinador_entra_confirmado_y_visible(agua):

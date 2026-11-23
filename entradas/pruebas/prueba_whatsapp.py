@@ -126,7 +126,7 @@ def prueba_pide_la_ubicacion_publica_y_responde_con_el_enlace(enviados, settings
     assert Reporte.objects.count() == 0
     r2 = decir("", tipo="location", lat=-0.7412, lon=-90.3135)
     reporte = Reporte.objects.get()
-    assert reporte.fuente == "whatsapp" and reporte.estado == "por_verificar" and not reporte.contenido_visible
+    assert reporte.fuente == "whatsapp" and reporte.estado == "por_verificar" and reporte.contenido_visible
     assert reporte.tipo.codigo == "agua_via" and reporte.foto and abs(reporte.punto.y + 0.7412) < 1e-6
     assert f"{settings.SITIO_URL}/riesgos/?r={reporte.id_publico}" in r2
     assert "Ganaste 15 puntos" in r2 and "nombre o apodo" in r2 and "911" in r2
