@@ -269,3 +269,17 @@ def prueba_la_linea_del_tiempo_lee_la_lluvia_de_esta_base(cargada):
     assert panel.estaciones_con_lluvia() == [{"id": "ierse/n1", "nombre": "Los Guayabillos", "isla": "Santa Cruz"}]
     inicio, valores = panel.lluvia_por_hora("ierse/n1", HORA - timedelta(hours=1), HORA + timedelta(hours=1))
     assert inicio == HORA - timedelta(hours=1) and valores == [None, 6.0]
+
+
+def prueba_la_tabla_del_inocar_se_pide_dia_por_dia(monkeypatch, settings):
+    """Una página por día: si una trae menos días de lo prometido, no queda un hueco en la curva de marea."""
+    from datetime import date
+
+    from clima import mar
+
+    settings.CLIMA_INOCAR_MAREAS_URL = "prueba://{cp}/{fecha}"
+    pedidas = []
+    monkeypatch.setattr(mar, "_bajar", lambda url, *a, **k: pedidas.append(url) or b"")
+    mar.actualizar_inocar(dias=9, hoy=date(2026, 11, 22))
+    santa_cruz = sorted(u.rsplit("/", 1)[1] for u in pedidas if u.startswith("prueba://30/"))
+    assert santa_cruz == [f"2026-11-{d}" for d in range(22, 31)]
