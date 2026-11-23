@@ -246,6 +246,8 @@ class ClaseSuceso(models.TextChoices):
     NOTICIA = "noticia", "Noticia"
     INFORME = "informe", "Informe o mapa de SOS Galápagos"
     NOTA = "nota", "Nota de coordinación"
+    # Un documento de la comunidad (directiva de un barrio, comité): no es oficial ni de SOS Galápagos.
+    BARRIO = "barrio", "Informe comunitario"
 
 
 class ZonaGrande(models.TextChoices):
