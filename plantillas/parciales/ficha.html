@@ -32,6 +32,7 @@
   {% if r.contacto and r.contenido_visible %}<p class="ficha-contacto"><span>Contacto del lugar</span> <a href="tel:{{ r.contacto|cut:' ' }}">{{ r.contacto }}</a></p>{% endif %}
   {% if not r.contenido_visible %}{% if r.foto or r.nota %}<p class="ficha-oculto">Este reporte trae {% if r.foto %}una foto{% endif %}{% if r.foto and r.nota %} y {% endif %}{% if r.nota %}una nota{% endif %}. Se publica cuando coordinación la revise.</p>{% endif %}{% endif %}
 
+  {% with docs=r.documentos.all %}{% if docs %}{% for d in docs %}{% if d.publico %}<p class="ficha-documento"><a href="{% url 'reportes:documento' d.pk %}" target="_blank" rel="noopener">{{ d.titulo }}</a> <small>PDF{% if d.fecha %} · {{ d.fecha|date:"j M Y" }}{% endif %}</small></p>{% endif %}{% endfor %}{% endif %}{% endwith %}
   {% if r.estado != "cerrado" %}
   <div class="ficha-botones">
     <button class="boton lleno" hx-post="{% url 'reportes:confirmar' r.id_publico %}" hx-vals='{"tipo":"sigue_ahi"}' hx-target="#detalle">Sigue ahí<small>Lo estoy viendo ahora</small></button>

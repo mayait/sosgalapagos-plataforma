@@ -7,6 +7,7 @@ de su tipo y se retira solo. Nunca se borra: al cerrarse pasa al archivo del eve
 Las reglas (plazos, duplicados, confirmaciones) están en reportes/reglas.py.
 """
 import secrets
+import uuid
 
 from django.contrib.gis.db import models
 from django.utils import timezone
@@ -16,6 +17,9 @@ ALFABETO_ID = "23456789abcdefghjkmnpqrstuvwxyz"  # sin 0, 1, i, l, o: se dictan 
 
 def nuevo_id_publico():
     return "".join(secrets.choice(ALFABETO_ID) for _ in range(8))
+
+
+DOCUMENTO_MAX_BYTES = 25 * 1024 * 1024
 
 
 class Clase(models.TextChoices):
@@ -221,6 +225,48 @@ class FotoReporte(models.Model):
         verbose_name = "foto adicional"
         verbose_name_plural = "fotos adicionales"
         ordering = ["orden", "id"]
+
+
+def ruta_documento(instancia, nombre):
+    # Nombre al azar: el archivo nunca se sirve por /riesgos/medios/, pero tampoco debe adivinarse.
+    return f"documentos/{instancia.reporte.id_publico}/{uuid.uuid4().hex}.pdf"
+
+
+def validar_pdf(archivo):
+    from django.core.exceptions import ValidationError
+
+    if archivo.size > DOCUMENTO_MAX_BYTES:
+        raise ValidationError(f"El PDF pesa más de {DOCUMENTO_MAX_BYTES // (1024 * 1024)} MB.")
+    inicio = archivo.read(5)
+    archivo.seek(0)
+    if not archivo.name.lower().endswith(".pdf") or inicio != b"%PDF-":
+        raise ValidationError("Solo se aceptan documentos PDF.")
+
+
+class DocumentoReporte(models.Model):
+    """Un documento que respalda un aviso: un informe, un oficio. Solo lo sube coordinación desde el admin.
+
+    Es privado salvo que coordinación lo marque público: muchos traen nombres, cédulas o teléfonos.
+    Se guarda en el volumen de medios (con respaldo diario) bajo documentos/, que /riesgos/medios/ no
+    sirve: solo se baja por /riesgos/documento/<id>/, que exige sesión de coordinación si es privado.
+    Nunca se borra.
+    """
+
+    reporte = models.ForeignKey(Reporte, on_delete=models.PROTECT, related_name="documentos")
+    archivo = models.FileField(upload_to=ruta_documento, validators=[validar_pdf], help_text="PDF, hasta 25 MB.")
+    titulo = models.CharField("título", max_length=140)
+    fecha = models.DateField("fecha del documento", null=True, blank=True)
+    publico = models.BooleanField("se puede ver en el mapa", default=False,
+                                  help_text="Márcalo solo si el PDF no trae nombres de personas afectadas, cédulas ni teléfonos.")
+    subido_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "documento"
+        verbose_name_plural = "documentos"
+        ordering = ["fecha", "id"]
+
+    def __str__(self):
+        return self.titulo
 
 
 class TipoConfirmacion(models.TextChoices):

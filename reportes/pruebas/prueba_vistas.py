@@ -380,3 +380,48 @@ def prueba_los_datos_del_mapa_de_lluvia_los_sirve_la_plataforma(client, settings
     r = client.get("/riesgos/api/clima/lluvia-mapa.json")
     assert r.status_code == 200 and b"".join(r.streaming_content) == b'{"generado": "x"}' and "max-age" in r["Cache-Control"]
 
+
+
+# ── Documentos PDF de un reporte ─────────────────────────────────────────────
+PDF = b"%PDF-1.4\n%prueba\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n"
+
+
+def _reporte_con_documento(publico, settings, tmp_path):
+    from reportes.models import DocumentoReporte, TipoRiesgo
+    from django.contrib.gis.geos import Point
+
+    settings.MEDIA_ROOT = tmp_path
+    r = Reporte.objects.create(tipo=TipoRiesgo.objects.get(codigo="agua_via"), punto=Point(-90.3145, -0.7435, srid=4326))
+    d = DocumentoReporte(reporte=r, titulo="Informe de campo", publico=publico,
+                         archivo=SimpleUploadedFile("informe.pdf", PDF, content_type="application/pdf"))
+    d.full_clean()
+    d.save()
+    return r, d
+
+
+def prueba_un_documento_privado_solo_lo_ve_coordinacion(client, admin_client, settings, tmp_path):
+    r, d = _reporte_con_documento(False, settings, tmp_path)
+    assert client.get(f"/riesgos/documento/{d.pk}/").status_code == 404
+    assert client.get(f"/riesgos/medios/{d.archivo.name}").status_code == 404   # tampoco por la ruta de las fotos
+    assert "Informe de campo" not in client.get(f"/riesgos/r/{r.id_publico}/").content.decode()
+    resp = admin_client.get(f"/riesgos/documento/{d.pk}/")
+    assert resp.status_code == 200 and resp["Content-Type"] == "application/pdf" and "no-store" in resp["Cache-Control"]
+    assert b"".join(resp.streaming_content) == PDF
+
+
+def prueba_un_documento_publico_sale_en_la_ficha(client, settings, tmp_path):
+    r, d = _reporte_con_documento(True, settings, tmp_path)
+    assert f"/riesgos/documento/{d.pk}/" in client.get(f"/riesgos/r/{r.id_publico}/").content.decode()
+    assert client.get(f"/riesgos/documento/{d.pk}/").status_code == 200
+
+
+def prueba_solo_se_aceptan_pdf(settings, tmp_path):
+    from django.core.exceptions import ValidationError
+    from reportes.models import DocumentoReporte, TipoRiesgo
+    from django.contrib.gis.geos import Point
+
+    settings.MEDIA_ROOT = tmp_path
+    r = Reporte.objects.create(tipo=TipoRiesgo.objects.get(codigo="agua_via"), punto=Point(-90.3145, -0.7435, srid=4326))
+    d = DocumentoReporte(reporte=r, titulo="No es PDF", archivo=SimpleUploadedFile("x.pdf", b"hola", content_type="application/pdf"))
+    with pytest.raises(ValidationError):
+        d.full_clean()

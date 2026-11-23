@@ -3,7 +3,7 @@
 from django.contrib.gis import admin
 
 from . import reglas
-from .models import Colaborador, Confirmacion, Estado, FotoReporte, MotivoCierre, Reporte, Suceso, SuscripcionPush, TipoRiesgo
+from .models import Colaborador, Confirmacion, DocumentoReporte, Estado, FotoReporte, MotivoCierre, Reporte, Suceso, SuscripcionPush, TipoRiesgo
 
 
 @admin.register(TipoRiesgo)
@@ -24,13 +24,30 @@ class FotoEnLinea(admin.TabularInline):
     extra = 0
 
 
+class DocumentoEnLinea(admin.TabularInline):
+    model = DocumentoReporte
+    extra = 0
+    can_delete = False  # un documento nunca se borra
+    fields = ("archivo", "titulo", "fecha", "publico", "ver", "subido_en")
+    readonly_fields = ("ver", "subido_en")
+
+    @admin.display(description="Abrir")
+    def ver(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+
+        if not obj.pk:
+            return "—"
+        return format_html('<a href="{}" target="_blank" rel="noopener">Abrir el PDF</a>', reverse("reportes:documento", args=[obj.pk]))
+
+
 @admin.register(Reporte)
 class ReporteAdmin(admin.GISModelAdmin):
     list_display = ("id_publico", "titulo", "tipo", "gravedad", "estado", "contenido_visible", "zona", "visto_en", "vence_en", "fuente")
     list_filter = ("estado", "tipo__clase", "tipo", "gravedad", "fuente", "contenido_visible")
     search_fields = ("id_publico", "titulo", "nota")
     readonly_fields = ("id_publico", "vence_en", "huella", "creado_en", "cerrado_en", "motivo_cierre")
-    inlines = [FotoEnLinea, ConfirmacionEnLinea]
+    inlines = [DocumentoEnLinea, FotoEnLinea, ConfirmacionEnLinea]
     actions = ["verificar", "publicar_contenido", "avisar", "cerrar"]
 
     # Un reporte nunca se borra: se cierra y queda en el archivo.
