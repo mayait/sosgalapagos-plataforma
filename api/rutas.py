@@ -290,6 +290,32 @@ def clima_zcit(request):
     return _archivo_clima(request, "zcit.json", "todavía no hay análisis de la ZCIT")
 
 
+@api.get("/clima/pdirnow.json", summary="Lluvia estimada por satélite (PDIR-Now) sobre Galápagos, últimas horas", tags=["clima"])
+def clima_pdirnow(request):
+    """Lo genera clima/satelite/pdir.py (servicio «satelite»). Estimación por infrarrojo, no medida ni oficial:
+    no ve la garúa ni la lluvia de nubes bajas. No entra en la señal satelital ni en el nivel de lluvia."""
+    from pathlib import Path
+
+    from django.conf import settings
+    from django.http import FileResponse
+
+    ruta = Path(settings.CLIMA_SALIDA or ".") / "pdirnow.json"
+    if not settings.CLIMA_SALIDA or not ruta.exists():
+        return api.create_response(request, {"error": "todavía no hay lluvia estimada"}, status=404)
+    return FileResponse(open(ruta, "rb"), content_type="application/json", headers={"Cache-Control": "public, max-age=300"})
+
+
+@api.get("/clima/satelite-capas", summary="Fondo del mapa del satélite: horas disponibles de la imagen GeoColor", tags=["clima"])
+def clima_satelite_capas(request):
+    """Plantilla de teselas y horas (UTC, cada 10 min, últimas 3 h disponibles) de la imagen GeoColor de GOES-East
+    que sirve NASA GIBS. Es una imagen del satélite, no un dato de lluvia. Sin GIBS, `tiempos` viene vacío."""
+    from clima.satelite import gibs
+
+    r = api.create_response(request, gibs.capas(), status=200)
+    r["Cache-Control"] = "public, max-age=300"
+    return r
+
+
 @api.get("/clima/nivel", summary="Nivel de lluvia peligrosa por zona", tags=["clima"])
 def clima_nivel(request):
     """El nivel vigente de cada zona. Es una estimación propia y preliminar, no una alerta oficial."""
