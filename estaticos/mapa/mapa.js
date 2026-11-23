@@ -390,14 +390,15 @@
   // Solo donde hay ratón; en el teléfono se toca el punto y se abre su ficha.
   const NOMBRES = {
     gravedad: { cuidado: 'Pasar con cuidado', no_pasar: 'No pasar', peligro_vida: 'Peligro de vida' },
-    estado: { por_verificar: 'por verificar', confirmado: 'confirmado', bajando: 'bajando', cerrado: 'cerrado' },
+    estado: { confirmado: 'confirmado', bajando: 'bajando', cerrado: 'cerrado' }, // «por verificar» no se muestra
   };
   function haceCuanto(segundos) {
     const min = Math.max(0, Math.round((Date.now() / 1000 - segundos) / 60));
+    const en = (n, uno, varios) => `hace ${n} ${n === 1 ? uno : varios}`;
     if (min < 1) return 'hace un momento';
-    if (min < 60) return `hace ${min} min`;
+    if (min < 60) return en(min, 'minuto', 'minutos');
     const h = Math.floor(min / 60);
-    return h < 24 ? `hace ${h} h` : `hace ${Math.floor(h / 24)} d`;
+    return h < 24 ? en(h, 'hora', 'horas') : en(Math.floor(h / 24), 'día', 'días');
   }
   function pistaDe(punto) {
     if (mapa.getLayer('reportes-pin')) {

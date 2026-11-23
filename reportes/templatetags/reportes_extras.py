@@ -22,29 +22,34 @@ def propio(ruta):
     return f"{static(ruta)}?v={version}"
 
 
+def _plural(n, uno, varios):
+    return f"{n} {uno if n == 1 else varios}"
+
+
 def _duracion(segundos):
+    """En palabras, como lo diría una persona: «5 minutos», «2 horas y 15 minutos», «12 días»."""
     minutos = int(segundos // 60)
     if minutos < 1:
-        return "menos de 1 min"
+        return "menos de un minuto"
     if minutos < 60:
-        return f"{minutos} min"
+        return _plural(minutos, "minuto", "minutos")
     horas = minutos // 60
     if horas < 24:
         resto = minutos % 60
-        return f"{horas} h" if resto < 5 or horas >= 6 else f"{horas} h {resto} min"
-    dias = horas // 24
-    return f"{dias} día" if dias == 1 else f"{dias} días"
+        texto = _plural(horas, "hora", "horas")
+        return texto if resto < 5 or horas >= 6 else f"{texto} y {_plural(resto, 'minuto', 'minutos')}"
+    return _plural(horas // 24, "día", "días")
 
 
 @register.filter
 def hace(fecha, ahora):
-    """«hace 25 min»"""
+    """«hace 25 minutos»"""
     return "hace " + _duracion((ahora - fecha).total_seconds())
 
 
 @register.filter
 def falta(fecha, ahora):
-    """«en 3 h»"""
+    """«en 3 horas»"""
     segundos = (fecha - ahora).total_seconds()
     return "en " + _duracion(segundos) if segundos > 0 else "ya"
 
