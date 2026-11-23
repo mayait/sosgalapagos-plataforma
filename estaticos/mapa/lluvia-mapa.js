@@ -180,7 +180,7 @@
     const E = {
       modelo: op.modelo && j.modelos.some(m => m.id === op.modelo) ? op.modelo : j.modelos[0].id,
       modo: op.modo === "dia" ? "dia" : "hora",
-      viento: op.viento !== false && !matchMedia("(prefers-reduced-motion: reduce)").matches,
+      viento: op.viento !== false,  // encendido siempre al abrir (lo pidió Julián); se apaga con el botón «Viento»
       t: 0, jugando: false,
     };
     // Cuadro inicial: el periodo de 3 h que contiene «ahora» (o el primero que se muestra)
