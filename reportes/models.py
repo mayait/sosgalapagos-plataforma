@@ -77,6 +77,8 @@ class Fuente(models.TextChoices):
     COORDINADOR = "coordinador", "Coordinador"
     INSTITUCION = "institucion", "Institución"
     WHATSAPP = "whatsapp", "WhatsApp"
+    # Un documento público de la comunidad (el informe de campo de un barrio): ni coordinación ni institución.
+    COMUNITARIO = "comunitario", "Informe comunitario"
 
 
 class MotivoCierre(models.TextChoices):
