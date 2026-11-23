@@ -68,14 +68,38 @@ def _configuracion():
     }
 
 
+def _compartir(request, reporte):
+    """Título, texto e imagen con que se ve el enlace de un reporte en WhatsApp y otras apps."""
+    from django.templatetags.static import static
+
+    partes = [reporte.tipo.nombre if reporte.titulo else ""]
+    if reporte.tipo.clase == "riesgo":
+        partes.append(reporte.get_gravedad_display())
+    if reporte.zona:
+        partes.append(reporte.zona.nombre)
+    partes.append(reporte.get_estado_display())
+    descripcion = " · ".join(p for p in partes if p) + ". Información ciudadana, no oficial. Emergencias: 911."
+    con_foto = bool(reporte.foto and reporte.contenido_visible)
+    return {
+        "titulo": f"{reporte.nombre} · SOS Galápagos",
+        "descripcion": descripcion,
+        "imagen": request.build_absolute_uri(reporte.foto.url if con_foto else static("app/icono-512.png")),
+        "con_foto": con_foto,
+        "url": request.build_absolute_uri(f"{reverse('reportes:mapa')}?r={reporte.id_publico}"),
+    }
+
+
 @ensure_csrf_cookie
 @require_GET
 def mapa(request):
-    return render(
-        request,
-        "reportes/mapa.html",
-        {"tipos": TipoRiesgo.objects.filter(activo=True), "configuracion": _configuracion()},
-    )
+    contexto = {"tipos": TipoRiesgo.objects.filter(activo=True), "configuracion": _configuracion()}
+    # Un enlace compartido (/riesgos/?r=<id>) muestra en WhatsApp el título y la foto de ese reporte.
+    rid = request.GET.get("r", "")
+    if rid:
+        reporte = Reporte.objects.select_related("tipo", "zona").filter(id_publico=rid).first()
+        if reporte:
+            contexto["compartir"] = _compartir(request, reporte)
+    return render(request, "reportes/mapa.html", contexto)
 
 
 def _numero(valor):
@@ -206,7 +230,7 @@ def _contexto_ficha(reporte, huella=None, mensaje=""):
 def ficha(request, id_publico):
     reporte = get_object_or_404(Reporte.objects.select_related("tipo", "zona"), id_publico=id_publico)
     plantilla = "parciales/ficha.html" if request.headers.get("HX-Request") else "reportes/ficha.html"
-    return render(request, plantilla, _contexto_ficha(reporte))
+    return render(request, plantilla, {**_contexto_ficha(reporte), "compartir": _compartir(request, reporte)})
 
 
 @require_POST

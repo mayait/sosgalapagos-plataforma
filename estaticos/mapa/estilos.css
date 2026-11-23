@@ -750,3 +750,9 @@ textarea.nota { width: 100%; min-height: 64px; padding: 10px 12px; border: 2px s
 .corregir-barra p { margin: 0 0 8px; font-size: 14px; }
 .corregir-barra div { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .corregir-mira[hidden], .corregir-barra[hidden] { display: none; }
+
+/* Compartir un reporte */
+.ficha-compartir { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 10px; }
+.ficha-compartir .boton { padding: 8px 14px; }
+.ficha-compartido { font-size: 13px; color: var(--gris); }
+.ficha-compartido a { color: inherit; font-weight: 700; }

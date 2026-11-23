@@ -98,3 +98,21 @@
     });
   }
 })();
+
+/* Compartir un reporte: el menú del teléfono si existe; si no, copia el enlace y ofrece WhatsApp. */
+document.addEventListener('click', async (e) => {
+  const boton = e.target.closest('[data-compartir]');
+  if (!boton) return;
+  const url = new URL('/riesgos/?r=' + encodeURIComponent(boton.dataset.compartir), location.origin).href;
+  const texto = boton.dataset.texto || boton.dataset.titulo || '';
+  if (navigator.share) {
+    try { await navigator.share({ title: boton.dataset.titulo, text: texto, url }); } catch (err) { /* la persona cerró el menú */ }
+    return;
+  }
+  const aviso = boton.parentElement.querySelector('.ficha-compartido');
+  try { await navigator.clipboard.writeText(url); } catch (err) { /* sin permiso: queda el enlace de WhatsApp */ }
+  if (aviso) {
+    aviso.querySelector('[data-whatsapp]').href = 'https://wa.me/?text=' + encodeURIComponent(texto + ' ' + url);
+    aviso.hidden = false;
+  }
+});

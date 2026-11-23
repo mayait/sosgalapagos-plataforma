@@ -8,6 +8,15 @@
   <meta name="theme-color" content="#ffffff">
   <title>{% block titulo %}Mapa de riesgos{% endblock %} · SOS Galápagos</title>
   <meta name="description" content="Reportes ciudadanos de lugares de riesgo en Galápagos. Información preliminar, no oficial. Emergencias: 911.">
+  {% block compartir %}{% with c=compartir %}
+  <meta property="og:site_name" content="SOS Galápagos">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{% if c %}{{ c.titulo }}{% else %}Mapa de riesgos · SOS Galápagos{% endif %}">
+  <meta property="og:description" content="{% if c %}{{ c.descripcion }}{% else %}Lugares de peligro, cosas buenas y dónde ayudar en Galápagos, según la comunidad. Información preliminar, no oficial.{% endif %}">
+  <meta property="og:image" content="{% if c %}{{ c.imagen }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'app/icono-512.png' %}{% endif %}">
+  {% if c %}<meta property="og:url" content="{{ c.url }}">{% endif %}
+  <meta name="twitter:card" content="{% if c and c.con_foto %}summary_large_image{% else %}summary{% endif %}">
+  {% endwith %}{% endblock %}
   <link rel="manifest" href="{% url 'reportes:manifiesto_app' %}">
   <link rel="icon" href="{% static 'marca/usfq-isotipo-color.svg' %}">
   <link rel="apple-touch-icon" href="{% static 'app/icono-192.png' %}">

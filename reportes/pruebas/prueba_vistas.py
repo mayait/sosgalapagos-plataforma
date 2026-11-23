@@ -452,3 +452,15 @@ def prueba_solo_coordinacion_corrige_la_ubicacion(client, admin_client):
 def prueba_no_se_mueve_fuera_de_galapagos(admin_client):
     r = _reporte_simple()
     assert admin_client.post(f"/riesgos/r/{r.id_publico}/mover/", {"lat": "40.4", "lon": "-3.7"}).status_code == 400
+
+
+# ── Compartir ────────────────────────────────────────────────────────────────
+def prueba_un_enlace_compartido_trae_titulo_y_boton(client):
+    r = _reporte_simple()
+    pagina = client.get(f"/riesgos/?r={r.id_publico}").content.decode()
+    assert 'property="og:title" content="Agua en la vía · SOS Galápagos"' in pagina
+    assert f"/riesgos/?r={r.id_publico}" in pagina
+    assert "no oficial" in pagina
+    assert f'data-compartir="{r.id_publico}"' in client.get(f"/riesgos/r/{r.id_publico}/").content.decode()
+    # un id que no existe muestra el mapa con los datos generales
+    assert "Mapa de riesgos · SOS Galápagos" in client.get("/riesgos/?r=noexiste").content.decode()
