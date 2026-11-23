@@ -516,3 +516,15 @@ def prueba_el_componente_pinta_el_menu_con_la_lista_de_destinos(client):
     lista = _json.loads(codigo.split("const DESTINOS = ", 1)[1].split(";\n", 1)[0])
     assert [(d["nombre"], d["ruta"]) for d in lista] == DESTINOS_MENU
     assert "[data-sos-menu]" in codigo and "showModal" in codigo and "aria-expanded" in codigo
+
+
+# ── Tiempos en palabras y caducidad ──────────────────────────────────────────
+def prueba_la_ficha_dice_cuando_caduca_y_no_por_verificar(client):
+    from reportes.templatetags.reportes_extras import _duracion
+
+    r = _reporte_simple()
+    ficha = client.get(f"/riesgos/r/{r.id_publico}/", headers={"HX-Request": "true"}).content.decode()
+    assert "Caduca" in ficha and "hora de Galápagos" in ficha
+    assert "Por verificar" not in ficha
+    assert _duracion(5 * 60) == "5 minutos" and _duracion(3600) == "1 hora" and _duracion(12 * 86400) == "12 días"
+    assert _duracion(2 * 3600 + 15 * 60) == "2 horas y 15 minutos" and _duracion(86400) == "1 día"
