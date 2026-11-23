@@ -48,7 +48,9 @@ def leer_tabla_inocar(pagina):
     salida, dia = [], None
     for fila in re.findall(r"<tr[^>]*>(.*?)</tr>", texto, re.S):
         celdas = [html.unescape(re.sub(r"<[^>]+>", "", c)).strip() for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", fila, re.S)]
-        if len(celdas) == 1 and (m := re.match(r"(\d{2})/(\d{2})/(\d{4})", celdas[0])):
+        # El encabezado del día trae a veces una celda vacía de más («24/11/2026Martes», «»). Antes solo se
+        # aceptaba con una celda: ese día se guardaba con la fecha del anterior.
+        if not any(celdas[1:]) and celdas and (m := re.match(r"(\d{2})/(\d{2})/(\d{4})", celdas[0])):
             dia = (int(m.group(3)), int(m.group(2)), int(m.group(1)))
         elif dia and len(celdas) == 2 and (h := re.match(r"(\d{1,2}):(\d{2})$", celdas[0])) and (a := re.match(r"(-?\d+(?:\.\d+)?)\s*([PB])$", celdas[1])):
             local = datetime(*dia, int(h.group(1)), int(h.group(2)), tzinfo=GALAPAGOS)
