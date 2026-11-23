@@ -25,16 +25,17 @@
   const SUBMUESTREO = 8;      // píxeles del canvas por celda de la rejilla
   const SEG_POR_CUADRO = 0.9; // al reproducir: segundos por cada 3 h
 
-  // Paletas (valor, [r, g, b, a]). Tonos de Windy: azul claro → azul → verde → amarillo → naranja → rojo → magenta.
+  // Paletas (valor, [r, g, b, a]) sobre fondo claro: azul → verde → amarillo → naranja → rojo → magenta → morado oscuro.
+  // La lluvia débil arranca en un azul con cuerpo y lo más intenso termina oscuro, para que ambos se lean sobre el mapa claro.
   const PALETAS = {
     hora: {unidad: "mm/h · prom. 3 h", marcas: [1, 3, 10, 20, 40], max: 60, paradas: [
-      [0.1, [120, 180, 235, 0]], [0.3, [110, 170, 235, 110]], [0.7, [70, 130, 225, 170]], [1.5, [45, 95, 210, 200]],
+      [0.1, [95, 155, 230, 0]], [0.3, [95, 155, 230, 140]], [0.7, [60, 120, 220, 185]], [1.5, [40, 90, 205, 210]],
       [3, [40, 175, 205, 210]], [5, [55, 190, 95, 220]], [8, [235, 220, 55, 230]], [13, [245, 150, 40, 235]],
-      [20, [230, 55, 45, 240]], [32, [205, 40, 150, 245]], [50, [150, 70, 225, 250]], [60, [235, 210, 255, 250]]]},
+      [20, [230, 55, 45, 240]], [32, [205, 40, 150, 245]], [50, [130, 50, 200, 250]], [60, [70, 20, 110, 250]]]},
     dia: {unidad: "mm en 24 h", marcas: [5, 20, 50, 100, 150], max: 200, paradas: [
-      [0.5, [120, 180, 235, 0]], [1.5, [110, 170, 235, 110]], [4, [70, 130, 225, 170]], [8, [45, 95, 210, 200]],
+      [0.5, [95, 155, 230, 0]], [1.5, [95, 155, 230, 140]], [4, [60, 120, 220, 185]], [8, [40, 90, 205, 210]],
       [14, [40, 175, 205, 210]], [22, [55, 190, 95, 220]], [35, [235, 220, 55, 230]], [55, [245, 150, 40, 235]],
-      [80, [230, 55, 45, 240]], [115, [205, 40, 150, 245]], [160, [150, 70, 225, 250]], [200, [235, 210, 255, 250]]]},
+      [80, [230, 55, 45, 240]], [115, [205, 40, 150, 245]], [160, [130, 50, 200, 250]], [200, [70, 20, 110, 250]]]},
   };
   const N_LUT = 512;
 
@@ -194,11 +195,11 @@
     mapa.attributionControl.setPrefix(false);
     if (!matchMedia("(pointer: coarse)").matches) L.control.zoom({position: "topright"}).addTo(mapa);
     mapa.fitBounds([[-1.45, -91.7], [0.75, -89.15]]);
-    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
       {maxNativeZoom: 16, attribution: "Mapa Esri"}).addTo(mapa);
     mapa.createPane("lmEtiquetas").style.zIndex = 460;
     mapa.getPane("lmEtiquetas").style.pointerEvents = "none";
-    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
       {maxNativeZoom: 16, pane: "lmEtiquetas", opacity: 0.85}).addTo(mapa);
     mapa.attributionControl.addAttribution("Lluvia y viento: Open-Meteo (CC BY 4.0) · ECMWF, NOAA, DWD");
 
@@ -284,7 +285,7 @@
       cx.globalCompositeOperation = "source-over";
       if (!E.viento) return;
       cx.lineWidth = 1.1;
-      cx.strokeStyle = "rgba(255,255,255,0.78)";
+      cx.strokeStyle = "rgba(25,35,55,0.55)";  // sobre fondo claro, el viento va en tinta
       cx.beginPath();
       const K = 0.22; // px por cuadro por cada m/s
       for (const p of parts) {
