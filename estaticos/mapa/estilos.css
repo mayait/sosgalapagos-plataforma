@@ -587,6 +587,9 @@ textarea.nota { width: 100%; min-height: 64px; padding: 10px 12px; border: 2px s
 .descarga-nombre small { display: block; font-weight: 400; font-size: 11.5px; color: var(--gris-claro); }
 .ayuda-descargas { margin-top: 20px; font-size: 13.5px; }
 .ayuda-descargas summary { font-weight: 700; cursor: pointer; padding: 8px 0; }
+.referencias-descargas { margin-top: 24px; font-size: 13.5px; line-height: 1.45; }
+.referencias-descargas h2 { margin: 0 0 8px; font: 800 13px/1.15 var(--titulo); letter-spacing: 0.04em; text-transform: uppercase; }
+.referencias-descargas ul { margin: 0; padding-left: 18px; display: grid; gap: 8px; }
 @media (min-width: 700px) { .descargas li { grid-template-columns: 1fr auto; align-items: center; } }
 
 /* Para qué sirve el reporte (formulario y política de privacidad) */
