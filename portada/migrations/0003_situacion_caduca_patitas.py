@@ -13,7 +13,7 @@ from django.db import migrations, models
 
 GALAPAGOS = timezone(timedelta(hours=-6))
 CADUCADA = datetime(2026, 11, 5, 7, 0, tzinfo=GALAPAGOS)  # un día después de la última revisión
-PATITAS = "Banco Pichincha · Cuenta transaccional 2203496066\nTitular: Fátima Samanta Walthert · C.I. 1757800683"
+PATITAS = "Banco Pichincha · Cuenta transaccional 2203496066\nTitular: Fátima Samanta Walthert"
 
 
 def cargar(apps, schema_editor):
