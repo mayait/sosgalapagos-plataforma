@@ -558,6 +558,10 @@ textarea.nota { width: 100%; min-height: 64px; padding: 10px 12px; border: 2px s
 /* Sucesos sin punto en el mapa: avisos enviados, comunicados oficiales, noticias e informes. Marca cuadrada. */
 .hito.clase-aviso::before { border-radius: 2px; background: var(--negro); }
 .hito.clase-oficial::before { border-radius: 2px; background: #1d4ed8; }
+/* Un documento oficial se distingue de un vistazo: fondo propio, y dice que se puede abrir. */
+.hito.clase-oficial { background: #f2f6ff; border-radius: 10px; padding-right: 12px; }
+.hito.clase-oficial .hito-clase { color: #1d4ed8; }
+.hito-abrir { margin-top: 3px; font-size: 13px; font-weight: 700; color: #1d4ed8; }
 .hito.clase-noticia::before { border-radius: 2px; background: #6b7280; }
 .hito.clase-informe::before, .hito.clase-nota::before { border-radius: 2px; background: #0f766e; }
 .hito.clase-barrio::before { border-radius: 2px; background: #92400e; }

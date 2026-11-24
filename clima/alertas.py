@@ -179,6 +179,8 @@ def _oficiales(ahora):
     for b in Boletin.objects.filter(afecta_galapagos=True, visto_en__gte=ahora - timedelta(hours=12)):
         if b.vigente_hasta and b.vigente_hasta < ahora:
             continue
+        if b.tipo == "sitrep":
+            continue  # sale dos veces al día: va a la línea del tiempo y a la portada, no al teléfono
         tema = "mar" if b.tipo == "oleaje" else "oficiales"
         salida.append(emitir(tema, "", f"boletin:{b.huella[:24]}", f"{nombres.get(b.tipo, 'Boletín oficial')}{' n.º ' + b.numero if b.numero else ''}",
                              (b.resumen or "Hay un boletín oficial nuevo que nombra a Galápagos.")[:230] + " Lee el documento oficial.", b.enlace or "/clima/", ahora=ahora))

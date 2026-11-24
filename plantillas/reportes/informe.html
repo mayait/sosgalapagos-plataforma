@@ -5,6 +5,7 @@
 {% block contenido %}
 <main class="pagina ancha" id="informe" aria-busy="true">
   <h1 class="form-titulo">Línea del tiempo</h1>
+  <p class="form-ayuda atajos-linea"><a href="{% url 'reportes:informe' %}?ver=oficial">Solo los documentos oficiales</a> · <a href="{% url 'reportes:informe' %}">Todo</a></p>
   <p class="form-ayuda">Todo lo que ha pasado, en orden, desde el inicio de la emergencia: lo que reporta la comunidad, los avisos que mandamos a los teléfonos, los comunicados oficiales, las noticias y los informes. Lo que reporta la comunidad y lo que avisamos <b>no es información oficial</b>; lo oficial lleva el nombre de su institución y el enlace al documento.</p>
 
   <form class="filtros" onsubmit="return false" aria-label="Filtros">
