@@ -18,9 +18,13 @@ class AvisoAdmin(admin.ModelAdmin):
 
 @admin.register(Situacion)
 class SituacionAdmin(admin.ModelAdmin):
-    list_display = ("tema", "texto", "orden", "visible", "actualizado")
+    list_display = ("tema", "texto", "orden", "visible", "actualizado", "caduca", "vigente")
     list_editable = ("orden", "visible")
     readonly_fields = ("actualizado",)
+
+    @admin.display(boolean=True, description="se ve ahora")
+    def vigente(self, obj):
+        return obj.visible and (obj.caduca is None or obj.caduca > timezone.now())
 
     def save_model(self, request, obj, form, change):
         # La fecha «Actualizado el…» de la portada es la del último cambio real de texto.

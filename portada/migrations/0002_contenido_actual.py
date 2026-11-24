@@ -4,8 +4,8 @@
 
 - El aviso del sábado 21 de noviembre entra ya vencido y desactivado: queda en el admin como modelo.
 - «Situación hoy» se revisó por última vez el miércoles 4 de noviembre a las 07:00.
-- Mascotas: de Patitas Galapagueñas no se carga la cuenta bancaria, porque está a nombre de una
-  persona y trae su cédula; queda su Facebook.
+- Mascotas: de Patitas Galapagueñas esta migración no carga la cuenta bancaria (está a nombre de una
+  persona); la publica la 0003, con la autorización de Julián.
 Solo crea lo que falta: no pisa lo que coordinación ya haya editado.
 """
 from datetime import datetime, timedelta, timezone

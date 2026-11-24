@@ -3,7 +3,8 @@
 """Lo que coordinación edita en la portada (sosgalapagos.org/) desde el admin.
 
 - El aviso destacado en rojo, con su vencimiento: se oculta solo al pasar `hasta`.
-- «Situación hoy»: frases cortas por tema, con la fecha en que se revisaron.
+- «Situación hoy»: frases cortas por tema, con la fecha en que se revisaron y cuándo caducan.
+  La portada no las muestra hoy: las del 4 de noviembre caducaron y la sección solo vuelve con una vigente.
 - Las organizaciones aliadas y las que atienden animales, con sus canales oficiales.
 
 La advertencia oficial no se edita aquí: sale sola del último boletín del INAMHI (app `clima`).
@@ -42,6 +43,13 @@ class Aviso(models.Model):
         return self.activo and self.hasta > timezone.now()
 
 
+class SituacionQuerySet(models.QuerySet):
+    def vigentes(self, ahora=None):
+        """Las visibles que no han caducado. Sin fecha de caducidad, siguen vigentes hasta que se ocultan."""
+        ahora = ahora or timezone.now()
+        return self.filter(visible=True).filter(models.Q(caduca__isnull=True) | models.Q(caduca__gt=ahora))
+
+
 class Situacion(models.Model):
     """Una línea de «Situación hoy»: qué hay que saber de un tema (refugio, comida, salud…)."""
 
@@ -51,6 +59,10 @@ class Situacion(models.Model):
     visible = models.BooleanField(default=True)
     # Se pone sola al guardar un cambio en el admin. La portada muestra la más reciente.
     actualizado = models.DateTimeField("revisado", default=timezone.now)
+    caduca = models.DateTimeField("deja de verse", null=True, blank=True,
+                                  help_text="Al pasar esta fecha y hora la línea se oculta sola. Vacío: se ve hasta que la ocultes.")
+
+    objects = SituacionQuerySet.as_manager()
 
     class Meta:
         verbose_name = "línea de «Situación hoy»"
@@ -79,7 +91,7 @@ class Organizacion(models.Model):
     donar = models.URLField("enlace para donar", max_length=300, blank=True, help_text="El canal oficial de pagos de la organización.")
     donar_texto = models.CharField("texto del botón de donar", max_length=40, blank=True, default="Donar")
     pago = models.TextField("datos de transferencia", blank=True,
-                           help_text="Solo cuentas a nombre de la organización (con su RUC). Nunca a nombre de una persona ni con cédula.")
+                           help_text="Cuentas a nombre de la organización (con su RUC). Una cuenta a nombre de una persona solo si coordinación lo autorizó.")
     orden = models.PositiveSmallIntegerField(default=0)
     visible = models.BooleanField(default=True)
 

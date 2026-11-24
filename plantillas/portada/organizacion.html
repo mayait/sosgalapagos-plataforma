@@ -10,5 +10,5 @@
     {% if o.enlace %}<a href="{{ o.enlace }}" target="_blank" rel="noopener">{{ o.enlace_texto|default:"Sitio oficial" }} ↗</a>{% endif %}
     {% if not o.instagram and not o.facebook and not o.enlace and not o.donar and not o.pago %}<span>Contáctala por sus canales oficiales.</span>{% endif %}
   </div>
-  {% if o.donar %}<a class="pt-boton lleno" href="{{ o.donar }}" target="_blank" rel="noopener">{{ o.donar_texto|default:"Donar" }} ↗</a>{% endif %}
+  {% if o.donar %}<a class="pt-boton pt-boton-chico" href="{{ o.donar }}" target="_blank" rel="noopener">{{ o.donar_texto|default:"Donar" }} ↗</a>{% endif %}
 </li>
