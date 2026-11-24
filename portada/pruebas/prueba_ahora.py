@@ -165,24 +165,29 @@ def _reporte(gravedad="no_pasar", fuente="vecino", horas=2, zona=None, nota=""):
 
 
 @pytest.mark.django_db
-def prueba_cero_peligros_en_48_h_da_el_texto_exacto(client):
-    _reporte(gravedad="cuidado")             # no es grave
-    _reporte(horas=50)                       # fuera de las 48 h
-    _reporte(fuente="anterior", horas=1)     # historial de ResponseGrid: nunca cuenta
+def prueba_sin_puntos_vivos_da_el_texto_exacto(client):
+    _reporte(horas=50)
+    _reporte(fuente="anterior", horas=1)
     pagina = client.get("/").content.decode()
-    assert "Nadie ha reportado un peligro nuevo en 48 h. Si ves uno, repórtalo." in pagina
-    assert "peligro nuevo en 48 h</b>" not in pagina
+    assert "Todavía no hay puntos en el mapa. Si ves algo, repórtalo." in pagina
 
 
 @pytest.mark.django_db
-def prueba_los_peligros_se_cuentan_por_zona_sin_texto_libre(client):
+def prueba_cuenta_todos_los_puntos_del_mapa_por_clase_y_zona_sin_texto_libre(client):
     from zonas.models import Zona
 
     cascada = Zona.objects.create(nombre="La Cascada", isla="Santa Cruz", geometria=Polygon.from_bbox((-90.32, -0.75, -90.31, -0.74)))
     _reporte(zona=cascada, nota="Texto libre de un vecino que no debe salir")
-    _reporte(gravedad="peligro_vida", zona=cascada)
+    _reporte(gravedad="cuidado", zona=cascada)
     _reporte(fuente="anterior", zona=cascada)
     pagina = client.get("/").content.decode()
-    assert "2 peligros nuevos en 48 h</b> · La Cascada" in pagina
+    assert "2 puntos en el mapa</b>: 2 peligros" in pagina and "La Cascada" in pagina
     assert "Texto libre de un vecino" not in pagina
     assert "zona segura" not in pagina.lower() and "sin riesgo" not in pagina.lower()
+
+
+@pytest.mark.django_db
+def prueba_los_botones_dicen_reportar_un_punto_y_hay_boton_de_clima(client):
+    pagina = client.get("/").content.decode()
+    assert "Reportar un punto" in pagina and "Reportar un peligro" not in pagina
+    assert 'class="pt-boton pt-boton-clima" href="/clima/"' in pagina

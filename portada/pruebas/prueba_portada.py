@@ -18,13 +18,13 @@ def prueba_la_portada_responde_en_la_raiz(client):
     pagina = r.content.decode()
     assert r.status_code == 200
     for texto in ("<h1 class=\"pt-titulo\">SOS Galápagos</h1>", "Sociedad Civil Galápagos · USFQ. Lluvias de El Niño en Santa Cruz, San Cristóbal e Isabela.",
-                  'href="tel:911"', "Reportar un peligro", "Ver el mapa de riesgos", "¿Necesitas ayuda?", "Apoyo ante violencia", "¿Quieres ayudar?",
+                  'href="tel:911"', "Reportar un punto", "Ver el mapa de riesgos", "Ver el clima en vivo", "¿Necesitas ayuda?", "Apoyo ante violencia", "¿Quieres ayudar?",
                   "No mandes cosas desde el continente", "Boletines oficiales", "Todos los documentos oficiales", "Clima completo", "Línea del tiempo",
                   "Lluvia y viento", "Descargar capas", 'id="informes"', 'id="organizaciones"', 'id="mascotas"', 'id="ayuda"', 'id="grupos-whatsapp"',
                   "Magma Galápagos", "/privacidad", "Refugios y puntos de ayuda en el mapa"):
         assert texto in pagina, texto
     assert "albergue" not in pagina.lower()
-    # Un solo botón lleno: el rojo de «Reportar un peligro».
+    # Un solo botón lleno: el rojo de «Reportar un punto».
     assert pagina.count("pt-boton-rojo\"") == 1 and " lleno" not in pagina
     # Fuera: los accesos grandes, «Mapas y clima», las referencias y la probabilidad de lluvia fuerte.
     for fuera in ("pt-acceso", "Mapas y clima", "Publicaciones científicas", "doi.org", "probabilidad", "Gestión de emergencias"):

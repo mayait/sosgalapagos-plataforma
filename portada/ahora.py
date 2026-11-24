@@ -198,3 +198,30 @@ def peligros_recientes(ahora, horas=48):
         elif r.zona.nombre not in zonas:
             zonas.append(r.zona.nombre)
     return {"total": total, "zonas": zonas[:5], "mas_zonas": len(zonas) > 5 or (sin_zona > 0 and bool(zonas))}
+
+
+# Cómo se nombra cada clase en la portada (plural, singular).
+CLASES_PORTADA = [("riesgo", "peligros", "peligro"), ("observa", "observaciones", "observación"),
+                  ("ayuda", "puntos de ayuda", "punto de ayuda"), ("bueno", "cosas buenas", "cosa buena")]
+
+
+def puntos_activos(ahora):
+    """Todos los puntos que se ven ahora en el mapa, por clase y por zona. Sin texto libre de vecinos.
+
+    Cuenta lo vivo (no cerrado, sin vencer). El historial de la coordinación anterior y los fusionados no cuentan.
+    """
+    from reportes.models import Reporte
+
+    qs = (Reporte.objects.del_mapa().vivos(ahora).filter(fusionado_en__isnull=True)
+          .select_related("tipo", "zona").order_by("-visto_en"))
+    por_clase, zonas, sin_zona, total = {}, [], 0, 0
+    for r in qs:
+        total += 1
+        por_clase[r.tipo.clase] = por_clase.get(r.tipo.clase, 0) + 1
+        if r.zona_id is None:
+            sin_zona += 1
+        elif r.zona.nombre not in zonas:
+            zonas.append(r.zona.nombre)
+    clases = [f"{por_clase[c]} {plural if por_clase[c] != 1 else singular}"
+              for c, plural, singular in CLASES_PORTADA if por_clase.get(c)]
+    return {"total": total, "clases": clases, "zonas": zonas[:6], "mas_zonas": len(zonas) > 6 or (sin_zona > 0 and bool(zonas))}

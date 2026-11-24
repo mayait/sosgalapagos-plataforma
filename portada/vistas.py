@@ -102,7 +102,7 @@ def portada(request):
     respuesta = render(request, "portada/portada.html", {
         "aviso": Aviso.objects.vigentes(ahora).first(),
         "ahora": lectura_ahora.leer(ahora),
-        "peligros": lectura_ahora.peligros_recientes(ahora),
+        "puntos": lectura_ahora.puntos_activos(ahora),
         "advertencia": advertencia_vigente(ahora),
         "boletines": boletines(ahora),
         "situacion": situacion,
