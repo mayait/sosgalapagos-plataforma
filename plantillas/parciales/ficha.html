@@ -42,6 +42,7 @@
     <button class="boton lleno" hx-post="{% url 'reportes:confirmar' r.id_publico %}" hx-vals='{"tipo":"sigue_ahi"}' hx-target="#detalle">Sigue ahí<small>Lo estoy viendo ahora</small></button>
     <button class="boton" hx-post="{% url 'reportes:confirmar' r.id_publico %}" hx-vals='{"tipo":"ya_bajo"}' hx-target="#detalle">{% if r.tipo.clase == "riesgo" %}Ya bajó<small>Ya se puede pasar</small>{% else %}Ya no está<small>Ya terminó o cerró</small>{% endif %}</button>
   </div>
+  {% if r.fuente == "coordinador" or r.fuente == "institucion" or r.fuente == "comunitario" %}<p class="ficha-oculto">{% if r.fuente == "coordinador" %}Lo publicó la coordinación{% elif r.fuente == "institucion" %}Lo publicó una institución{% else %}Viene del informe de un barrio{% endif %}: si ya no está, tu aviso le llega a la coordinación, que lo revisa antes de quitarlo.</p>{% endif %}
   {% endif %}
   {% if request.user.is_staff %}
   <div class="ficha-coordinacion">

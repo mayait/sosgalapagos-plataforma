@@ -166,6 +166,12 @@ def confirmar(reporte, tipo, huella, ahora=None):
         reporte.save(update_fields=["vence_en", "estado"])
         return reporte
 
+    if reporte.fuente in (Fuente.COORDINADOR, Fuente.INSTITUCION, Fuente.COMUNITARIO):
+        # Un refugio o un punto que puso coordinación, una institución o el informe de un barrio (las encañadas
+        # obstruidas de Tomás de Berlanga) no lo quitan dos vecinos: su «ya no está» queda registrado y
+        # coordinación decide en el admin.
+        return reporte
+
     desde = (
         reporte.confirmaciones.filter(tipo=TipoConfirmacion.SIGUE_AHI).values_list("fecha", flat=True).first()
     )

@@ -178,3 +178,29 @@ def prueba_la_huella_no_revela_el_identificador():
     huella = reglas.huella_de("identificador-del-telefono")
     assert "identificador" not in huella and len(huella) == 64
     assert huella == reglas.huella_de("identificador-del-telefono")
+
+
+def prueba_dos_vecinos_no_quitan_un_refugio_de_coordinacion():
+    """Un refugio que puso coordinación no lo cierran dos «ya no está»: lo decide coordinación."""
+    from reportes.models import Fuente
+
+    refugio = TipoRiesgo.objects.get(codigo="refugio")
+    assert refugio.activo is False and refugio.plazo_horas == 720
+    r = crear(refugio, fuente=Fuente.COORDINADOR).reporte
+    reglas.confirmar(r, TipoConfirmacion.YA_BAJO, "b")
+    r = reglas.confirmar(r, TipoConfirmacion.YA_BAJO, "c")
+    assert r.estado != Estado.CERRADO and r in Reporte.objects.vivos()
+    assert r.confirmaciones.filter(tipo=TipoConfirmacion.YA_BAJO).count() == 2  # quedan registrados
+
+
+def prueba_el_refugio_no_se_ofrece_en_el_formulario(client):
+    html = client.get("/riesgos/reportar/").content.decode()
+    assert "Refugio" not in html
+
+
+@pytest.mark.parametrize("fuente", ["institucion", "comunitario"])
+def prueba_dos_vecinos_no_cierran_lo_de_una_institucion_o_de_un_informe_de_barrio(agua, fuente):
+    r = crear(agua, fuente=fuente).reporte
+    reglas.confirmar(r, TipoConfirmacion.YA_BAJO, "b")
+    r = reglas.confirmar(r, TipoConfirmacion.YA_BAJO, "c")
+    assert r.estado != Estado.CERRADO
