@@ -41,6 +41,9 @@ a.pt-fila:hover, a.pt-tarjeta:hover { border-color: var(--tinta); }
 .pt-boton-rojo:hover { background: var(--rojo-osc); }
 .pt-boton-rojo svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
 .pt-boton { display: flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 18px; border: 1.5px solid var(--tinta); border-radius: 12px; background: var(--blanco); color: var(--tinta); font-weight: 700; font-size: 15px; text-decoration: none; text-align: center; box-sizing: border-box; }
+.pt-boton-clima { gap: 9px; min-height: 52px; font: 800 15px/1.1 var(--titulo); text-transform: uppercase; }
+.pt-boton-clima svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pt-gris { color: var(--gris-texto); font-weight: 400; }
 .pt-boton-chico { display: inline-flex; flex: none; min-height: 44px; padding: 0 14px; border-radius: 10px; font-size: 14px; }
 .pt-enlace { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; font-size: 14px; }
 

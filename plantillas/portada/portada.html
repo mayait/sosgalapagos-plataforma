@@ -53,13 +53,13 @@
         {% endfor %}
       </ul>
       {% endif %}
-      {# Peligros graves de las últimas 48 h: cuántos y en qué zonas, sin el texto de los vecinos. #}
+      {# Todos los puntos que hoy se ven en el mapa: cuántos de cada clase y en qué zonas, sin el texto de los vecinos. #}
       <a class="pt-tarjeta pt-peligros" href="/riesgos/">
-        {% if peligros.total %}
-        <span><b class="pt-rojo">{{ peligros.total }} peligro{{ peligros.total|pluralize:"s" }} nuevo{{ peligros.total|pluralize:"s" }} en 48 h</b>{% if peligros.zonas %} · {{ peligros.zonas|join:", " }}{% if peligros.mas_zonas %} y otros lugares{% endif %}{% endif %}</span>
+        {% if puntos.total %}
+        <span><b>{{ puntos.total }} punto{{ puntos.total|pluralize:"s" }} en el mapa</b>{% if puntos.clases %}: {{ puntos.clases|join:" · " }}{% endif %}{% if puntos.zonas %}<br><span class="pt-gris">{{ puntos.zonas|join:", " }}{% if puntos.mas_zonas %} y otros lugares{% endif %}</span>{% endif %}</span>
         <b class="pt-ir">Ver en el mapa →</b>
         {% else %}
-        <span>Nadie ha reportado un peligro nuevo en 48 h. Si ves uno, repórtalo.</span>
+        <span>Todavía no hay puntos en el mapa. Si ves algo, repórtalo.</span>
         <b class="pt-ir">Mapa →</b>
         {% endif %}
       </a>
@@ -95,10 +95,11 @@
       <p class="pt-todos"><a href="{{ boletines.todos }}">Todos los documentos oficiales →</a></p>
     </section>
 
-    {# Las dos acciones. El único botón lleno de la página es «Reportar un peligro». #}
+    {# Las acciones. El único botón lleno de la página es «Reportar un punto». #}
     <nav class="pt-acciones" aria-label="Acciones principales">
-      <a class="pt-boton-rojo" href="/riesgos/reportar/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Reportar un peligro</a>
+      <a class="pt-boton-rojo" href="/riesgos/reportar/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Reportar un punto</a>
       <a class="pt-boton" href="/riesgos/">Ver el mapa de riesgos</a>
+      <a class="pt-boton pt-boton-clima" href="/clima/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4 4 0 0 1-.6-7.95A5.5 5.5 0 0 1 17 9a3.5 3.5 0 0 1 .5 6.97"/><path d="M9 21l1-2M13 21l1-2M17 19l1-2"/></svg>Ver el clima en vivo</a>
     </nav>
   </div>
 
@@ -108,7 +109,7 @@
       <h2 class="pt-h2" id="necesitas-titulo">¿Necesitas ayuda?</h2>
       <div class="pt-lista">
         <a class="pt-fila pt-fila-911" href="tel:911"><span><b>Emergencia:</b> llama al 911</span><b class="pt-rojo">911</b></a>
-        <a class="pt-fila" href="/riesgos/reportar/"><span>Si ves un peligro, repórtalo con una foto y sin cuenta.</span><b class="pt-ir">Reportar →</b></a>
+        <a class="pt-fila" href="/riesgos/reportar/"><span>Reporta un punto en el mapa, con una foto y sin cuenta.</span><b class="pt-ir">Reportar →</b></a>
         <a class="pt-fila" href="/riesgos/"><span>Refugios y puntos de ayuda en el mapa</span><b class="pt-ir">Mapa →</b></a>
       </div>
 
