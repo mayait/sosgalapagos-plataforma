@@ -20,7 +20,8 @@
   const UTC_GALAPAGOS = -6; // Galápagos no cambia de hora
   const COLOR = { lluvia: '#2f6fb3', reportes: '#c8151b' }; // par validado (daltonismo y contraste)
   const CLASES = { campo: 'Reporte de campo', buena: 'Buena noticia o ayuda (de campo)', riesgo: 'Peligro', bueno: 'Algo bueno', ayuda: 'Donar o colaborar', observa: 'Observación para el mapa',
-    aviso: 'Aviso a los teléfonos', oficial: 'Documentos oficiales', noticia: 'Noticia', informe: 'Informe', nota: 'Nota de coordinación', barrio: 'Informe comunitario' };
+    aviso: 'Aviso a los teléfonos', oficial: 'Documentos oficiales', noticia: 'Noticia', informe: 'Informe', nota: 'Nota de coordinación', barrio: 'Informe comunitario',
+    anterior: 'Coordinación anterior (1 al 4 de nov)' };
   const SUCESOS = ['aviso', 'oficial', 'noticia', 'informe', 'nota', 'barrio']; // sin punto en el mapa
   const ESTACION_POR_ISLA = { 'Santa Cruz': 'ambient/evolucion', 'San Cristóbal': 'gsc/mirador', Isabela: 'darwin/puerto_villamil' };
 
@@ -74,6 +75,20 @@
       return {
         t: p.visto * 1000, clase: p.clase, titulo: p.titulo || p.tipo_nombre, lugar: p.zona || '', zona: zonaGrande(lon, lat), isla: islaDe(lon, lat),
         detalle: estados[p.estado] || '', texto: '', foto: '', nFotos: 0, lon, lat, enlace: `${cfg.mapa}?r=${encodeURIComponent(p.id)}`,
+      };
+    });
+  }
+
+  // Historial de la plataforma de coordinación anterior (ResponseGrid, 1 al 4 de noviembre): refugios,
+  // acopios, entregas y pedidos de ayuda. Están cerrados y no salen en el mapa: el enlace va a su ficha.
+  async function cargarHistorial() {
+    if (!cfg.historial) return [];
+    const d = await fetch(cfg.historial).then((r) => r.json());
+    return d.features.map((f) => {
+      const p = f.properties, [lon, lat] = f.geometry.coordinates;
+      return {
+        t: p.visto * 1000, clase: 'anterior', titulo: p.titulo || p.tipo_nombre, lugar: p.zona || '', zona: zonaGrande(lon, lat), isla: islaDe(lon, lat),
+        detalle: p.tipo_nombre, texto: p.nota || '', foto: '', nFotos: 0, lon, lat, enlace: `${cfg.ficha}${encodeURIComponent(p.id)}/`,
       };
     });
   }
@@ -334,8 +349,9 @@
   }
 
   async function iniciar() {
-    const [propios, campo, sucesos] = await Promise.all([cargarPropios().catch(() => []), cargarDeCampo().catch(() => []), cargarSucesos().catch(() => [])]);
-    estado.reportes = propios.concat(campo, sucesos);
+    const [propios, campo, sucesos, anteriores] = await Promise.all([cargarPropios().catch(() => []), cargarDeCampo().catch(() => []), cargarSucesos().catch(() => []),
+      cargarHistorial().catch(() => [])]);
+    estado.reportes = propios.concat(campo, sucesos, anteriores);
     rango(0); // todo el evento: los días en calma se juntan, así que cabe
     await cargarLluvia();
     const f = estado.filtros;

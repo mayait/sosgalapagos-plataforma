@@ -29,12 +29,17 @@ x-plataforma: &plataforma
     - CLIMA_SALIDA=/srv/clima/datos
     - MEDIOS_DIR=/medios
     - RELIEVE_DIR=/relieve
+    # Portada: índice de los informes en PDF (los PDF y sus miniaturas los sirve Caddy en /descargas/).
+    - INFORMES_DIR=/srv/descargas
   volumes:
     - medios:/medios
     # La carpeta que publica el servidor en /clima/: aquí se escriben los datos del panel y las descargas.
     - /srv/sosgalapagos-clima:/srv/clima
     # Relieve propio del 3D (teselas de cota). Se sube con rsync; ver despliegue/servidor.md.
     - /srv/sosgalapagos-relieve3d:/relieve:ro
+    # Informes y mapas en PDF de la portada (los publica sosgalapagos-datos: servidores/publicar.sh descargas).
+    # Solo lectura. Si la carpeta no existe, la portada dice que aún no hay informes.
+    - ${DESCARGAS_DIR:-/srv/sosgalapagos-descargas}:/srv/descargas:ro
   depends_on:
     postgis:
       condition: service_healthy

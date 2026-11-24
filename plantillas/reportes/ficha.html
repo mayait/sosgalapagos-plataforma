@@ -5,7 +5,8 @@
 {% block contenido %}
 <main class="pagina">
   <div id="detalle">{% include "parciales/ficha.html" %}</div>
-  <p><a class="enlace" href="{% url 'reportes:mapa' %}?r={{ r.id_publico }}">Ver en el mapa</a></p>
+  {% if r.fuente == "anterior" %}<p><a class="enlace" href="{% url 'reportes:informe' %}">Ver la línea del tiempo</a></p>
+  {% else %}<p><a class="enlace" href="{% url 'reportes:mapa' %}?r={{ r.id_publico }}">Ver en el mapa</a></p>{% endif %}
   {% include "parciales/firma.html" %}
 </main>
 {% endblock %}

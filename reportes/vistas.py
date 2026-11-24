@@ -64,6 +64,7 @@ def _configuracion():
         "pushSuscribir": reverse("reportes:push_suscribir"),
         "todos": "/riesgos/api/reportes/vivos.geojson?periodo=evento",
         "sucesos": "/riesgos/api/sucesos.json",
+        "historial": "/riesgos/api/reportes/historial.json",
         "lluviaHoraria": "/riesgos/api/lluvia.json",
     }
 
@@ -97,6 +98,9 @@ def mapa(request):
     rid = request.GET.get("r", "")
     if rid:
         reporte = Reporte.objects.select_related("tipo", "zona").filter(id_publico=rid).first()
+        if reporte and reporte.fuente == "anterior":
+            # El historial de la coordinación anterior no sale en el mapa: su enlace lleva a la ficha.
+            return HttpResponseRedirect(reverse("reportes:ficha", args=[reporte.id_publico]))
         if reporte:
             contexto["compartir"] = _compartir(request, reporte)
     return render(request, "reportes/mapa.html", contexto)

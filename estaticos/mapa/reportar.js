@@ -211,7 +211,7 @@
         this.tituloFinal = datos.duplicado ? 'Ya estaba reportado' : 'Reporte enviado';
         this.textoFinal = datos.duplicado
           ? 'Alguien ya había avisado de esto aquí mismo. Tu aviso confirma que sigue ahí y renueva el plazo.'
-          : 'Ya aparece en el mapa como «por verificar». Se retira solo cuando pase su plazo.';
+          : 'Ya aparece en el mapa como «por verificar». Se retira solo cuando pase su plazo, pero queda guardado para saber hasta dónde llegó el agua y mejorar los modelos.';
         if (this.clase !== 'riesgo' && !datos.duplicado) this.textoFinal = 'Gracias. Ya aparece en el mapa.';
         if (this.clase === 'observa' && !datos.duplicado) this.textoFinal = 'Gracias. Con lo que viste se corrige el mapa de riesgo. Ya aparece en el mapa.';
         this.enlaceFinal = '/riesgos/?r=' + datos.id;

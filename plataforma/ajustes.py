@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "api",
     "entradas",
     "clima",
+    "portada",
 ]
 
 MIDDLEWARE = [
@@ -105,6 +106,16 @@ X_FRAME_OPTIONS = "SAMEORIGIN"  # igual que la cabecera que ya pone Caddy
 # Django por defecto no envía el origen a otros dominios; aquí se envía solo el dominio, nunca la ruta.
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# ── Portada (sosgalapagos.org/) ───────────────────────────────────────────────
+# Informes y mapas en PDF de la portada: los publica sosgalapagos-datos (servidores/publicar.sh descargas)
+# en /srv/sosgalapagos-descargas, que Caddy sirve en /descargas/. Aquí solo se lee su indice.json, con la
+# carpeta montada en solo lectura. Sin carpeta (como en la Mac) la sección no sale.
+INFORMES_DIR = entorno("INFORMES_DIR", "")
+INFORMES_URL = "/descargas/"
+# Privacidad: a quién se escribe para ver, corregir o borrar datos, y la fecha de la política.
+PRIVACIDAD_CORREO = entorno("PRIVACIDAD_CORREO", "jamaya@usfq.edu.ec")
+PRIVACIDAD_ACTUALIZADA = "23 de noviembre de 2026"
 
 # ── Mapa ──────────────────────────────────────────────────────────────────────
 # Vista inicial: centro de Puerto Ayora, a nivel de calles (ver docs/visual-mapa.md).

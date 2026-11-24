@@ -471,7 +471,7 @@ def prueba_un_enlace_compartido_trae_titulo_y_boton(client):
 DESTINOS_MENU = [
     ("Inicio", "/"), ("Mapa de riesgos", "/riesgos/"), ("Línea del tiempo", "/riesgos/informe/"), ("Clima", "/clima/"),
     ("Lluvia y viento", "/riesgos/mapa-del-tiempo/"), ("Descargar capas", "/riesgos/descargas/"), ("Top contributors", "/riesgos/puntos/"),
-    ("Admin", "/riesgos/admin/"),
+    ("Privacidad", "/privacidad"), ("Admin", "/riesgos/admin/"),
 ]
 
 

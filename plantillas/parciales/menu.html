@@ -1,8 +1,9 @@
 {# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec> · Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito. #}
 {% comment %}Menú del sitio: enlaces de respaldo (sin JavaScript también sirven). /riesgos/app.js los reemplaza al pintar la barra.
-   La altura la reserva estilos.css (.sos-menu), para que la página no salte cuando llega el componente.{% endcomment %}
+   La altura la reserva estilos.css (.sos-menu), para que la página no salte cuando llega el componente.
+   El aviso general se escribe una sola vez: el resto de la frase (.sos-aviso-largo) solo se ve en pantallas anchas.{% endcomment %}
 {% if variante == "nada" %}
-<p class="sos-menu-aviso sos-menu-suelto" role="note"><span class="sos-aviso-corto"><b>{{ aviso_titulo }}</b><span class="sos-aviso-tel"> Emergencias: <a class="sos-aviso-911" href="tel:911">911</a></span></span><span class="sos-aviso-largo"><b>{{ aviso_titulo }}</b> {{ aviso_resto }}<span class="sos-aviso-tel"> Emergencias: <a class="sos-aviso-911" href="tel:911">911</a></span></span></p>
+<p class="sos-menu-aviso sos-menu-suelto" role="note"><b>{{ aviso_titulo }}</b><span class="sos-aviso-largo"> {{ aviso_resto }}</span><span class="sos-aviso-tel"> Emergencias: <a class="sos-aviso-911" href="tel:911">911</a></span></p>
 {% else %}
 <nav data-sos-menu{% if variante == "flotante" %}="flotante"{% endif %} class="sos-menu{% if variante == "flotante" %} sos-menu-flotante{% endif %}" aria-label="SOS Galápagos">
   <div class="sos-menu-barra">
@@ -10,6 +11,6 @@
     <ul class="sos-menu-enlaces">{% for d in destinos %}<li><a href="{{ d.ruta }}"{% if request.path == d.ruta %} aria-current="page"{% endif %}>{{ d.nombre }}</a></li>{% endfor %}</ul>
     <a class="sos-menu-911" href="tel:911" aria-label="Emergencias: llamar al 911">911</a>
   </div>
-  <p class="sos-menu-aviso" role="note"><span class="sos-aviso-corto"><b>{{ aviso_titulo }}</b><span class="sos-aviso-tel"> Emergencias: <a class="sos-aviso-911" href="tel:911">911</a></span></span><span class="sos-aviso-largo"><b>{{ aviso_titulo }}</b> {{ aviso_resto }}<span class="sos-aviso-tel"> Emergencias: <a class="sos-aviso-911" href="tel:911">911</a></span></span></p>
+  <p class="sos-menu-aviso" role="note"><b>{{ aviso_titulo }}</b><span class="sos-aviso-largo"> {{ aviso_resto }}</span><span class="sos-aviso-tel"> Emergencias: <a class="sos-aviso-911" href="tel:911">911</a></span></p>
 </nav>
 {% endif %}

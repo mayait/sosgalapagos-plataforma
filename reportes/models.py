@@ -83,6 +83,9 @@ class Fuente(models.TextChoices):
     WHATSAPP = "whatsapp", "WhatsApp"
     # Un documento público de la comunidad (el informe de campo de un barrio): ni coordinación ni institución.
     COMUNITARIO = "comunitario", "Informe comunitario"
+    # Historial de la plataforma de coordinación anterior (ResponseGrid, 1 al 4 de noviembre de 2026).
+    # Entra cerrado y nunca sale en el mapa: solo en la línea del tiempo (ver ReporteQuerySet.del_mapa).
+    ANTERIOR = "anterior", "Coordinación anterior"
 
 
 class MotivoCierre(models.TextChoices):
@@ -90,6 +93,7 @@ class MotivoCierre(models.TextChoices):
     YA_BAJO = "ya_bajo", "Dos avisos de que ya bajó"
     COORDINADOR = "coordinador", "Lo cerró coordinación"
     FUSIONADO = "fusionado", "Se fusionó con otro reporte"
+    HISTORIAL = "historial", "Historial de la coordinación anterior"
 
 
 class Colaborador(models.Model):
@@ -154,7 +158,15 @@ class ReporteQuerySet(models.QuerySet):
         tarea que lo marca como cerrado no haya corrido.
         """
         ahora = ahora or timezone.now()
-        return self.exclude(estado=Estado.CERRADO).filter(vence_en__gt=ahora)
+        return self.del_mapa().exclude(estado=Estado.CERRADO).filter(vence_en__gt=ahora)
+
+    def del_mapa(self):
+        """Lo que puede salir en el mapa. El historial de la coordinación anterior no: solo va en la línea del tiempo."""
+        return self.exclude(fuente=Fuente.ANTERIOR)
+
+    def historial(self):
+        """El historial de la coordinación anterior (ResponseGrid), para la línea del tiempo."""
+        return self.filter(fuente=Fuente.ANTERIOR)
 
 
 class Reporte(models.Model):
@@ -191,6 +203,8 @@ class Reporte(models.Model):
     fusionado_en = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="fusionados")
     creado_por_llave = models.ForeignKey("api.LlaveApi", null=True, blank=True, on_delete=models.SET_NULL)
     huella = models.CharField(max_length=64, blank=True, editable=False, help_text="Huella anónima del dispositivo que lo creó")
+    # Identificador en otro sistema («responsegrid:punto:<uuid>»): permite volver a importar sin duplicar.
+    id_externo = models.CharField("identificador de origen", max_length=80, null=True, blank=True, editable=False)
     creado_en = models.DateTimeField(auto_now_add=True)
 
     objects = ReporteQuerySet.as_manager()
@@ -198,6 +212,7 @@ class Reporte(models.Model):
     class Meta:
         ordering = ["-visto_en"]
         indexes = [models.Index(fields=["estado", "vence_en"])]
+        constraints = [models.UniqueConstraint(fields=["id_externo"], condition=models.Q(id_externo__isnull=False), name="reporte_id_externo_unico")]
 
     def __str__(self):
         return f"{self.titulo or self.tipo} · {self.id_publico}"

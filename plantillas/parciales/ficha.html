@@ -13,7 +13,7 @@
   </header>
 
   <div class="ficha-compartir">
-    <button type="button" class="boton" data-compartir="{{ r.id_publico }}" data-titulo="{{ r.nombre }}" data-texto="{{ r.nombre }}{% if r.tipo.clase == 'riesgo' %} · {{ r.get_gravedad_display }}{% endif %}{% if r.zona %} · {{ r.zona.nombre }}{% endif %}. Información ciudadana, no oficial.">Compartir</button>
+    <button type="button" class="boton" data-compartir="{{ r.id_publico }}"{% if r.fuente == "anterior" %} data-url="/riesgos/r/{{ r.id_publico }}/"{% endif %} data-titulo="{{ r.nombre }}" data-texto="{{ r.nombre }}{% if r.tipo.clase == 'riesgo' %} · {{ r.get_gravedad_display }}{% endif %}{% if r.zona %} · {{ r.zona.nombre }}{% endif %}. Información ciudadana, no oficial.">Compartir</button>
     <span class="ficha-compartido" role="status" hidden>Enlace copiado. <a href="#" target="_blank" rel="noopener" data-whatsapp>Enviar por WhatsApp</a></span>
   </div>
   {% if mensaje %}<p class="ficha-mensaje" role="status">{{ mensaje }}</p>{% endif %}
@@ -29,7 +29,7 @@
     {% if r.profundidad != "sin_dato" %}<li><span>Agua</span> {{ r.get_profundidad_display|lower }}</li>{% endif %}
     {% if r.zona %}<li><span>Zona</span> {{ r.zona.nombre }}</li>{% endif %}
     <li><span>Fuente</span> {{ r.get_fuente_display }}{% if r.autor and r.autor.nombre and r.autor.visible %} · {{ r.autor.nombre }}{% endif %}</li>
-    <li><span>Avisos</span> {{ sigue }} «sigue ahí» · {{ bajo }} «{% if r.tipo.clase == "riesgo" %}ya bajó{% else %}ya no está{% endif %}»</li>
+    {% if r.fuente != "anterior" %}<li><span>Avisos</span> {{ sigue }} «sigue ahí» · {{ bajo }} «{% if r.tipo.clase == "riesgo" %}ya bajó{% else %}ya no está{% endif %}»</li>{% endif %}
   </ul>
 
   {% if r.nota and r.contenido_visible %}<p class="ficha-nota">{{ r.nota }}</p>{% endif %}
@@ -49,5 +49,5 @@
     <a class="boton" href="{% url 'admin:reportes_reporte_change' r.pk %}" target="_blank" rel="noopener">Editar todo en el admin<small>Título, nota, tipo, documentos</small></a>
   </div>
   {% endif %}
-  <p class="ficha-pie">Reporte {{ r.id_publico }}. {% if r.fuente == "coordinador" %}Lo publicó la coordinación de SOS Galápagos{% elif r.fuente == "institucion" %}Lo publicó una institución{% elif r.fuente == "comunitario" %}Viene de un informe comunitario, un documento público del barrio{% else %}Lo hizo la comunidad{% endif %}; no es un dato oficial.{% if r.tipo.clase == "riesgo" %} Si hay peligro de vida, llama al 911.{% endif %}</p>
+  <p class="ficha-pie">Reporte {{ r.id_publico }}. {% if r.fuente == "coordinador" %}Lo publicó la coordinación de SOS Galápagos{% elif r.fuente == "institucion" %}Lo publicó una institución{% elif r.fuente == "comunitario" %}Viene de un informe comunitario, un documento público del barrio{% elif r.fuente == "anterior" %}Viene del historial de la plataforma de coordinación anterior (1 al 4 de noviembre de 2026), sin datos personales. Ya no está vigente y no sale en el mapa{% else %}Lo hizo la comunidad{% endif %}; no es un dato oficial.{% if r.tipo.clase == "riesgo" %} Si hay peligro de vida, llama al 911.{% endif %}</p>
 </article>

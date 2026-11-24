@@ -555,6 +555,8 @@ textarea.nota { width: 100%; min-height: 64px; padding: 10px 12px; border: 2px s
 .hito.clase-buena::before { border-radius: 3px; background: #db2777; }
 .hito.clase-ayuda::before { background: #db2777; }
 .hito.clase-observa::before { background: #3d6a8c; }
+/* Historial de la coordinación anterior (1 al 4 de noviembre): gris, no está vigente. */
+.hito.clase-anterior::before { background: var(--blanco); border: 2px solid var(--por-verificar); }
 /* Sucesos sin punto en el mapa: avisos enviados, comunicados oficiales, noticias e informes. Marca cuadrada. */
 .hito.clase-aviso::before { border-radius: 2px; background: var(--negro); }
 .hito.clase-oficial::before { border-radius: 2px; background: #1d4ed8; }
@@ -585,7 +587,17 @@ textarea.nota { width: 100%; min-height: 64px; padding: 10px 12px; border: 2px s
 .descarga-nombre small { display: block; font-weight: 400; font-size: 11.5px; color: var(--gris-claro); }
 .ayuda-descargas { margin-top: 20px; font-size: 13.5px; }
 .ayuda-descargas summary { font-weight: 700; cursor: pointer; padding: 8px 0; }
+.referencias-descargas { margin-top: 24px; font-size: 13.5px; line-height: 1.45; }
+.referencias-descargas h2 { margin: 0 0 8px; font: 800 13px/1.15 var(--titulo); letter-spacing: 0.04em; text-transform: uppercase; }
+.referencias-descargas ul { margin: 0; padding-left: 18px; display: grid; gap: 8px; }
 @media (min-width: 700px) { .descargas li { grid-template-columns: 1fr auto; align-items: center; } }
+
+/* Para qué sirve el reporte (formulario y política de privacidad) */
+.para-que { margin: 22px 0 6px; padding: 14px 16px; border-left: 3px solid var(--rojo); background: var(--fondo-suave); border-radius: 0 10px 10px 0; font-size: 13.5px; }
+.para-que-titulo { display: block; margin-bottom: 6px; font-size: 14.5px; }
+.para-que ul { margin: 0 0 8px; padding-left: 18px; display: grid; gap: 4px; }
+.para-que-promesa { margin: 0; color: var(--gris); }
+.envio-aviso { margin: 14px 0 0; }
 
 /* Página suelta de la ficha */
 .pagina { max-width: 520px; margin: 0 auto; padding: 18px 16px 40px; }

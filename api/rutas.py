@@ -97,7 +97,8 @@ def vivos(request, periodo: str = "ahora"):
     - `evento`: además, todos los cerrados del evento.
     """
     ahora = timezone.now()
-    consulta = Reporte.objects.select_related("tipo", "zona")
+    # El historial de la coordinación anterior nunca sale en el mapa, en ningún período.
+    consulta = Reporte.objects.del_mapa().select_related("tipo", "zona")
     if periodo == "24h":
         consulta = consulta.filter(visto_en__gt=ahora - timedelta(hours=24))
     elif periodo == "evento":
@@ -118,6 +119,20 @@ def vivos(request, periodo: str = "ahora"):
     if request.headers.get("If-None-Match") == etiqueta:
         return HttpResponse(status=304, headers={"ETag": etiqueta})
     return HttpResponse(cuerpo, content_type="application/geo+json", headers={"ETag": etiqueta, "Cache-Control": "no-cache"})
+
+
+@api.get("/reportes/historial.json", summary="Historial de la coordinación anterior", tags=["informe"])
+def historial(request):
+    """Lo que publicó la plataforma de coordinación anterior (ResponseGrid) del 1 al 4 de noviembre de 2026:
+    refugios, centros de acopio, entregas y pedidos de ayuda. Está cerrado y no sale en el mapa: solo en la
+    línea del tiempo. Sin datos personales; los pedidos sensibles van con la ubicación aproximada (unos 500 m)."""
+    elementos = []
+    for r in Reporte.objects.historial().select_related("tipo", "zona")[:2000]:
+        p = _propiedades(r)
+        p["nota"] = r.nota if r.contenido_visible else ""
+        elementos.append({"type": "Feature", "geometry": {"type": "Point", "coordinates": [round(r.punto.x, 6), round(r.punto.y, 6)]}, "properties": p})
+    return HttpResponse(json.dumps({"type": "FeatureCollection", "features": elementos}, separators=(",", ":")),
+                        content_type="application/geo+json", headers={"Cache-Control": "public, max-age=300"})
 
 
 # ── WhatsApp: lo que manda el servidor OpenWA cuando llega un mensaje ────────

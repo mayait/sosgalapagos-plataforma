@@ -154,8 +154,8 @@ def confirmar(reporte, tipo, huella, ahora=None):
     """Registra «sigue ahí» o «ya bajó» y aplica sus efectos. Devuelve el reporte."""
     ahora = ahora or timezone.now()
     reporte = Reporte.objects.select_for_update().get(pk=reporte.pk)
-    if reporte.estado == Estado.CERRADO:
-        return reporte
+    if reporte.estado == Estado.CERRADO or reporte.fuente == Fuente.ANTERIOR:
+        return reporte  # el historial de la coordinación anterior no se renueva: nunca vuelve al mapa
     Confirmacion.objects.create(reporte=reporte, tipo=tipo, huella=huella, fecha=ahora)
 
     if tipo == TipoConfirmacion.SIGUE_AHI:

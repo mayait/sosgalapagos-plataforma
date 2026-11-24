@@ -1,0 +1,209 @@
+{# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec> · Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito. #}
+{% extends "base.html" %}
+{% load static reportes_extras %}
+{% block titulo %}Lluvias de El Niño en Galápagos{% endblock %}
+{% block descripcion %}SOS Galápagos (Sociedad Civil Galápagos · USFQ): la lluvia de ahora por zona, los boletines oficiales, el mapa de riesgos y cómo pedir o dar ayuda en Santa Cruz, San Cristóbal e Isabela. Emergencias: 911.{% endblock %}
+{% block estilos_despues %}<link rel="stylesheet" href="{% propio 'portada/portada.css' %}">{% endblock %}
+{% block clase_cuerpo %}con-portada{% endblock %}
+{% block contenido %}
+<main class="pt" id="inicio">
+
+  {% comment %}Arriba. En el teléfono: identidad, aviso, Ahora, boletines y las dos acciones.
+     En el escritorio: identidad, acciones y boletines a la izquierda; Ahora a la derecha (portada.css).{% endcomment %}
+  <div class="pt-arriba">
+
+    <header class="pt-identidad">
+      <h1 class="pt-titulo">SOS Galápagos</h1>
+      <p class="pt-sub">Sociedad Civil Galápagos · USFQ. Lluvias de El Niño en Santa Cruz, San Cristóbal e Isabela.</p>
+    </header>
+
+    {# Aviso destacado de coordinación (admin). Se oculta solo al vencer. #}
+    {% if aviso %}
+    <aside class="pt-aviso" role="note" id="aviso">
+      <p class="pt-aviso-titulo">{{ aviso.titulo }}</p>
+      {% if aviso.texto %}<p>{{ aviso.texto|linebreaksbr }}</p>{% endif %}
+    </aside>
+    {% endif %}
+
+    {# Ahora: el nivel y la lluvia medida de cada zona, leídos en el servidor (portada/ahora.py). #}
+    <section class="pt-ahora" id="ahora" aria-labelledby="ahora-titulo">
+      <div class="pt-cab">
+        <h2 class="pt-h2s" id="ahora-titulo">Ahora</h2>
+        {% if ahora.hora %}<span class="pt-cab-hora">lluvia medida · dato de las {{ ahora.hora }}</span>{% endif %}
+      </div>
+      {% if ahora.vacio %}
+      <p class="pt-tarjeta pt-sin">Todavía no hay datos de lluvia de las estaciones. <a href="/clima/">Ver clima →</a></p>
+      {% else %}
+      <ul class="pt-zonas">
+        {% for f in ahora.filas %}
+        <li class="pt-zona es-{{ f.estado }}" data-zona="{{ f.id }}">
+          <div class="pt-zona-cab">
+            <b>{{ f.nombre }}{% if f.lugar %} <span>({{ f.lugar }})</span>{% endif %}</b>
+            {% if f.tramos %}
+            <span class="pt-nivel tono-{{ f.tono }}"><span class="pt-barra" aria-hidden="true">{% for k in "1234" %}<i{% if forloop.counter <= f.tramos %} class="si"{% endif %}></i>{% endfor %}</span>{{ f.nivel }}</span>
+            {% else %}
+            <span class="pt-nivel-sin">{{ f.nivel }}</span>
+            {% endif %}
+          </div>
+          {% if f.cifras %}<p class="pt-cifras">{{ f.cifras }}</p>{% endif %}
+          {% if f.estado == "viejo" %}<p class="pt-viejo">dato de las {{ f.hora }} · {{ f.hace }}</p>{% endif %}
+          {% if f.causa %}<p class="pt-causa">{{ f.causa }}</p>{% endif %}
+          {% if f.texto %}<p class="pt-zona-texto">{{ f.texto }}{% if f.estado == "sin-estaciones" %} <a href="/riesgos/mapa-del-tiempo/">Mira la lluvia de los modelos →</a>{% elif f.estado == "mudo" %} · <a href="/clima/">Ver clima</a>{% elif f.estado != "silencio" %} <a href="/clima/">Ver clima</a>{% endif %}</p>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {# Peligros graves de las últimas 48 h: cuántos y en qué zonas, sin el texto de los vecinos. #}
+      <a class="pt-tarjeta pt-peligros" href="/riesgos/">
+        {% if peligros.total %}
+        <span><b class="pt-rojo">{{ peligros.total }} peligro{{ peligros.total|pluralize:"s" }} nuevo{{ peligros.total|pluralize:"s" }} en 48 h</b>{% if peligros.zonas %} · {{ peligros.zonas|join:", " }}{% if peligros.mas_zonas %} y otros lugares{% endif %}{% endif %}</span>
+        <b class="pt-ir">Ver en el mapa →</b>
+        {% else %}
+        <span>Nadie ha reportado un peligro nuevo en 48 h. Si ves uno, repórtalo.</span>
+        <b class="pt-ir">Mapa →</b>
+        {% endif %}
+      </a>
+      <p class="pt-mas-clima"><a href="/clima/">Ver la lluvia en vivo en cada estación →</a></p>
+    </section>
+
+    {# Boletines oficiales. data-sos-oficiales con la clase sos-oficiales ya puesta: app.js no pinta otro bloque aquí. #}
+    <section class="pt-boletines sos-oficiales" data-sos-oficiales id="boletines" aria-labelledby="boletines-titulo">
+      <h2 class="pt-h2s" id="boletines-titulo">Boletines oficiales</h2>
+      {% if advertencia %}
+      <article class="pt-advertencia" id="advertencia">
+        <p class="pt-etq pt-rojo">INAMHI · advertencia vigente</p>
+        <p class="pt-adv-titulo">{{ advertencia.titulo }}</p>
+        {% if advertencia.hasta_txt %}<p class="pt-adv-vigencia">Vigente hasta el {{ advertencia.hasta_txt }} (hora de Galápagos).</p>
+        {% elif advertencia.emitido_txt %}<p class="pt-adv-vigencia">Emitida el {{ advertencia.emitido_txt }} (hora de Galápagos).</p>{% endif %}
+        {% if advertencia.enlace %}<a class="pt-enlace" href="{{ advertencia.enlace }}" target="_blank" rel="noopener">Ver el documento del INAMHI ↗</a>{% endif %}
+      </article>
+      {% else %}
+      <p class="pt-tarjeta pt-sin">El INAMHI no tiene una advertencia vigente para Galápagos.{% if boletines.inamhi_enlace %} <a href="{{ boletines.inamhi_enlace }}" target="_blank" rel="noopener">Último boletín ↗</a>{% endif %}</p>
+      {% endif %}
+      {% if boletines.tarjetas %}
+      <ul class="pt-docs">
+        {% for d in boletines.tarjetas %}
+        <li class="pt-tarjeta pt-doc">
+          <p class="pt-etq">{{ d.nombre }} · {{ d.que_es }}{% if d.fecha %} · {{ d.fecha }}{% endif %}</p>
+          <p class="pt-doc-titulo">{{ d.titulo }}</p>
+          {% if d.frase %}<p class="pt-doc-frase">{{ d.frase }}</p>{% endif %}
+          {% if d.enlace %}<a class="pt-enlace" href="{{ d.enlace }}" target="_blank" rel="noopener">Ver el documento ↗</a>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      <p class="pt-todos"><a href="{{ boletines.todos }}">Todos los documentos oficiales →</a></p>
+    </section>
+
+    {# Las dos acciones. El único botón lleno de la página es «Reportar un peligro». #}
+    <nav class="pt-acciones" aria-label="Acciones principales">
+      <a class="pt-boton-rojo" href="/riesgos/reportar/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Reportar un peligro</a>
+      <a class="pt-boton" href="/riesgos/">Ver el mapa de riesgos</a>
+    </nav>
+  </div>
+
+  <div class="pt-ayudas">
+    {# ¿Necesitas ayuda? Solo lo que existe hoy: el 911, reportar y el mapa. #}
+    <section class="pt-bloque" id="ayuda" aria-labelledby="necesitas-titulo">
+      <h2 class="pt-h2" id="necesitas-titulo">¿Necesitas ayuda?</h2>
+      <div class="pt-lista">
+        <a class="pt-fila pt-fila-911" href="tel:911"><span><b>Emergencia:</b> llama al 911</span><b class="pt-rojo">911</b></a>
+        <a class="pt-fila" href="/riesgos/reportar/"><span>Si ves un peligro, repórtalo con una foto y sin cuenta.</span><b class="pt-ir">Reportar →</b></a>
+        <a class="pt-fila" href="/riesgos/"><span>Refugios y puntos de ayuda en el mapa</span><b class="pt-ir">Mapa →</b></a>
+      </div>
+
+      {# Situación hoy (admin): solo las líneas vigentes. Sin ninguna, no se ve. #}
+      {% if situacion %}
+      <div class="pt-situacion" id="situacion">
+        <h3 class="pt-h3">Situación hoy</h3>
+        <dl>{% for s in situacion %}<div><dt>{{ s.tema }}</dt><dd>{{ s.texto }}</dd></div>{% endfor %}</dl>
+        <p class="pt-nota">Revisado el {{ situacion_fecha }} (hora de Galápagos).</p>
+      </div>
+      {% endif %}
+
+      {# Apoyo ante violencia. Solo instituciones: ningún teléfono personal. El QR, solo en computadora. #}
+      <div class="pt-violencia" id="apoyo-violencia">
+        <div>
+          <h3 class="pt-violencia-titulo">Apoyo ante violencia</h3>
+          <p>Si tú o alguien que conoces vive violencia en estos días, <a href="{{ cont.APOYO_VIOLENCIA.instagram }}" target="_blank" rel="noopener">{{ cont.APOYO_VIOLENCIA.organizacion }}</a> acompaña de forma confidencial.</p>
+          <a class="pt-boton pt-boton-chico" href="{{ cont.APOYO_VIOLENCIA.whatsapp }}" target="_blank" rel="noopener">Escribir por WhatsApp ↗</a>
+        </div>
+        <img class="pt-qr" src="{% static 'portada/qr/apoyo-violencia.svg' %}" alt="Código QR para escribir a {{ cont.APOYO_VIOLENCIA.organizacion }} por WhatsApp" width="88" height="88" loading="lazy">
+      </div>
+    </section>
+
+    {# ¿Quieres ayudar? Primero las organizaciones con canal de donación; el resto, plegado. #}
+    <section class="pt-bloque" id="quieres-ayudar" aria-labelledby="quieres-titulo">
+      <h2 class="pt-h2" id="quieres-titulo">¿Quieres ayudar?</h2>
+      <p class="pt-texto"><b>No mandes cosas desde el continente.</b> Ponen en riesgo la bioseguridad de las islas y saturan la logística. Dona dinero a organizaciones con trazabilidad.</p>
+      <div class="pt-lista" id="organizaciones">
+        {% for o in con_donar %}
+        <div class="pt-fila pt-donar">
+          <span><b>{{ o.nombre }}</b>{% if o.detalle %}<small>{{ o.detalle }}</small>{% endif %}</span>
+          <a class="pt-boton pt-boton-chico" href="{{ o.donar }}" target="_blank" rel="noopener">{{ o.donar_texto|default:"Donar" }} ↗</a>
+        </div>
+        {% endfor %}
+        {% if otras %}
+        <details class="pt-plegado">
+          <summary>Más organizaciones ({{ otras|length }})</summary>
+          <ul class="pt-orgs">{% for o in otras %}{% include "portada/organizacion.html" %}{% endfor %}</ul>
+        </details>
+        {% endif %}
+        {% if mascotas %}
+        <details class="pt-plegado" id="mascotas">
+          <summary>Ayuda para mascotas ({{ mascotas|length }})</summary>
+          <p class="pt-nota">Los perros y gatos de las familias damnificadas también lo perdieron todo. Se necesita alimento, collares, correas, transportadoras, toallas y dinero. Estas organizaciones de Santa Cruz los atienden; los datos de donación los compartieron ellas mismas.</p>
+          <ul class="pt-orgs">{% for o in mascotas %}{% include "portada/organizacion.html" %}{% endfor %}</ul>
+        </details>
+        {% endif %}
+      </div>
+
+      <h3 class="pt-h3" id="grupos-whatsapp">Únete a una brigada</h3>
+      <ul class="pt-brigadas">
+        {% for g in cont.GRUPOS_WHATSAPP %}
+        <li class="pt-brigada">
+          <a class="pt-fila" href="{{ g.url }}" target="_blank" rel="noopener"><span>{{ g.nombre }}</span><b class="pt-ir">WhatsApp ↗</b></a>
+          {% if g.grupos %}<p class="pt-nota">Un grupo por brigada: {{ g.grupos|join:", " }}.</p>{% endif %}
+          <img class="pt-qr" src="{% static g.qr %}" alt="Código QR para unirse a {{ g.nombre }}" width="88" height="88" loading="lazy">
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+
+  {# Informes y mapas en PDF: el índice que publica sosgalapagos-datos en /srv/sosgalapagos-descargas. #}
+  <div class="pt-abajo">
+    <section class="pt-seccion" id="informes" aria-labelledby="informes-titulo">
+      <h2 class="pt-h2s" id="informes-titulo">Informes</h2>
+      {% if informes %}
+      <ul class="pt-lista">
+        {% for i in informes %}
+        <li><a class="pt-fila" href="{{ informes_url }}{{ i.archivo }}" target="_blank" rel="noopener"><span>{{ i.titulo }}<small>{{ i.fecha_txt }}{% if i.paginas %} · {{ i.paginas }} pág.{% endif %}{% if i.tamano %} · {{ i.tamano }}{% endif %}</small></span><b class="pt-ir">PDF ↓</b></a></li>
+        {% endfor %}
+      </ul>
+      {% if informes_resto %}
+      <details class="pt-plegado pt-todos-informes">
+        <summary>Ver todos ({{ informes_total }})</summary>
+        <ul class="pt-lista">
+          {% for i in informes_resto %}
+          <li><a class="pt-fila" href="{{ informes_url }}{{ i.archivo }}" target="_blank" rel="noopener"><span>{{ i.titulo }}<small>{{ i.fecha_txt }}</small></span><b class="pt-ir">PDF ↓</b></a></li>
+          {% endfor %}
+        </ul>
+      </details>
+      {% endif %}
+      {% else %}
+      <p class="pt-tarjeta pt-sin">Todavía no hay informes publicados aquí. Las capas de riesgo se pueden <a href="/riesgos/descargas/">descargar una por una</a>.</p>
+      {% endif %}
+    </section>
+
+    <section class="pt-seccion" id="mas" aria-labelledby="mas-titulo">
+      <h2 class="pt-h2s" id="mas-titulo">Más</h2>
+      <nav class="pt-pildoras" aria-label="Más secciones">
+        {% for m in cont.MAS %}<a href="{{ m.ruta }}">{{ m.nombre }}</a>{% endfor %}
+      </nav>
+    </section>
+  </div>
+
+  {% include "parciales/firma.html" %}
+</main>
+{% endblock %}

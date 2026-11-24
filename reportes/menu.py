@@ -17,6 +17,7 @@ DESTINOS = [
     ("Lluvia y viento", "/riesgos/mapa-del-tiempo/", True),
     ("Descargar capas", "/riesgos/descargas/", True),
     ("Top contributors", "/riesgos/puntos/", False),
+    ("Privacidad", "/privacidad", False),  # una sola política para todo el sitio
     ("Admin", "/riesgos/admin/", False),  # para coordinación: pide usuario y contraseña
 ]
 

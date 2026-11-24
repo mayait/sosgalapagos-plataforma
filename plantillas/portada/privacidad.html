@@ -1,0 +1,104 @@
+{# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec> · Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito. #}
+{% extends "base.html" %}
+{% load static reportes_extras %}
+{% block titulo %}Privacidad y uso de datos{% endblock %}
+{% block descripcion %}Qué datos recoge SOS Galápagos, para qué sirven, con quién se comparten y cómo pedir que se borren. No te contactamos, no vendemos datos y no los usamos con fines comerciales.{% endblock %}
+{% block estilos_despues %}<link rel="stylesheet" href="{% propio 'portada/portada.css' %}">{% endblock %}
+{% block contenido %}
+<main class="pagina ancha politica">
+  <h1 class="form-titulo">Privacidad y uso de datos</h1>
+  <p class="form-ayuda">Todo el sitio sosgalapagos.org · actualizada el {{ actualizada }}</p>
+
+  <ul class="politica-indice" aria-label="En esta página">
+    <li><a href="#responsable">Responsable</a></li>
+    <li><a href="#que-recogemos">Qué recogemos</a></li>
+    <li><a href="#publicamos">Qué se publica</a></li>
+    <li><a href="#compartimos">Con quién</a></li>
+    <li><a href="#plazos">Cuánto tiempo</a></li>
+    <li><a href="#responsegrid">Plataforma anterior</a></li>
+    <li><a href="#derechos">Tus derechos</a></li>
+  </ul>
+
+  {% include "parciales/para_que.html" with completo=True %}
+
+  <h2 id="responsable">Quién es responsable</h2>
+  <p>El responsable del tratamiento es <b>Julián Maya</b>, autor de SOS Galápagos, proyecto de la <b>Universidad San Francisco de Quito (USFQ Galápagos)</b> que coordina la ayuda con organizaciones de la sociedad civil y con el COE. Para cualquier asunto de datos personales, escribe a <a href="mailto:{{ correo }}">{{ correo }}</a>.</p>
+  <p>Esta política cubre todo el sitio:</p>
+  <ul class="ficha-datos">
+    <li><span>La portada</span> sosgalapagos.org: no pide datos; solo enlaza a formularios de otras instituciones (el GAD de Santa Cruz y el COE), que tienen sus propias políticas.</li>
+    <li><span>El mapa de riesgos</span> /riesgos/: el formulario «Reportar», las confirmaciones «sigue ahí» y «ya bajó», la tabla de puntos y la línea del tiempo.</li>
+    <li><span>WhatsApp</span> los avisos que nos mandas por WhatsApp al número de SOS Galápagos.</li>
+    <li><span>Avisos al teléfono</span> si activas «Recibir avisos».</li>
+    <li><span>El clima</span> /clima/ y el mapa de lluvia y viento: no piden datos.</li>
+    <li><span>La app</span> si instalas SOS Galápagos en tu teléfono, es este mismo sitio; guarda en tu teléfono lo que se dice abajo.</li>
+  </ul>
+
+  <h2 id="que-recogemos">Qué datos recogemos</h2>
+  <ul class="ficha-datos">
+    <li><span>El lugar</span> el punto que marcas en el mapa o la ubicación de tu teléfono, solo si das permiso.</li>
+    <li><span>Lo que pasa</span> el tipo de aviso, hasta dónde llega el agua, si se puede pasar, la fecha y la hora.</li>
+    <li><span>La foto</span> si envías una. Leemos su ubicación y la volvemos a guardar <b>sin metadatos</b>: la fecha, el modelo del teléfono y las coordenadas originales se descartan.</li>
+    <li><span>La nota</span> si escribes una (hasta 280 caracteres). Los números de 7 o más cifras (teléfonos, cédulas) se ocultan solos.</li>
+    <li><span>Tu nombre o apodo</span> solo si lo pones, para la tabla de puntos.</li>
+    <li><span>Un identificador del teléfono</span> un número al azar guardado en una galleta de este sitio, para contar tus puntos y saber que dos confirmaciones vienen de teléfonos distintos. No sirve para saber quién eres.</li>
+    <li><span>Un teléfono de contacto</span> solo en los avisos de centros de acopio o instituciones, y debe ser el del lugar, no uno personal.</li>
+    <li><span>Por WhatsApp</span> el texto, la foto y la ubicación que nos mandas. Tu número <b>nunca</b> se guarda en claro: solo un resumen con clave que no permite recuperarlo, y el identificador del chat, cifrado, para responderte en esa misma conversación. Lo que no tiene que ver con la emergencia no se guarda.</li>
+    <li><span>En grupos de WhatsApp</span> solo en los grupos cuyo administrador lo autorizó, el asistente lee los mensajes. Lo que no pasa el filtro de reglas no se guarda ni se manda a ningún modelo; lo que pasa se guarda 7 días, con el número solo como resumen con clave. En los grupos no responde.</li>
+    <li><span>Avisos al teléfono</span> la dirección técnica de entrega que da tu navegador y los temas e islas que eliges. No pedimos tu nombre, correo ni número.</li>
+    <li><span>En tu teléfono</span> el mapa guarda en tu navegador las capas que encendiste, tus puntos marcados en «Mis puntos», tu apodo y una copia de los reportes para verlos sin conexión. Eso no sale de tu teléfono.</li>
+  </ul>
+  <p>No pedimos cédula, correo ni la dirección de tu casa. Por favor, <b>no fotografíes caras ni documentos</b> y no escribas nombres, teléfonos ni cédulas en la nota.</p>
+
+  <h2 id="publicamos">Qué se publica y qué no</h2>
+  <ul class="ficha-datos">
+    <li><span>Al instante</span> el punto, el tipo de aviso, la profundidad, la gravedad, la hora, la foto, la nota y, en los centros de acopio o instituciones, el teléfono del lugar. El punto sale «por verificar». Coordinación oculta lo que no deba verse (una cara, un nombre, un teléfono personal) en cuanto lo ve, o cuando nos lo pides.</li>
+    <li><span>Nunca</span> tu identificador, el resumen de tu número de WhatsApp ni tu chat. Tu nombre o apodo solo aparece en la tabla de puntos, y puedes pedir que lo quitemos.</li>
+  </ul>
+  <p>Los reportes publicados son <b>datos abiertos</b>: se pueden descargar, sin datos personales, para que autoridades, investigadores y vecinos los usen.</p>
+
+  <h2 id="compartimos">Con quién los compartimos</h2>
+  <p>Con las instituciones que toman decisiones en la emergencia (SNGR, COE, gobiernos locales, Consejo de Gobierno, Parque Nacional) y con equipos de investigación que rehacen los modelos de riesgo. Les damos lo mismo que se publica: <b>sin datos personales</b>. No vendemos, alquilamos ni cedemos datos a nadie, y no los usamos para publicidad.</p>
+  <p id="terceros">Para funcionar usamos algunos servicios de terceros. Ninguno recibe tu nombre ni tu número:</p>
+  <ul class="ficha-datos">
+    <li><span>Cloudflare</span> protege y entrega el sitio, y sirve algunas librerías del mapa; ve tu dirección IP, como en cualquier página web.</li>
+    <li><span>Mapas de fondo</span> el mapa base propio usa datos de OpenStreetMap (con Protomaps) y se sirve desde este sitio. Si eliges el mapa de calles, la foto de satélite o el mapa de lluvia y viento, tu navegador baja teselas de OpenStreetMap o de Esri, y el relieve en 3D, de Amazon Web Services: esos servidores ven tu dirección IP.</li>
+    <li><span>NASA GIBS</span> las imágenes del satélite GOES las baja tu navegador directamente de NASA, que ve tu dirección IP.</li>
+    <li><span>Un modelo de lenguaje</span> un proveedor externo (Anthropic o Google) lee el texto y la foto de un aviso de WhatsApp para ordenarlo en un reporte, y los boletines oficiales para resumirlos. Solo recibe lo que pasa un filtro de reglas, nunca tu número, y no lo usamos para tomar decisiones sobre ti.</li>
+    <li><span>WhatsApp</span> si nos escribes por ahí, se aplica además la política de WhatsApp (Meta).</li>
+    <li><span>Tu navegador</span> si activas los avisos, el servicio de notificaciones de tu navegador (Google, Apple o Mozilla) entrega los mensajes.</li>
+  </ul>
+  <p>Algunos de estos servicios y nuestros servidores están fuera de Ecuador, así que los datos pueden viajar a otros países.</p>
+
+  <h2 id="base-legal">Por qué podemos tratarlos</h2>
+  <p>Por tu <b>consentimiento</b>: lo das al enviar un reporte o al escribirnos, y puedes retirarlo cuando quieras. En una emergencia también nos ampara la necesidad de <b>proteger la vida y la integridad de las personas</b> (sus intereses vitales), como prevé la Ley Orgánica de Protección de Datos Personales. Enviar un reporte es voluntario: puedes hacerlo sin foto, sin nota y sin nombre.</p>
+
+  <h2 id="plazos">Cuánto tiempo los guardamos</h2>
+  <ul class="ficha-datos">
+    <li><span>El reporte</span> el punto, el tipo, la profundidad, la fecha, la foto y la nota. Se retira del mapa cuando vence, pero <b>se conserva como registro histórico</b>, sin datos personales, porque permite saber hasta dónde subió el agua y mejorar los modelos de los próximos años.</li>
+    <li><span>Tu nombre o apodo y el identificador del teléfono</span> hasta que pidas borrarlos. La galleta del identificador dura un año y puedes borrarla desde tu navegador. Al cerrar la emergencia revisaremos este plazo y lo diremos aquí.</li>
+    <li><span>Los mensajes de WhatsApp</span> el texto de la conversación se borra a los 7 días. Queda solo el reporte que salió de ella.</li>
+    <li><span>Los avisos al teléfono</span> hasta que los apagues o tu navegador deje de aceptarlos.</li>
+  </ul>
+
+  <h2 id="responsegrid">Los datos de la plataforma de coordinación anterior</h2>
+  <p>Desde el 1 de noviembre de 2026 la coordinación usó otra plataforma (ResponseGrid) para registrar pedidos de ayuda, puntos de acopio, voluntariado y cuentas de personas y organizaciones. <b>Esa plataforma se retiró</b> el 23 de noviembre de 2026.</p>
+  <ul class="ficha-datos">
+    <li><span>Cuentas, consentimientos y peticiones</span> quedan en un respaldo <b>fuera de línea</b>, sin publicar y sin acceso desde internet, por si hay que responder a un pedido tuyo o de una autoridad. No se usan para nada más.</li>
+    <li><span>Lo que ya era público</span> los pedidos de ayuda y los puntos públicos (refugios, centros de acopio, entregas, transporte) pasaron a la <a href="/riesgos/informe/">línea del tiempo</a> como historial, con su fecha original y <b>sin datos personales</b>: sin nombres, teléfonos ni correos, y los pedidos sensibles con la ubicación aproximada (unos 500 m). No salen en el mapa.</li>
+    <li><span>Si quieres que se borren</span> escribe a <a href="mailto:{{ correo }}">{{ correo }}</a> con el correo de tu cuenta o lo que publicaste, y borramos tus datos del respaldo y del historial.</li>
+  </ul>
+
+  <h2 id="derechos">Tus derechos y cómo borrar tus datos</h2>
+  <p>Según la Ley Orgánica de Protección de Datos Personales del Ecuador puedes pedir <b>ver, corregir, borrar u oponerte</b> al uso de tus datos, pedir que se suspenda su tratamiento, llevarlos a otro lugar y retirar tu consentimiento. Escribe a <a href="mailto:{{ correo }}">{{ correo }}</a> e incluye el código del reporte (lo ves al final del enlace, después de <code>/r/</code>) o la fecha y el lugar. Respondemos en un máximo de 15 días.</p>
+  <p>Para dejar de recibir avisos, ábrelos en el menú («Recibir avisos») y toca «Apagar todos los avisos». Para borrar lo que el mapa guardó en tu teléfono, borra los datos del sitio desde tu navegador.</p>
+  <p>Si crees que no cumplimos, puedes reclamar ante la <b>Superintendencia de Protección de Datos Personales</b>.</p>
+
+  <h2 id="cuidado">Cómo los cuidamos</h2>
+  <p>Las fotos se guardan sin metadatos; los números de WhatsApp, solo como resumen con clave; el chat, cifrado. Solo el equipo de coordinación entra al panel de revisión, con usuario y contraseña. Hacemos un respaldo diario de la base de datos.</p>
+
+  <h2 id="cambios">Cambios</h2>
+  <p>Si cambiamos esta política, lo diremos aquí con la fecha nueva. Nunca usaremos lo que ya enviaste para un fin distinto de los que dice esta página sin pedirte permiso.</p>
+
+  {% include "parciales/firma.html" %}
+</main>
+{% endblock %}
