@@ -58,7 +58,7 @@ def prueba_dato_de_mas_de_3_h_sin_cifras():
     _, f = _filas(edad_min=200)
     z = f["la-cascada"]
     assert z["estado"] == "mudo" and z["cifras"] == "" and z["tramos"] == 0
-    assert z["texto"] == "Las estaciones no han enviado datos desde las 05:20."
+    assert z["texto"] == "Las estaciones no han enviado datos desde las 05:20"
     assert "mm" not in z["texto"] and z["nivel"] != "bajo"
 
 
@@ -100,6 +100,17 @@ def prueba_linea_de_causa_solo_cuando_corresponde():
     _, f = _filas(_estado(la_cascada={"nivel": "muy alto", "R": {"R1h": 0.2, "R3h": 3.0, "R24h": 40.0, "R72h": 60.0}}))
     assert "3 días" not in f["la-cascada"]["causa"] and "8 h" in f["la-cascada"]["causa"]
     assert f["la-cascada"]["tono"] == "muy-alto" and f["la-cascada"]["tramos"] == 4
+
+
+def prueba_nivel_sin_estaciones_validas_no_se_esconde():
+    # La coordinación subió el nivel por reportes de campo y las estaciones no tienen datos válidos.
+    _, f = _filas(_estado(la_cascada={"nivel": "alto", "R": {}, "manual": {"nivel": "alto", "motivo": "x"}}))
+    z = f["la-cascada"]
+    assert z["nivel"] == "alto" and z["tramos"] == 3 and z["cifras"] == "" and "sin datos" not in z["nivel"]
+    assert z["causa"] == "Lo subió la coordinación por reportes de campo." and "0 mm" not in (z["causa"] + z["texto"])
+    # Lo sostiene la persistencia.
+    _, f = _filas(_estado(la_cascada={"nivel": "muy alto", "R": {}}))
+    assert f["la-cascada"]["tramos"] == 4 and "8 h" in f["la-cascada"]["causa"]
 
 
 def prueba_silencio_en_lluvia_fuerte_no_es_bajo():

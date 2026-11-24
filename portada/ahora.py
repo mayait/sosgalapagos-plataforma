@@ -127,12 +127,20 @@ def filas(estado, generado, ultimas, ahora, regla=None, umbrales_de=None):
         if z.get("silencio"):
             fila.update(estado="silencio", nivel="sin datos en lluvia fuerte", tramos=4, tono="muy-alto",
                         texto="Las estaciones dejaron de enviar datos durante una lluvia fuerte. Tómalo como un nivel muy alto.")
+        elif z.get("nivel") in TRAMOS and not z.get("R"):
+            # Sin estaciones válidas ahora, pero con nivel: lo subió la coordinación o lo sostienen las 8 h
+            # de persistencia. Se muestra como en /clima/, sin cifras.
+            tramos, tono = TRAMOS[z["nivel"]]
+            horas_p = regla.get("persistencia_horas", 8)
+            fila.update(estado="sostenido", nivel=z["nivel"], tramos=tramos, tono=tono,
+                        causa="Lo subió la coordinación por reportes de campo." if z.get("manual")
+                        else f"Sigue {z['nivel']}: el nivel se mantiene {horas_p} h después de la lluvia fuerte y ahora las estaciones no tienen datos válidos.")
         elif dato is None or z.get("nivel") in (None, "", "sin datos") or not z.get("R"):
             fila.update(estado="sin-datos", nivel="sin datos",
                         texto=(f"Las estaciones no han enviado datos desde las {fila['hora']}." if dato else "Las estaciones de la zona no responden.")
                         + " «Sin datos» no quiere decir que no llueva.")
         elif edad > VIEJO_MIN:
-            fila.update(estado="mudo", nivel="sin datos", texto=f"Las estaciones no han enviado datos desde las {fila['hora']}.")
+            fila.update(estado="mudo", nivel="sin datos", texto=f"Las estaciones no han enviado datos desde las {fila['hora']}")
         else:
             tramos, tono = TRAMOS.get(z["nivel"], (0, ""))
             R = z["R"]

@@ -48,7 +48,7 @@
           {% if f.cifras %}<p class="pt-cifras">{{ f.cifras }}</p>{% endif %}
           {% if f.estado == "viejo" %}<p class="pt-viejo">dato de las {{ f.hora }} · {{ f.hace }}</p>{% endif %}
           {% if f.causa %}<p class="pt-causa">{{ f.causa }}</p>{% endif %}
-          {% if f.texto %}<p class="pt-zona-texto">{{ f.texto }}{% if f.estado == "sin-estaciones" %} <a href="/riesgos/mapa-del-tiempo/">Mira la lluvia de los modelos →</a>{% elif f.estado != "silencio" %} · <a href="/clima/">Ver clima</a>{% endif %}</p>{% endif %}
+          {% if f.texto %}<p class="pt-zona-texto">{{ f.texto }}{% if f.estado == "sin-estaciones" %} <a href="/riesgos/mapa-del-tiempo/">Mira la lluvia de los modelos →</a>{% elif f.estado == "mudo" %} · <a href="/clima/">Ver clima</a>{% elif f.estado != "silencio" %} <a href="/clima/">Ver clima</a>{% endif %}</p>{% endif %}
         </li>
         {% endfor %}
       </ul>
