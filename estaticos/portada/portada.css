@@ -63,14 +63,15 @@ a.pt-fila:hover, a.pt-tarjeta:hover { border-color: var(--tinta); }
 .pt-nivel { flex: none; display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; }
 .pt-barra { display: flex; gap: 2px; }
 .pt-barra i { width: 9px; height: 8px; border-radius: 1px; background: var(--linea); }
+/* Escala de nivel, la misma en la portada, /clima/ y /riesgos/: gris, rosa, rojo y granate. Sin verde: «bajo» no es «seguro». */
 .tono-bajo { color: var(--gris-texto); }
 .tono-bajo .si { background: #8a8a8a; }
 .tono-medio { color: var(--tinta); font-weight: 800; }
-.tono-medio .si { background: var(--tinta); }
+.tono-medio .si { background: #f29c9f; }
 .tono-alto { color: var(--rojo-osc); font-weight: 800; }
 .tono-alto .si { background: var(--rojo); }
-.tono-muy-alto { color: var(--rojo-osc); font-weight: 900; }
-.tono-muy-alto .si { background: var(--rojo-osc); }
+.tono-muy-alto { color: #6e0b0f; font-weight: 900; }
+.tono-muy-alto .si { background: #6e0b0f; }
 .pt-nivel-sin { flex: none; font-size: 13.5px; color: var(--gris); }
 .pt-cifras { margin-top: 3px !important; font-size: 13.5px; color: var(--gris-texto); }
 .pt-viejo { margin-top: 3px !important; font-size: 12.5px; font-weight: 700; color: var(--gris); }
