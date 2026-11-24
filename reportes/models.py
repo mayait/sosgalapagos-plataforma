@@ -311,6 +311,24 @@ class ZonaGrande(models.TextChoices):
     ISLA_SAN_CRISTOBAL = "san-cristobal", "Todo San Cristóbal"
 
 
+class Institucion(models.TextChoices):
+    """Quién firma un documento oficial. Sirve para mostrar «el último de cada institución» en la portada."""
+
+    INAMHI = "inamhi", "INAMHI"
+    SNGR = "sngr", "Secretaría Nacional de Gestión de Riesgos"
+    INOCAR = "inocar", "INOCAR"
+    GAD_SANTA_CRUZ = "gad-santa-cruz", "GAD de Santa Cruz"
+    GAD_SAN_CRISTOBAL = "gad-san-cristobal", "GAD de San Cristóbal"
+    GAD_ISABELA = "gad-isabela", "GAD de Isabela"
+    COE = "coe", "COE"
+    CGREG = "cgreg", "Consejo de Gobierno de Galápagos"
+    OTRA = "otra", "Otra institución"
+
+
+def ruta_oficial(instancia, nombre):
+    return f"oficiales/{timezone.now():%Y-%m}/{uuid.uuid4().hex}.pdf"
+
+
 class Suceso(models.Model):
     """Algo que pasó en la emergencia y debe quedar en la línea del tiempo, aunque no tenga un punto en el mapa.
 
@@ -326,6 +344,10 @@ class Suceso(models.Model):
     texto = models.TextField(blank=True, help_text="Qué pasó, en pocas frases. Sin nombres de personas afectadas.")
     fuente = models.CharField(max_length=80, blank=True, help_text="Quién lo dice: INAMHI, COE cantonal, el nombre del medio…")
     enlace = models.URLField(max_length=400, blank=True, help_text="Al documento o a la noticia original.")
+    # Un documento oficial lleva su institución (para la portada) y, si no está publicado en internet, el PDF.
+    institucion = models.CharField("institución", max_length=20, choices=Institucion, blank=True, help_text="Solo para documentos oficiales.")
+    archivo = models.FileField("PDF del documento", upload_to=ruta_oficial, validators=[validar_pdf], blank=True,
+                               help_text="Si el documento no está en internet. Es público: no subas uno con nombres de personas afectadas, cédulas ni teléfonos.")
     ocurrido = models.DateTimeField("cuándo", default=timezone.now, db_index=True)
     # Lo que dura: un cierre de vía anunciado, una suspensión de clases. Vacío: un hecho puntual.
     hasta = models.DateTimeField("vigente hasta", null=True, blank=True)
@@ -340,3 +362,10 @@ class Suceso(models.Model):
 
     def __str__(self):
         return f"{self.get_clase_display()} · {self.titulo}"
+
+    @property
+    def destino(self):
+        """Adónde lleva: al original en internet o, si se subió el PDF, a su descarga."""
+        if self.enlace:
+            return self.enlace
+        return f"/riesgos/oficial/{self.pk}/" if self.archivo else ""

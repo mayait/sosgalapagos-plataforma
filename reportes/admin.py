@@ -106,8 +106,8 @@ class SucesoAdmin(admin.ModelAdmin):
     Sin nombres de personas afectadas, cédulas ni teléfonos personales.
     """
 
-    list_display = ("ocurrido", "clase", "titulo", "fuente", "zona", "hasta", "visible")
-    list_filter = ("clase", "zona", "visible")
+    list_display = ("ocurrido", "clase", "institucion", "titulo", "fuente", "zona", "hasta", "visible")
+    list_filter = ("clase", "institucion", "zona", "visible")
     list_editable = ("visible",)
     search_fields = ("titulo", "texto", "fuente")
     date_hierarchy = "ocurrido"

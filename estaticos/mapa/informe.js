@@ -20,7 +20,7 @@
   const UTC_GALAPAGOS = -6; // Galápagos no cambia de hora
   const COLOR = { lluvia: '#2f6fb3', reportes: '#c8151b' }; // par validado (daltonismo y contraste)
   const CLASES = { campo: 'Reporte de campo', buena: 'Buena noticia o ayuda (de campo)', riesgo: 'Peligro', bueno: 'Algo bueno', ayuda: 'Donar o colaborar', observa: 'Observación para el mapa',
-    aviso: 'Aviso a los teléfonos', oficial: 'Oficial', noticia: 'Noticia', informe: 'Informe', nota: 'Nota de coordinación', barrio: 'Informe comunitario' };
+    aviso: 'Aviso a los teléfonos', oficial: 'Documentos oficiales', noticia: 'Noticia', informe: 'Informe', nota: 'Nota de coordinación', barrio: 'Informe comunitario' };
   const SUCESOS = ['aviso', 'oficial', 'noticia', 'informe', 'nota', 'barrio']; // sin punto en el mapa
   const ESTACION_POR_ISLA = { 'Santa Cruz': 'ambient/evolucion', 'San Cristóbal': 'gsc/mirador', Isabela: 'darwin/puerto_villamil' };
 
@@ -267,7 +267,8 @@
       ${r.foto ? `<img src="${x(r.foto)}" alt="" loading="lazy">` : ''}
       <span class="hito-texto"><span class="hito-clase">${horaDe(r.t)} · ${x(CLASES[r.clase] || '')}${r.nFotos > 1 ? ` · ${r.nFotos} fotos` : ''}</span>
       ${estado.filtros.zona && !r.suceso ? '' : `<span class="hito-zona">${x(donde)}</span>`}
-      <b>${x(r.titulo)}</b>${sub ? `<span class="hito-sub">${x(sub)}</span>` : ''}${r.texto ? `<span class="hito-desc">${x(r.texto)}</span>` : ''}</span></${etiqueta}>`;
+      <b>${x(r.titulo)}</b>${sub ? `<span class="hito-sub">${x(sub)}</span>` : ''}${r.texto ? `<span class="hito-desc">${x(r.texto)}</span>` : ''}
+      ${r.clase === 'oficial' && r.enlace ? '<span class="hito-abrir">Abrir el documento oficial ↗</span>' : ''}</span></${etiqueta}>`;
   }
   // Hito de lluvia: un dato de contexto, no un reporte. Va en la hora en que más llovió.
   function hitoLluvia(d) {
@@ -340,8 +341,21 @@
     const f = estado.filtros;
     f.estacion = ESTACION_POR_ISLA['Santa Cruz'];
     if (!estado.estaciones.some((e) => e.id === f.estacion)) f.estacion = (estado.estaciones[0] || {}).id || '';
+    // El filtro viaja en la dirección, para poder compartirla: /riesgos/informe/?ver=oficial&zona=sc
+    const pedido = new URLSearchParams(location.search);
+    if (CLASES[pedido.get('ver')]) f.clase = pedido.get('ver');
+    if (ZONAS.some((z) => z.id === pedido.get('zona'))) {
+      f.zona = pedido.get('zona');
+      f.isla = (ZONAS.find((z) => z.id === f.zona) || {}).isla || '';
+    }
     await actualizar(true);
     $('informe').removeAttribute('aria-busy');
+    const enlazar = () => {
+      const q = new URLSearchParams();
+      if (f.clase) q.set('ver', f.clase);
+      if (f.zona) q.set('zona', f.zona);
+      history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : ''));
+    };
 
     $('f-zona').onchange = (e) => {
       f.zona = e.target.value;
@@ -350,9 +364,9 @@
       const propia = ESTACION_POR_ISLA[f.isla || 'Santa Cruz'] || (estado.estaciones.find((st) => st.isla === f.isla) || {}).id;
       // Si esa isla no tiene estación con lluvia por hora, no se anota lluvia de otra isla.
       f.estacion = propia && estado.estaciones.some((st) => st.id === propia) ? propia : '';
-      actualizar(true);
+      actualizar(true); enlazar();
     };
-    $('f-clase').onchange = (e) => { f.clase = e.target.value; actualizar(false); };
+    $('f-clase').onchange = (e) => { f.clase = e.target.value; actualizar(false); enlazar(); };
     const fechas = () => {
       const d = inicioDelDia($('f-desde').value), h = inicioDelDia($('f-hasta').value) + DIA;
       if (Number.isNaN(d) || Number.isNaN(h) || h <= d) return;

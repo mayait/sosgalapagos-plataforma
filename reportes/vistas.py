@@ -263,6 +263,23 @@ def mover(request, id_publico):
 
 
 @require_GET
+def oficial(request, pk):
+    """El PDF de un documento oficial que subió coordinación (un informe de un GAD, un comunicado del COE)."""
+    from django.http import FileResponse
+
+    from .models import Suceso
+
+    s = get_object_or_404(Suceso, pk=pk, visible=True)
+    if not s.archivo:
+        raise Http404
+    nombre = "".join(c if c.isalnum() or c in " -_" else "_" for c in s.titulo).strip() or "documento"
+    respuesta = FileResponse(s.archivo.open("rb"), content_type="application/pdf", filename=f"{nombre}.pdf")
+    respuesta["Content-Disposition"] = respuesta["Content-Disposition"].replace("attachment", "inline")
+    respuesta["Cache-Control"] = "public, max-age=3600"
+    return respuesta
+
+
+@require_GET
 def documento(request, pk):
     """Baja el PDF de un reporte. Si es privado, solo con sesión de coordinación; si no, como si no existiera."""
     from django.http import FileResponse

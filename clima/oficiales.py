@@ -7,16 +7,19 @@ Se detecta que hay uno nuevo por la huella del archivo y un modelo de lenguaje l
 la vigencia, el nivel y lo que dice de Galápagos. El resumen nunca reemplaza al documento:
 siempre se guarda y se muestra el enlace al original.
 
+También lee los informes de situación (SITREP) de la Secretaría Nacional de Gestión de Riesgos:
+mira la página donde se publican, toma el de número más alto y, si es nuevo, lo baja y lo resume.
+
 Endpoints, en variables de entorno (nunca en el repositorio):
   CLIMA_INAMHI_PRONOSTICO_URL, CLIMA_INAMHI_LLUVIA_HORAS_URL, CLIMA_INAMHI_ADVERTENCIA_URL,
-  CLIMA_INOCAR_OLEAJE_RSS, CLIMA_ERFEN_URL
+  CLIMA_INOCAR_OLEAJE_RSS, CLIMA_ERFEN_URL, CLIMA_SNGR_SITREP_URL
 """
 import hashlib
 import json
 import logging
 import re
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from django.conf import settings
 from pydantic import BaseModel, Field
@@ -99,14 +102,15 @@ def _fecha(texto):
         return None
 
 
-def leer_documento(contenido, tipo_mime, que_es):
-    """Pasa el documento (PDF o imagen) al modelo configurado y devuelve un Extraido, o None si no hay modelo o falla."""
+def leer_documento(contenido, tipo_mime, que_es, esquema=None, instrucciones=None):
+    """Pasa el documento (PDF o imagen) al modelo configurado y devuelve lo extraído (un Extraido, o el
+    esquema que se pida), o None si no hay modelo o falla."""
     if not settings.IA_MODELO:
         return None
     try:
         from pydantic_ai import Agent, BinaryContent
 
-        agente = Agent(settings.IA_MODELO, output_type=Extraido, instructions=INSTRUCCIONES, retries=1)
+        agente = Agent(settings.IA_MODELO, output_type=esquema or Extraido, instructions=instrucciones or INSTRUCCIONES, retries=1)
         return agente.run_sync([f"Documento: {que_es}. Hoy es {datetime.now(GALAPAGOS):%Y-%m-%d}.", BinaryContent(data=contenido, media_type=tipo_mime)],
                                model_settings={"timeout": 90}).output
     except Exception:
@@ -129,6 +133,81 @@ def registrar(fuente, tipo, contenido, tipo_mime, enlace, que_es, titulo=""):
             extraido_con=str(settings.IA_MODELO)[:60],
         )
     return Boletin.objects.create(fuente=fuente, tipo=tipo, huella=huella, **campos)
+
+
+# ── SITREP de la Secretaría Nacional de Gestión de Riesgos ───────────────────
+class InformeSituacion(BaseModel):
+    """Lo que dice un informe de situación (SITREP) nacional sobre Galápagos."""
+
+    emitido: str | None = Field(default=None, description="Fecha y hora de corte del informe, ISO 8601 con zona (-05:00 si es hora de Ecuador continental).")
+    nombra_galapagos: bool = Field(description="True si el informe trae datos de la provincia de Galápagos o de sus cantones (Santa Cruz, San Cristóbal, Isabela).")
+    resumen: str = Field(description="De 2 a 4 frases, máximo 550 caracteres, para vecinos de Galápagos. Primero lo que el informe dice de Galápagos: cantones, eventos, personas afectadas o damnificadas, viviendas, vías y servicios, con sus cifras tal como aparecen. Después, en una frase, el total nacional. Si no trae nada de Galápagos, dilo y resume lo nacional. Sin nombres de personas.")
+    personas_afectadas_galapagos: int | None = Field(default=None, description="Personas afectadas en Galápagos, si el informe da la cifra.")
+    viviendas_afectadas_galapagos: int | None = Field(default=None, description="Viviendas afectadas en Galápagos, si el informe da la cifra.")
+    eventos_galapagos: int | None = Field(default=None, description="Número de eventos registrados en Galápagos, si el informe lo da.")
+
+
+INSTRUCCIONES_SITREP = """Lees un informe de situación (SITREP) de la Secretaría Nacional de Gestión de Riesgos de Ecuador sobre las lluvias, y rellenas el esquema.
+- Busca la provincia de Galápagos y sus cantones (Santa Cruz, San Cristóbal, Isabela) en las tablas y en el texto.
+- Copia las cifras tal como aparecen. No sumes, no estimes y no inventes. Si un dato no está, déjalo vacío.
+- No escribas nombres de personas, cédulas ni teléfonos.
+- El resumen es para vecinos: claro, sin siglas sin explicar, y sin recomendaciones propias."""
+
+_SITREP = re.compile(r'<a[^>]+href="([^"]+\.pdf)"[^>]*>\s*(?:<[^>]+>\s*)*SITREP\s+Nacional\s+No\.?\s*(\d+)([^<]*)', re.I)
+_INFOGRAFIA = re.compile(r'<a[^>]+href="([^"]+\.pdf)"[^>]*>\s*(?:<[^>]+>\s*)*Infograf[ií]a\s+Nacional\s+No\.?\s*(\d+)', re.I)
+_CORTE = re.compile(r"al\s+(\d{2})/(\d{2})/(\d{4})\D{0,4}(\d{1,2})h(\d{2})")
+
+
+def ultimo_sitrep(pagina):
+    """De la página de la SNGR, el SITREP nacional de número más alto: {numero, enlace, emitido, infografia}, o None."""
+    informes = [(int(n), enlace, resto) for enlace, n, resto in _SITREP.findall(pagina)]
+    if not informes:
+        return None
+    numero, enlace, resto = max(informes)
+    emitido, corte = None, _CORTE.search(resto)
+    if corte:
+        dia, mes, anio, hora, minuto = (int(x) for x in corte.groups())
+        try:  # la hora del informe es la continental de Ecuador (UTC−5)
+            emitido = datetime(anio, mes, dia, hora, minuto, tzinfo=timezone(timedelta(hours=-5)))
+        except ValueError:
+            emitido = None
+    infografia = next((e for e, n in _INFOGRAFIA.findall(pagina) if int(n) == numero), "")
+    return {"numero": str(numero), "enlace": enlace, "emitido": emitido, "infografia": infografia}
+
+
+def revisar_sitrep():
+    """Mira si la SNGR publicó un SITREP nuevo. Solo baja el PDF (y solo llama al modelo) cuando el número es nuevo.
+    Devuelve el Boletin creado, o None."""
+    if not settings.CLIMA_SNGR_SITREP_URL:
+        return None
+    t0 = time.monotonic()
+    try:
+        ultimo = ultimo_sitrep(_bajar(settings.CLIMA_SNGR_SITREP_URL, espera=60).decode("utf-8", "replace"))
+        if not ultimo or not ultimo["enlace"].startswith("https://"):
+            _corrida("boletin_sitrep", t0, False, error="la página no trae ningún SITREP nacional")
+            return None
+        if Boletin.objects.filter(fuente="sngr", tipo="sitrep", numero=ultimo["numero"]).exists():
+            _corrida("boletin_sitrep", t0, True, 0)
+            return None
+        contenido = _bajar(ultimo["enlace"], espera=90)
+        huella = hashlib.sha256(contenido).hexdigest()
+        if Boletin.objects.filter(huella=huella).exists():
+            _corrida("boletin_sitrep", t0, True, 0)
+            return None
+        e = leer_documento(contenido, "application/pdf", f"SITREP nacional n.º {ultimo['numero']} de la SNGR por las lluvias", InformeSituacion, INSTRUCCIONES_SITREP)
+        campos = {"numero": ultimo["numero"], "titulo": f"SITREP nacional n.º {ultimo['numero']} · lluvias", "enlace": ultimo["enlace"],
+                  "emitido": ultimo["emitido"], "datos": {"infografia": ultimo["infografia"]} if ultimo["infografia"] else {}}
+        if e:
+            campos.update(emitido=ultimo["emitido"] or _fecha(e.emitido), afecta_galapagos=e.nombra_galapagos, resumen=e.resumen[:600], extraido_con=str(settings.IA_MODELO)[:60])
+            campos["datos"].update({k: v for k, v in {"personas_afectadas_galapagos": e.personas_afectadas_galapagos, "viviendas_afectadas_galapagos": e.viviendas_afectadas_galapagos,
+                                                      "eventos_galapagos": e.eventos_galapagos}.items() if v is not None})
+        b = Boletin.objects.create(fuente="sngr", tipo="sitrep", huella=huella, **campos)
+        _corrida("boletin_sitrep", t0, True, 1)
+        return b
+    except Exception as e:
+        registro.exception("No se pudo revisar el SITREP")
+        _corrida("boletin_sitrep", t0, False, error=type(e).__name__)
+        return None
 
 
 MIME = {".pdf": "application/pdf", ".png": "image/png", ".webp": "image/webp", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}
@@ -170,6 +249,9 @@ def revisar_boletines():
             _corrida("boletin_oleaje", t0, True, len([b for b in nuevos if b.tipo == "oleaje"]))
         except Exception as e:
             _corrida("boletin_oleaje", t0, False, error=type(e).__name__)
+    sitrep = revisar_sitrep()
+    if sitrep:
+        nuevos.append(sitrep)
     return nuevos
 
 

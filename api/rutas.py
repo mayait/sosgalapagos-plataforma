@@ -70,6 +70,15 @@ def lluvia(request, desde: datetime, hasta: datetime, estacion: str = ""):
     }
 
 
+@api.get("/oficiales.json", summary="El último documento oficial de cada institución", tags=["informe"])
+def oficiales(request):
+    """INAMHI, SNGR (SITREP), INOCAR y lo que coordinación suba de los GAD y del COE. Cada uno con su resumen y el
+    enlace al documento original, que es el que vale. `todos` lleva a la línea del tiempo filtrada."""
+    from reportes import cronica
+
+    return cronica.ultimos_oficiales()
+
+
 @api.get("/sucesos.json", summary="Sucesos de la línea del tiempo", tags=["informe"])
 def sucesos(request, desde: datetime = None, hasta: datetime = None):
     """Lo que pasó y no es un punto del mapa: avisos enviados a los teléfonos (o retenidos de noche),
