@@ -489,8 +489,49 @@
     return `<i class="muestra cuadro" style="background:${c}"></i>`;
   }
 
+  // ── Leyenda flotante: solo las capas encendidas, a la izquierda, colapsable ──
+  const LEYENDA_ABIERTA = 'sos-leyenda-abierta';
+  function leyendaFlotante() {
+    let caja = document.getElementById('leyenda-capas');
+    if (!caja) {
+      caja = document.createElement('aside');
+      caja.id = 'leyenda-capas'; caja.className = 'leyenda-capas'; caja.setAttribute('aria-label', 'Leyenda de las capas encendidas');
+      caja.innerHTML = '<button type="button" class="leyenda-capas-boton" aria-expanded="true">Leyenda</button><div class="leyenda-capas-cuerpo"></div>';
+      let abierta = !window.matchMedia('(max-width: 640px)').matches; // en el teléfono empieza plegada
+      try { const g = localStorage.getItem(LEYENDA_ABIERTA); if (g !== null) abierta = g === '1'; } catch (e) { /* sin almacenamiento */ }
+      caja.classList.toggle('plegada', !abierta);
+      caja.querySelector('button').setAttribute('aria-expanded', String(abierta));
+      caja.querySelector('button').addEventListener('click', () => {
+        const ahora = caja.classList.toggle('plegada');
+        caja.querySelector('button').setAttribute('aria-expanded', String(!ahora));
+        try { localStorage.setItem(LEYENDA_ABIERTA, ahora ? '0' : '1'); } catch (e) { /* sin almacenamiento */ }
+      });
+      estado.mapa.getContainer().append(caja);
+    }
+    return caja;
+  }
+  function pintarLeyenda() {
+    if (!estado.mapa) return;
+    const caja = leyendaFlotante(), x = SOS.escapar;
+    const activas = estado.capas.filter((c) => estado.encendidas.has(c.id) && !estado.auto3d.has(c.id)); // en el orden del panel
+    let h = '';
+    for (const c of activas) {
+      const lista = leyenda(c);
+      const e = c.estilo || {};
+      const color = e.fillColor || e.color || '#888';
+      const sola = c.tipo === 'linea' ? { forma: 'linea', color: e.color || color } : c.tipo === 'punto' ? { forma: 'punto', color } : { forma: 'cuadro', color };
+      h += `<div class="leyenda-capa"><b>${x(c.corto || c.titulo)}</b>`;
+      if (lista.length) for (const l of lista) h += `<span>${muestra(l)}${x(l.texto)}</span>`;
+      else if (c.tipo !== 'raster' && c.tipo !== 'teselas') h += `<span>${muestra(sola)}${x(c.titulo)}</span>`;
+      h += '</div>';
+    }
+    caja.hidden = !activas.length;
+    caja.querySelector('.leyenda-capas-cuerpo').innerHTML = h;
+  }
+
   // ── Panel ─────────────────────────────────────────────────────────────────
   function pintar() {
+    pintarLeyenda();
     const m = estado.manifiesto;
     const zoom = estado.mapa.getZoom();
     const x = SOS.escapar;
@@ -720,6 +761,7 @@
         if (quedan.has(capa.id)) { estado.encendidas.add(capa.id); await encender(capa); }
       }
       recordar();
+      pintarLeyenda();
       if (!panel().hidden) pintar();
       avisar(nuevas.length ? `Capas actualizadas. ${nuevas.length === 1 ? 'Hay una capa nueva' : `Hay ${nuevas.length} capas nuevas`}.` : 'Capas y modelos actualizados.');
     } finally { revisando = false; }
@@ -789,6 +831,7 @@
       for (const capa of estado.orden) {
         if (arranque.includes(capa.id)) { estado.encendidas.add(capa.id); await encender(capa); }
       }
+      pintarLeyenda();
       // Si la persona entró en 3D antes de que llegara el manifiesto, los volúmenes se ponen ahora.
       if (estado.en3d) await vista3d(true);
       if (location.hash.length > 1 && !/^#-?\d/.test(location.hash)) irSegunURL(); // nombre de lugar
