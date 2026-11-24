@@ -111,7 +111,8 @@
     const suelto = ['!', ['has', 'point_count']];
     const opacidad = ['interpolate', ['linear'], ['get', 'frac'], 0, 1, 1, OPACIDAD_MINIMA];
     const esPeligro = ['==', ['get', 'clase'], 'riesgo'];
-    const radio = ['case', esPeligro, ['match', ['get', 'gravedad'], 'peligro_vida', 17, 'no_pasar', 14.5, 12.5], 13.5];
+    const esCorazon = ['match', ['get', 'clase'], ['bueno', 'ayuda'], true, false]; // algo bueno y donar o colaborar
+    const radio = ['case', esPeligro, ['match', ['get', 'gravedad'], 'peligro_vida', 17, 'no_pasar', 14.5, 12.5], esCorazon, 17, 13.5];
 
     // Grupos: círculo negro con el número. Borde rojo si dentro hay peligro de vida.
     mapa.addLayer({
@@ -134,7 +135,16 @@
       filter: ['all', suelto, esPeligro, ['==', ['get', 'gravedad'], 'peligro_vida'], ['!=', ['get', 'estado'], 'cerrado']],
       paint: { 'circle-radius': 22, 'circle-color': 'rgba(0,0,0,0)', 'circle-stroke-color': '#000000', 'circle-stroke-width': 2.5, 'circle-stroke-opacity': opacidad },
     });
-    // Pin: relleno según el estado. «Por verificar» va hueco, con borde gris.
+    // Halo de los corazones: que lo bueno y la ayuda resalten entre los peligros.
+    mapa.addLayer({
+      id: 'reportes-halo-corazon', type: 'circle', source: 'reportes',
+      filter: ['all', suelto, esCorazon, ['!=', ['get', 'estado'], 'cerrado']],
+      paint: {
+        'circle-radius': 25, 'circle-blur': 0.55, 'circle-opacity': ['*', 0.45, opacidad],
+        'circle-color': ['match', ['get', 'clase'], 'bueno', COLOR.bueno, COLOR.ayuda],
+      },
+    });
+    // Pin: relleno según el estado. «Por verificar» va hueco, con borde gris (los corazones, siempre con su color).
     mapa.addLayer({
       id: 'reportes-pin', type: 'circle', source: 'reportes', filter: suelto,
       paint: {
@@ -142,15 +152,17 @@
         // Sin verificar, hueco. Cerrado, gris. Lo bueno, amarillo; donar o colaborar, rosa.
         // Los peligros, según su estado: rojo confirmado, ámbar bajando.
         'circle-color': ['case',
-          ['==', ['get', 'estado'], 'por_verificar'], '#ffffff',
           ['==', ['get', 'estado'], 'cerrado'], COLOR.cerrado,
+          ['==', ['get', 'clase'], 'bueno'], COLOR.bueno,
+          ['==', ['get', 'clase'], 'ayuda'], COLOR.ayuda,
+          ['==', ['get', 'estado'], 'por_verificar'], '#ffffff',
           ['==', ['get', 'clase'], 'bueno'], COLOR.bueno,
           ['==', ['get', 'clase'], 'ayuda'], COLOR.ayuda,
           ['==', ['get', 'clase'], 'observa'], COLOR.observa,
           ['==', ['get', 'estado'], 'bajando'], COLOR.bajando,
           COLOR.confirmado],
-        'circle-stroke-color': ['match', ['get', 'estado'], 'por_verificar', COLOR.por_verificar, '#ffffff'],
-        'circle-stroke-width': ['match', ['get', 'estado'], 'por_verificar', 2.5, 2],
+        'circle-stroke-color': ['case', esCorazon, '#ffffff', ['match', ['get', 'estado'], 'por_verificar', COLOR.por_verificar, '#ffffff']],
+        'circle-stroke-width': ['case', esCorazon, 3, ['match', ['get', 'estado'], 'por_verificar', 2.5, 2]],
         'circle-opacity': opacidad, 'circle-stroke-opacity': opacidad,
       },
     });
@@ -158,10 +170,11 @@
       id: 'reportes-icono', type: 'symbol', source: 'reportes', filter: suelto,
       layout: {
         'icon-image': ['case',
-          ['==', ['get', 'estado'], 'por_verificar'], ['concat', ['get', 'icono'], '-gris'],
           ['all', ['==', ['get', 'clase'], 'bueno'], ['!=', ['get', 'estado'], 'cerrado']], ['concat', ['get', 'icono'], '-tinta'], // sobre amarillo, icono oscuro
+          ['all', ['==', ['get', 'clase'], 'ayuda'], ['!=', ['get', 'estado'], 'cerrado']], ['get', 'icono'],
+          ['==', ['get', 'estado'], 'por_verificar'], ['concat', ['get', 'icono'], '-gris'],
           ['get', 'icono']],
-        'icon-size': ['match', ['get', 'gravedad'], 'peligro_vida', 0.85, 'no_pasar', 0.72, 0.62],
+        'icon-size': ['case', esCorazon, 0.88, ['match', ['get', 'gravedad'], 'peligro_vida', 0.85, 'no_pasar', 0.72, 0.62]],
         'icon-allow-overlap': true, 'icon-ignore-placement': true,
       },
       paint: { 'icon-opacity': opacidad },
@@ -284,6 +297,21 @@
       salirDeCorregir();
     }
   });
+
+  // ── Bienvenida: la primera vez explica que el azul no es agua ──────────────
+  const bienvenida = document.getElementById('bienvenida');
+  if (bienvenida && bienvenida.showModal) {
+    const CLAVE = 'sos-bienvenida-azul-1';
+    let vista = false;
+    try { vista = localStorage.getItem(CLAVE) === '1'; } catch (e) { /* sin almacenamiento: se muestra */ }
+    const guardar = () => { try { localStorage.setItem(CLAVE, '1'); } catch (e) { /* sin almacenamiento */ } };
+    if (!vista) bienvenida.showModal();
+    bienvenida.addEventListener('close', guardar);
+    bienvenida.addEventListener('click', (e) => {
+      if (e.target.closest('[data-bienvenida-cerrar]')) { guardar(); if (e.target.tagName !== 'A') bienvenida.close(); }
+      else if (e.target === bienvenida) bienvenida.close(); // toque fuera de la caja
+    });
+  }
 
   // ── Visor de fotos ────────────────────────────────────────────────────────
   const visor = document.getElementById('visor');

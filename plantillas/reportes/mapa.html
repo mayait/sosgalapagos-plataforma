@@ -44,15 +44,21 @@
     <button type="button" class="visor-paso siguiente" id="visor-siguiente" aria-label="Foto siguiente">›</button>
   </div>
 
-  <div class="leyenda flotante" aria-label="Leyenda de los reportes">
-    <span><i class="pin-muestra" style="background:#fff;border-color:#6b7280"></i>Por verificar</span>
-    <span><i class="pin-muestra" style="background:#e11b22;border-color:#fff;box-shadow:0 0 0 1px #e11b22"></i>Confirmado</span>
-    <span><i class="pin-muestra" style="background:#d97706;border-color:#fff;box-shadow:0 0 0 1px #d97706"></i>Bajando</span>
-    <span><i class="pin-muestra" style="background:#f2b400;border-color:#fff;box-shadow:0 0 0 1px #f2b400"></i>Algo bueno</span>
-    <span><i class="pin-muestra" style="background:#db2777;border-color:#fff;box-shadow:0 0 0 1px #db2777"></i>Donar o colaborar</span>
-    {# Va en la leyenda porque es lo que sale en las capturas que circulan por WhatsApp (23-nov-2026). #}
-    <span class="leyenda-azul"><i class="azul-muestra"></i><span><b>Azul:</b> no es agua. Son las partes bajas junto a las quebradas, por donde podría correr el agua si llueve fuerte. Es un cálculo, no un aviso de inundación.</span></span>
-  </div>
+  {# Bienvenida: sale la primera vez que alguien abre el mapa (23-nov-2026: circulaba que el azul era agua bajo tierra). #}
+  <dialog class="bienvenida" id="bienvenida" aria-labelledby="bienvenida-titulo">
+    <h2 id="bienvenida-titulo">El azul no es agua</h2>
+    <p><span class="azul-muestra" aria-hidden="true"></span> Las zonas azules son las partes bajas junto a las quebradas, o por donde hubo quebradas, por donde podría correr el agua <b>si llueve muy fuerte</b>.</p>
+    <p><b>Es un cálculo, no un aviso de inundación.</b></p>
+    <h3>Ayúdanos a mejorar el modelo</h3>
+    <ul>
+      <li>Si una zona azul <b>no</b> se inundó, añade un punto «Aquí no se inundó».</li>
+      <li>Si se inundó una zona que <b>no</b> está en azul, añade un punto «Aquí se inundó» y escríbenos en la nota cuándo fue.</li>
+    </ul>
+    <div class="bienvenida-botones">
+      <a class="boton" href="{% url 'reportes:reportar' %}" data-bienvenida-cerrar>Añadir un punto</a>
+      <button type="button" class="boton lleno" data-bienvenida-cerrar autofocus>Entendido, ver el mapa</button>
+    </div>
+  </dialog>
   <button class="ubicarme flotante" type="button" id="ubicarme" aria-label="Ir a mi ubicación"><svg><use href="#i-ubicar"/></svg></button>
   <button class="relieve flotante" type="button" id="relieve" aria-pressed="false" aria-label="Ver el mapa en 3D">3D</button>
   {# Controles de la vista 3D: solo se ven con el 3D encendido #}
