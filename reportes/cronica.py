@@ -58,8 +58,8 @@ def sucesos(desde=None, hasta=None):
         lista.append({
             "t": cuando, "clase": "oficial", "titulo": _titulo_boletin(b),
             "texto": b.resumen, "fuente": SIGLA.get(b.fuente, b.fuente.upper()), "institucion": b.fuente,
-            "detalle": ("vigente hasta el " + timezone.localtime(b.vigente_hasta, timezone.get_fixed_timezone(-360)).strftime("%d-%m %H:%M") if b.vigente_hasta else "")
-                       + ("" if b.revisado else " · resumen automático: lee el documento oficial"),
+            "detalle": " · ".join(x for x in (("vigente hasta el " + timezone.localtime(b.vigente_hasta, GALAPAGOS).strftime("%d-%m %H:%M")) if b.vigente_hasta else "",
+                                              "" if b.revisado or not b.resumen else "resumen automático: el documento oficial es el que vale") if x),
             "retenido": False, "enlace": b.enlace, "zonas": [],
         })
     for s in Suceso.objects.filter(visible=True, ocurrido__gte=desde, ocurrido__lte=hasta):

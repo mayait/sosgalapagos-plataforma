@@ -39,19 +39,19 @@
   estilo.textContent = `
     .sos-oficiales{margin:0;padding:22px 20px;border:1px solid #e3e3e0;border-top:4px solid #1d4ed8;border-radius:14px;background:#fff;color:#1d1d1b;font-family:inherit}
     .sos-oficiales[hidden]{display:none}
-    .sos-oficiales h2{margin:0;font:800 20px/1.2 inherit;letter-spacing:-.01em}
+    .sos-oficiales h2{margin:0;font-weight:800;font-size:20px;line-height:1.2}
     .sos-oficiales .sos-of-sub{margin:4px 0 14px;font-size:13.5px;line-height:1.45;color:#5c5c58}
     .sos-of-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin:0;padding:0;list-style:none}
     .sos-of-doc{display:flex;flex-direction:column;gap:5px;height:100%;padding:13px 14px;border:1px solid #e3e3e0;border-radius:11px;background:#fafaf8}
     .sos-of-doc.vigente{border-color:#1d4ed8;background:#f2f6ff}
-    .sos-of-quien{font:800 11px/1.2 inherit;letter-spacing:.06em;text-transform:uppercase;color:#1d4ed8}
+    .sos-of-quien{font-weight:800;font-size:11.5px;line-height:1.3;letter-spacing:.06em;text-transform:uppercase;color:#1d4ed8}
     .sos-of-quien span{font-weight:600;letter-spacing:0;text-transform:none;color:#5c5c58}
-    .sos-of-doc b{font-size:15px;line-height:1.3}
+    .sos-of-doc b{font-weight:800;font-size:15.5px;line-height:1.3}
     .sos-of-fecha{font-size:12px;color:#5c5c58}
     .sos-of-doc p{margin:0;font-size:13.5px;line-height:1.45;color:#33332f;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
     .sos-of-enlaces{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:auto;padding-top:6px}
     .sos-of-enlaces a{font-size:13.5px;font-weight:700;color:#1d4ed8;text-decoration:underline;text-underline-offset:2px}
-    .sos-of-todos{display:inline-flex;align-items:center;min-height:44px;margin-top:14px;padding:9px 16px;border-radius:999px;background:#1d1d1b;color:#fff;font:700 14px/1.2 inherit;text-decoration:none}
+    .sos-of-todos{display:inline-flex;align-items:center;min-height:44px;margin-top:14px;padding:9px 16px;border-radius:999px;background:#1d1d1b;color:#fff;font-weight:700;font-size:14px;line-height:1.2;text-decoration:none}
     .sos-app{display:flex;flex-wrap:wrap;gap:8px;margin:0;font-family:inherit}
     .sos-app:empty{display:none}
     .sos-app button{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:9px 14px;border:1.5px solid #1d1d1b;border-radius:999px;background:#fff;color:#1d1d1b;font:700 13.5px/1.2 inherit;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -352,6 +352,9 @@
       if (!docs.length) { hueco.hidden = true; continue; }
       hueco.hidden = false;
       hueco.setAttribute('aria-labelledby', 'sos-oficiales-titulo');
+      // El título toma la letra de los demás títulos de la página, para que el bloque no desentone.
+      const modelo = [...document.querySelectorAll('main h2, h2')].find((h) => !h.closest('.sos-oficiales'));
+      const letra = modelo ? getComputedStyle(modelo) : null;
       hueco.innerHTML = `<h2 id="sos-oficiales-titulo">Documentos oficiales</h2>
         <p class="sos-of-sub">El último de cada institución. El resumen es una ayuda: el documento original es el que vale.</p>
         <ul class="sos-of-lista">${docs.map((d) => `<li><article class="sos-of-doc${d.vigente ? ' vigente' : ''}">
@@ -361,6 +364,8 @@
           <span class="sos-of-enlaces">${enWeb(d.enlace) ? `<a href="${limpio(enWeb(d.enlace))}" target="_blank" rel="noopener">Abrir el documento ↗</a>` : ''}${enWeb(d.infografia) ? `<a href="${limpio(enWeb(d.infografia))}" target="_blank" rel="noopener">Infografía ↗</a>` : ''}</span>
         </article></li>`).join('')}</ul>
         <a class="sos-of-todos" href="${limpio(enWeb(oficiales.todos) || '/riesgos/informe/?ver=oficial')}">Ver todos los documentos oficiales →</a>`;
+      const titulo = hueco.querySelector('h2');
+      if (letra && titulo) for (const k of ['fontFamily', 'fontSize', 'fontWeight', 'textTransform', 'letterSpacing', 'lineHeight']) titulo.style[k] = letra[k];
     }
   }
 

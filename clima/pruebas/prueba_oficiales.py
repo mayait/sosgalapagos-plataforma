@@ -77,6 +77,7 @@ def prueba_el_sitrep_no_suena_en_el_telefono_pero_si_va_a_la_linea_del_tiempo(sn
     assert set(titulos) == {"SITREP nacional de la SNGR n.º 104", "SITREP nacional de la SNGR n.º 103"}   # aunque uno no nombre a Galápagos
     s = titulos["SITREP nacional de la SNGR n.º 104"]
     assert s["clase"] == "oficial" and s["fuente"] == "SNGR" and s["institucion"] == "sngr" and "120 personas" in s["texto"] and s["enlace"].endswith(".pdf")
+    assert s["detalle"] == "resumen automático: el documento oficial es el que vale" and titulos["SITREP nacional de la SNGR n.º 103"]["detalle"] == ""
 
 
 def prueba_lo_ultimo_de_cada_institucion_para_la_portada(sngr, client):
