@@ -5,7 +5,7 @@
  "niveles": [
   {
    "nivel": "muy alto",
-   "color": "#7f1d1d",
+   "color": "#6E0B0F",
    "si_alguno": {
     "R1h": 45,
     "R3h": 90,
@@ -15,7 +15,7 @@
   },
   {
    "nivel": "alto",
-   "color": "#dc2626",
+   "color": "#E11B22",
    "si_alguno": {
     "R1h": 30,
     "R3h": 60,
@@ -25,7 +25,7 @@
   },
   {
    "nivel": "medio",
-   "color": "#d97706",
+   "color": "#F29C9F",
    "si_alguno": {
     "R1h": 15,
     "R3h": 30,
@@ -35,7 +35,7 @@
   },
   {
    "nivel": "bajo",
-   "color": "#16a34a",
+   "color": "#8A8A8A",
    "probabilidad": "poco probable"
   }
  ],

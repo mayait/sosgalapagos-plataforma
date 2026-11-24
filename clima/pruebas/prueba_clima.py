@@ -298,3 +298,11 @@ def prueba_el_encabezado_del_dia_con_una_celda_vacia_no_cambia_la_fecha():
     (b, *_), (p, *_) = mar.leer_tabla_inocar(pagina)
     assert b.isoformat() == "2026-11-24T01:36:00+00:00"
     assert p.isoformat() == "2026-11-24T07:39:00+00:00"
+
+
+def prueba_la_escala_del_nivel_no_usa_verde():
+    """«Bajo» no es «seguro»: la escala es la de /clima/ y la portada (gris, rosa, rojo, granate), sin verde."""
+    from clima import nivel
+
+    colores = {n["nivel"]: n["color"].upper() for n in nivel.REGLA["niveles"]}
+    assert colores == {"muy alto": "#6E0B0F", "alto": "#E11B22", "medio": "#F29C9F", "bajo": "#8A8A8A"}

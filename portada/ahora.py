@@ -32,7 +32,7 @@ ZONAS = [
     ("isabela", "Isabela", "Puerto Villamil"),
 ]
 
-# Barra de 4 tramos. Sin verde: «bajo» en gris, «medio» en tinta, «alto» y «muy alto» en rojo.
+# Barra de 4 tramos, con la escala de /clima/: «bajo» gris, «medio» rosa, «alto» rojo, «muy alto» granate. Sin verde.
 TRAMOS = {"bajo": (1, "bajo"), "medio": (2, "medio"), "alto": (3, "alto"), "muy alto": (4, "muy-alto")}
 VENTANA_TXT = {"R72h": "en 3 días", "R24h": "en 24 h", "R3h": "en las últimas 3 h", "R1h": "en la última hora"}
 
