@@ -306,3 +306,22 @@ def prueba_la_escala_del_nivel_no_usa_verde():
 
     colores = {n["nivel"]: n["color"].upper() for n in nivel.REGLA["niveles"]}
     assert colores == {"muy alto": "#6E0B0F", "alto": "#E11B22", "medio": "#F29C9F", "bajo": "#8A8A8A"}
+
+
+def prueba_las_direcciones_con_tildes_se_bajan(monkeypatch):
+    """El INOCAR nombra las imágenes de sus boletines con «°» y tildes: urllib solo acepta ASCII."""
+    from clima import mar
+
+    pedidas = []
+
+    class Respuesta:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self): return b"imagen"
+
+    monkeypatch.setattr(mar.urllib.request, "urlopen", lambda pedido, timeout=None: pedidas.append(pedido.full_url) or Respuesta())
+    assert mar._bajar("https://inocar.test/uploads/2026/11/Boletín N°251126_95.png") == b"imagen"
+    assert pedidas == ["https://inocar.test/uploads/2026/11/Bolet%C3%ADn%20N%C2%B0251126_95.png"]
+    # Lo que ya venía bien escrito no cambia: ni los parámetros ni lo que ya estaba en %XX.
+    assert mar._url_ascii("https://inocar.test/tabla?cp=30&fecha=2026-11-25") == "https://inocar.test/tabla?cp=30&fecha=2026-11-25"
+    assert mar._url_ascii("https://inocar.test/a%20b.png") == "https://inocar.test/a%20b.png"
