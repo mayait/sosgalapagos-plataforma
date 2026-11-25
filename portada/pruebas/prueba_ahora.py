@@ -1,6 +1,8 @@
 # SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
 # Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito.
-"""Pruebas de «Ahora» en la portada: la hora del dato, el dato viejo, la zona sin datos, la línea de causa y los peligros."""
+"""Pruebas de la lluvia medida ahora (portada/ahora.py): la hora del dato, el dato viejo, la zona sin datos, la línea de causa y los puntos del mapa.
+
+La portada muestra de cada zona solo el nivel; `filas()` sigue armando también las cifras y la causa."""
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -142,9 +144,13 @@ def prueba_la_portada_lee_el_nivel_guardado(client):
     Estado.objects.create(clave="inundacion", generado=ahora - timedelta(minutes=2), datos=_estado(
         santa_cruz_alta={"nivel": "alto", "R": {"R1h": 0.3, "R3h": 0.8, "R24h": 20.0, "R72h": 229.0}}))
     pagina = client.get("/").content.decode()
-    assert "Sigue alto por lo que llovió en 3 días (229 mm): el suelo está saturado." in pagina
-    assert "es-viejo" in pagina and "hace 1 hora y 35 minutos" in pagina  # La Cascada: su última medición es de hace 95 min
-    assert "sin estaciones" in pagina and "Ver la lluvia en vivo en cada estación" in pagina
+    # En la portada va solo el nivel de cada zona, con enlace a su detalle en /clima/.
+    assert "Lluvia medida ahora" in pagina and 'href="/clima/?zona=santa-cruz-alta"' in pagina
+    assert '<span class="pt-nivel tono-alto">' in pagina and "</span>alto</span>" in pagina
+    assert "es-viejo" in pagina and "<small>dato de las " in pagina  # La Cascada: su última medición es de hace 95 min
+    assert "sin estaciones" in pagina
+    # Las cifras y la línea de causa ya no están en la portada: se ven en /clima/.
+    assert " mm" not in pagina and "Sigue alto" not in pagina and "Ver la lluvia en vivo en cada estación" not in pagina
     assert "No es una alerta oficial" not in pagina  # el aviso de la API no se copia a la portada
 
 
@@ -190,4 +196,4 @@ def prueba_cuenta_todos_los_puntos_del_mapa_por_clase_y_zona_sin_texto_libre(cli
 def prueba_los_botones_dicen_reportar_un_punto_y_hay_boton_de_clima(client):
     pagina = client.get("/").content.decode()
     assert "Reportar un punto" in pagina and "Reportar un peligro" not in pagina
-    assert 'class="pt-boton pt-boton-clima" href="/clima/"' in pagina
+    assert 'class="pt-boton pt-boton-grande" href="/clima/"' in pagina

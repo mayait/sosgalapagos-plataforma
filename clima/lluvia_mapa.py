@@ -249,6 +249,40 @@ def exportar(destino, ahora=None, modelos=None, caja=CAJA, paso=PASO, horas=HORA
     return archivo
 
 
+# ── Recorte ─────────────────────────────────────────────────────────────────
+RECORTE_MINIMO_H = 6  # con menos horas por delante que estas no hay nada que animar
+
+
+def recorte(datos, ahora=None, horas=24, modelo=REFERENCIA):
+    """Lo que hace falta para animar las próximas `horas` con un solo modelo, o None si el archivo ya no las cubre.
+
+    La portada anima 24 horas de un modelo: el archivo entero trae 6 días de tres modelos y pesa
+    cinco veces más. Tiene la misma forma que el archivo (lo dibuja el mismo `lluvia-mapa.js`), con
+    menos cuadros, un solo modelo y `ahora`, la hora del servidor, por si el reloj del teléfono está mal.
+
+    La lluvia de un cuadro es la de las 3 h que terminan en su hora; el viento, el de esa hora. Para
+    interpolar de «ahora» a «ahora + horas» hacen falta un cuadro antes y uno después de ese tramo.
+    """
+    ahora = (ahora or dt.datetime.now(UTC)).astimezone(UTC)
+    inicio = ahora.replace(minute=0, second=0, microsecond=0)
+    tiempos = [dt.datetime.fromisoformat(h.replace("Z", "+00:00")) for h in datos.get("horas") or []]
+    elegido = next((m for m in datos.get("modelos") or [] if m["id"] == modelo), None) or next(iter(datos.get("modelos") or []), None)
+    if not tiempos or elegido is None or tiempos[-1] < inicio + dt.timedelta(hours=RECORTE_MINIMO_H):
+        return None
+    fin = inicio + dt.timedelta(hours=horas)
+    primero = next(i for i, t in enumerate(tiempos) if t > inicio)                         # el periodo en curso
+    ultimo = next((i for i, t in enumerate(tiempos) if t >= fin), len(tiempos) - 1)
+    a, b = max(0, primero - 1), min(len(tiempos), ultimo + 2)
+    salida = {k: v for k, v in datos.items() if k not in ("horas", "modelos", "inicio")}
+    salida.update({
+        "ahora": _iso(ahora),
+        "horas": datos["horas"][a:b],
+        "inicio": primero - a,
+        "modelos": [{**elegido, "lluvia": elegido["lluvia"][a:b], "u": elegido["u"][a:b], "v": elegido["v"][a:b]}],
+    })
+    return salida
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         sys.exit("uso: python3 -I clima/lluvia_mapa.py CARPETA_O_ARCHIVO [--horas N] [--paso 0.125] [--modelos a,b]")

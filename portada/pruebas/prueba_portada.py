@@ -214,3 +214,93 @@ def prueba_el_menu_enlaza_la_privacidad(client):
     from reportes import menu
 
     assert ("Privacidad", "/privacidad", False) in menu.DESTINOS
+
+
+# ── La lluvia de las próximas 24 horas, el orden y los títulos (25-nov-2026) ──────────────
+
+def prueba_la_portada_abre_con_la_lluvia_de_las_proximas_24_horas(client):
+    pagina = client.get("/").content.decode()
+    assert '<h2 class="pt-h2" id="reel-titulo">Lluvia de las próximas 24 horas</h2>' in pagina
+    # La caja trae de dónde sale todo: los datos recortados a 24 horas, las islas y el motor del mapa de lluvia.
+    assert 'data-reel data-estado="espera" data-datos="/riesgos/api/clima/lluvia-mapa.json?horas=24"' in pagina
+    for trozo in ("portada/islas.json?v=", "mapa/lluvia-mapa.js?v=", "mapa/lluvia-mapa.css?v=", "terceros/leaflet/leaflet.js", "terceros/leaflet/leaflet.css"):
+        assert trozo in pagina, trozo
+    # Carga diferida: en la página solo va el guion que monta la animación; Leaflet y el motor no se enlazan.
+    assert "portada/portada.js?v=" in pagina
+    assert '<script src="/riesgos/estaticos/terceros/leaflet' not in pagina and '<script src="/riesgos/estaticos/mapa/lluvia-mapa' not in pagina
+    assert '<link rel="stylesheet" href="/riesgos/estaticos/terceros/leaflet' not in pagina
+    # Si el pronóstico no carga, la caja dice dónde ver la lluvia medida; no queda un hueco.
+    assert "No pudimos cargar el mapa de lluvia de las próximas 24 horas." in pagina and "<noscript>" in pagina
+    # Es lluvia de modelo y se dice para qué sirve, sin milímetros ni porcentajes.
+    assert "sirve para ver cuándo llueve" in pagina and "Open-Meteo" in pagina and "IGM" in pagina
+    assert "%" not in pagina.split('id="lluvia-24h"')[1].split('class="pt-hacer"')[0]
+
+
+def prueba_el_orden_de_la_portada(client):
+    _boletin(huella="orden")
+    pagina = client.get("/").content.decode()
+    orden = ['id="lluvia-24h"', 'id="ahora"', 'class="pt-acciones"', "</svg>Reportar un punto</a>", "</svg>Ver el mapa de riesgos</a>", "</svg>Ver el clima en vivo</a>",
+             'class="pt-tarjeta pt-peligros"', 'id="boletines"', 'id="ayuda"', 'id="quieres-ayudar"', 'id="grupos-whatsapp"', 'id="informes"', 'id="mas"']
+    lugares = [pagina.index(t) for t in orden]
+    assert lugares == sorted(lugares), list(zip(orden, lugares))
+
+
+def prueba_los_tres_botones_van_en_mayusculas_y_con_icono(client):
+    from django.contrib.staticfiles import finders
+
+    pagina = client.get("/").content.decode()
+    botones = pagina.split('<nav class="pt-acciones"')[1].split("</nav>")[0]
+    assert botones.count("<a ") == 3 and botones.count("<svg ") == 3
+    for clase, destino, texto in (("pt-boton-rojo", "/riesgos/reportar/", "Reportar un punto"), ("pt-boton pt-boton-grande", "/riesgos/", "Ver el mapa de riesgos"),
+                                  ("pt-boton pt-boton-grande", "/clima/", "Ver el clima en vivo")):
+        assert f'<a class="{clase}" href="{destino}"><svg ' in botones and f"</svg>{texto}</a>" in botones, texto
+    css = open(finders.find("portada/portada.css"), encoding="utf-8").read()
+    for clase in (".pt-boton-rojo {", ".pt-boton-grande {"):
+        assert "text-transform: uppercase" in css.split(clase)[1].split("}")[0], clase
+
+
+def prueba_los_titulos_de_seccion_miden_lo_mismo(client):
+    pagina = client.get("/").content.decode()
+    for titulo in ('<h2 class="pt-h2" id="necesitas-titulo">¿Necesitas ayuda?</h2>', '<h2 class="pt-h2" id="boletines-titulo">Boletines oficiales</h2>',
+                   '<h3 class="pt-h2 pt-h2-dentro" id="grupos-whatsapp">Únete a una brigada</h3>', '<h2 class="pt-h2" id="informes-titulo">Informes</h2>',
+                   '<h2 class="pt-h2" id="mas-titulo">Más</h2>', '<h2 class="pt-h2" id="quieres-titulo">¿Quieres ayudar?</h2>'):
+        assert titulo in pagina, titulo
+
+
+def prueba_el_recorte_de_24_horas_del_mapa_de_lluvia(client, settings, tmp_path):
+    from datetime import datetime, timezone as tz
+
+    from clima import lluvia_mapa
+
+    ahora = datetime(2026, 11, 25, 7, 22, tzinfo=tz.utc)   # 01:22 en Galápagos
+    horas = [f"2026-11-{24 + h // 24:02d}T{h % 24:02d}:00Z" for h in range(3, 150, 3)]   # del 24 a las 03:00 al 30 a las 03:00, cada 3 h
+    modelo = lambda nombre: {"id": nombre, "nombre": nombre, "corrida": "2026-11-24T18:00Z", "lluvia": [f"l{i}" for i in range(len(horas))],
+                             "u": [f"u{i}" for i in range(len(horas))], "v": [f"v{i}" for i in range(len(horas))]}
+    datos = {"version": 1, "generado": "2026-11-25T02:06Z", "rejilla": {"nlat": 1, "nlon": 1}, "horas": horas, "paso_h": 3, "inicio": 8,
+             "modelos": [modelo("gfs_seamless"), modelo("ecmwf_ifs")]}
+    r = lluvia_mapa.recorte(datos, ahora)
+    # De las 06:00Z (el cuadro anterior a las 07:00Z, para interpolar) a las 12:00Z del día siguiente (uno después de las 24 h).
+    assert r["horas"][0] == "2026-11-25T06:00Z" and r["horas"][-1] == "2026-11-26T12:00Z" and len(r["horas"]) == 11
+    assert r["ahora"] == "2026-11-25T07:22Z" and r["inicio"] == 1 and r["rejilla"] == datos["rejilla"]
+    assert [m["id"] for m in r["modelos"]] == ["ecmwf_ifs"]
+    i = horas.index("2026-11-25T06:00Z")
+    assert r["modelos"][0]["lluvia"] == [f"l{k}" for k in range(i, i + 11)] and r["modelos"][0]["v"][0] == f"v{i}"
+    assert len(datos["horas"]) == 49 and len(datos["modelos"]) == 2   # el original no se toca
+    # Si el archivo ya no cubre las próximas horas, no hay recorte.
+    assert lluvia_mapa.recorte(datos, datetime(2026, 11, 30, 1, 0, tzinfo=tz.utc)) is None
+    assert lluvia_mapa.recorte({"horas": [], "modelos": []}, ahora) is None
+
+    settings.CLIMA_SALIDA = str(tmp_path)
+    assert client.get("/riesgos/api/clima/lluvia-mapa.json?horas=24").status_code == 404   # todavía no se generó
+    viejo = {**datos, "horas": [h.replace("2026", "2020") for h in horas]}
+    (tmp_path / "lluvia-mapa.json").write_text(json.dumps(viejo), encoding="utf-8")
+    assert client.get("/riesgos/api/clima/lluvia-mapa.json?horas=24").status_code == 404   # un archivo viejo ya no cubre las próximas horas
+    ahora_real = timezone.now().replace(minute=0, second=0, microsecond=0)
+    datos["horas"] = [(ahora_real + timedelta(hours=3 * k)).strftime("%Y-%m-%dT%H:%MZ") for k in range(-8, 41)]
+    (tmp_path / "lluvia-mapa.json").write_text(json.dumps(datos), encoding="utf-8")
+    r = client.get("/riesgos/api/clima/lluvia-mapa.json?horas=24")
+    assert r.status_code == 200 and "max-age=300" in r["Cache-Control"]
+    j = json.loads(r.content)
+    assert len(j["horas"]) <= 11 and [m["id"] for m in j["modelos"]] == ["ecmwf_ifs"] and "ahora" in j
+    completo = client.get("/riesgos/api/clima/lluvia-mapa.json")   # sin «horas», el archivo entero, como siempre
+    assert len(json.loads(b"".join(completo.streaming_content))["horas"]) == 49

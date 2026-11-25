@@ -1,6 +1,11 @@
 # SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec>
 # Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito.
-"""«Ahora» en la portada: la lluvia medida y el nivel de cada zona, leídos en el servidor.
+"""«Lluvia medida ahora» en la portada: el nivel de cada zona, leído en el servidor.
+
+Desde el 25-nov-2026 la portada abre con la animación de la lluvia de las próximas 24 horas y de
+lo medido muestra solo el nivel de cada zona, con enlace a su detalle en /clima/. `filas()` sigue
+armando también las cifras («7 mm en la última hora») y la línea de causa: no se pintan en la
+portada, pero quedan listas y probadas por si vuelven.
 
 Sale del mismo cálculo que /clima/ y /riesgos/api/clima/nivel (clima.niveles guarda el
 resultado en clima.Estado «inundacion»), sin pasar por HTTP. Lo que se decide aquí es

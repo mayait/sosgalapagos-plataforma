@@ -3,7 +3,7 @@
 /* Portada (sosgalapagos.org/) y política de privacidad.
    Sistema USFQ «WE WANT MORE»: rojo, negro y blanco, fondo blanco, títulos en Zalando Sans Expanded.
    Teléfono primero (360 px sin desborde); dos columnas en el escritorio. Botones de 44 px o más.
-   Menos negro: un solo botón lleno (rojo, «Reportar un peligro»); el resto, con contorno.
+   Menos negro: un solo botón lleno (rojo, «Reportar un punto»); el resto, con contorno.
    Tarjetas blancas con borde #e5e5e5 de 1 px. El negro, solo en el texto, los títulos y la
    advertencia vigente. Ningún bloque de fondo negro. */
 
@@ -18,8 +18,10 @@
 /* Títulos */
 .pt-titulo { margin: 0; font: 900 34px/0.95 var(--titulo); letter-spacing: -0.01em; text-transform: uppercase; }
 .pt-sub { margin-top: 8px !important; font-size: 15px; line-height: 1.4; color: #444; max-width: 40ch; }
-.pt-h2 { margin: 0; font: 900 22px/1 var(--titulo); text-transform: uppercase; }
-.pt-h2s, .pt .sos-oficiales h2.pt-h2s { margin: 0; font: 800 13px/1.2 var(--titulo); letter-spacing: 0.05em; text-transform: uppercase; }
+/* Todos los títulos de sección miden lo mismo (.pt-h2). El de boletines pisa el que app.js trae para .sos-oficiales. */
+.pt-h2, .pt .sos-oficiales h2.pt-h2 { margin: 0; font: 900 22px/1.05 var(--titulo); text-transform: uppercase; }
+.pt-h2-dentro { margin: 30px 0 12px; scroll-margin-top: 96px; }
+.pt-h2s { margin: 0; font: 800 13px/1.2 var(--titulo); letter-spacing: 0.05em; text-transform: uppercase; }
 .pt-h3 { margin: 18px 0 8px; font-size: 15px; font-weight: 700; }
 .pt-etq { font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gris-texto); }
 .pt-nota { margin-top: 6px !important; font-size: 12.5px; line-height: 1.4; color: var(--gris); }
@@ -36,35 +38,48 @@
 .pt-ir { flex: none; font-weight: 700; }
 a.pt-fila:hover, a.pt-tarjeta:hover { border-color: var(--tinta); }
 
-/* Botones: el rojo lleno es el único; los demás, con contorno */
-.pt-boton-rojo { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 52px; padding: 0 20px; border-radius: 12px; background: var(--rojo); color: var(--blanco) !important; font: 800 15px/1.1 var(--titulo); text-transform: uppercase; text-decoration: none; text-align: center; }
+/* Botones: el rojo lleno es el único; los demás, con contorno. Los tres de arriba van en mayúsculas y con icono. */
+.pt-boton-rojo { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 52px; padding: 6px 16px; box-sizing: border-box; border-radius: 12px; background: var(--rojo); color: var(--blanco) !important; font: 800 15px/1.1 var(--titulo); text-transform: uppercase; text-decoration: none; text-align: center; }
 .pt-boton-rojo:hover { background: var(--rojo-osc); }
 .pt-boton-rojo svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
 .pt-boton { display: flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 18px; border: 1.5px solid var(--tinta); border-radius: 12px; background: var(--blanco); color: var(--tinta); font-weight: 700; font-size: 15px; text-decoration: none; text-align: center; box-sizing: border-box; }
-.pt-boton-clima { gap: 9px; min-height: 52px; font: 800 15px/1.1 var(--titulo); text-transform: uppercase; }
-.pt-boton-clima svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pt-boton-grande { gap: 9px; min-height: 52px; padding: 6px 16px; font: 800 15px/1.1 var(--titulo); text-transform: uppercase; }
+.pt-boton-grande svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .pt-gris { color: var(--gris-texto); font-weight: 400; }
 .pt-boton-chico { display: inline-flex; flex: none; min-height: 44px; padding: 0 14px; border-radius: 10px; font-size: 14px; }
 .pt-enlace { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; font-size: 14px; }
 
-/* Arriba: identidad, aviso, Ahora, boletines y acciones (en ese orden en el teléfono) */
+/* Arriba: identidad, aviso, la lluvia de las próximas 24 horas, botones y boletines (en ese orden en el teléfono) */
 .pt-arriba { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); }
 .pt-aviso { padding: 14px; border: 1.5px solid var(--rojo); border-radius: 14px; background: var(--blanco); }
 .pt-aviso-titulo { font-weight: 800; font-size: 16px; line-height: 1.3; color: var(--rojo-osc); }
 .pt-aviso p + p { margin-top: 6px; font-size: 14px; line-height: 1.45; }
 .pt-acciones { display: flex; flex-direction: column; gap: 10px; }
+.pt-peligros { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
+.pt-peligros > span { color: #333; }
 
-/* Ahora */
+/* La lluvia de las próximas 24 horas. La caja la llena LluviaMapa.reel (mapa/lluvia-mapa.css, prefijo «lr-»).
+   Mientras llega, guarda su sitio: el mapa (cuadrado en el teléfono) más la tira de las tres islas. */
+.pt-reel-caja { margin-top: 12px; }
+.pt-reel-espera { display: grid; place-items: center; aspect-ratio: 1 / 1; margin-bottom: 182px; padding: 20px; border: 1.5px solid var(--tinta); border-radius: 14px; background: #e3ecf1; box-sizing: border-box; text-align: center; font-size: 14px; line-height: 1.45; color: #333; }
+.pt-reel-espera a { font-weight: 700; }
+.pt-reel-fallo, [data-estado="fallo"] .pt-reel-cargando { display: none; }
+[data-estado="fallo"] .pt-reel-fallo { display: block; }
+[data-estado="fallo"] .pt-reel-espera { aspect-ratio: auto; min-height: 120px; margin-bottom: 0; background: var(--suave); border: 1px solid var(--linea); }
+.pt-reel-nota { margin-top: 8px !important; }
+[data-estado="fallo"] + .pt-reel-nota { display: none; }
+
+/* Lluvia medida ahora: el nivel de cada zona, en cuatro casillas. Las cifras están en /clima/. */
+.pt-medido { margin-top: 18px; scroll-margin-top: 96px; }
 .pt-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .pt-cab-hora { font-size: 12px; color: var(--gris); }
-.pt-zonas { margin: 10px 0 0; padding: 0; list-style: none; border: 1px solid var(--linea); border-radius: 14px; overflow: hidden; }
-.pt-zona { padding: 12px 14px; border-bottom: 1px solid var(--linea); }
-.pt-zona:last-child { border-bottom: 0; }
-.pt-zona-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.pt-zona-cab b { font-size: 15px; }
-.pt-zona-cab b span { font-weight: 400; color: var(--gris); }
-.pt-nivel { flex: none; display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; }
-.pt-barra { display: flex; gap: 2px; }
+.pt-medido > .pt-sin { margin-top: 8px; }
+.pt-zonas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 8px 0 0; padding: 0; list-style: none; }
+.pt-zona { display: flex; flex-direction: column; justify-content: center; gap: 4px; min-height: 56px; height: 100%; padding: 8px 12px; border: 1px solid var(--linea); border-radius: 12px; background: var(--blanco); font-size: 13.5px; line-height: 1.2; text-decoration: none; box-sizing: border-box; }
+a.pt-zona:hover { border-color: var(--tinta); }
+.pt-zona small { font-size: 12px; font-weight: 700; color: var(--gris); }
+.pt-nivel { display: flex; align-items: center; gap: 6px; font-weight: 700; }
+.pt-barra { flex: none; display: flex; gap: 2px; }
 .pt-barra i { width: 9px; height: 8px; border-radius: 1px; background: var(--linea); }
 /* Escala de nivel, la misma en la portada, /clima/ y /riesgos/: gris, rosa, rojo y granate. Sin verde: «bajo» no es «seguro». */
 .tono-bajo { color: var(--gris-texto); }
@@ -75,20 +90,11 @@ a.pt-fila:hover, a.pt-tarjeta:hover { border-color: var(--tinta); }
 .tono-alto .si { background: var(--rojo); }
 .tono-muy-alto { color: #6e0b0f; font-weight: 900; }
 .tono-muy-alto .si { background: #6e0b0f; }
-.pt-nivel-sin { flex: none; font-size: 13.5px; color: var(--gris); }
-.pt-cifras { margin-top: 3px !important; font-size: 13.5px; color: var(--gris-texto); }
-.pt-viejo { margin-top: 3px !important; font-size: 12.5px; font-weight: 700; color: var(--gris); }
-.pt-causa { margin-top: 6px !important; padding: 8px 10px; border-radius: 8px; background: var(--suave); font-size: 13px; line-height: 1.4; color: #333; }
-.pt-zona-texto { margin-top: 3px !important; font-size: 13.5px; line-height: 1.4; color: var(--gris); }
-.pt-zona-texto a { font-weight: 700; }
+.pt-nivel-sin { color: var(--gris); }
 /* Dato de hace más de 30 min: todo en gris */
-.es-viejo .pt-zona-cab b, .es-viejo .pt-cifras, .es-viejo .pt-nivel { color: var(--gris); }
+.es-viejo b, .es-viejo .pt-nivel { color: var(--gris); }
 .es-viejo .pt-barra .si { background: #b5b5b5; }
-.es-silencio .pt-nivel-sin, .es-silencio .pt-zona-texto { color: var(--rojo-osc); }
-.pt-peligros { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
-.pt-peligros > span { color: #333; }
-.pt-mas-clima { margin: 8px 2px 0 !important; font-size: 13px; }
-.pt-mas-clima a { display: inline-flex; align-items: center; min-height: 44px; }
+.es-silencio .pt-nivel { color: var(--rojo-osc); }
 
 /* Boletines oficiales. Pisa los estilos que app.js trae para .sos-oficiales. */
 .pt-boletines.sos-oficiales { margin: 0; padding: 0; border: 0; border-radius: 0; background: none; }
@@ -166,22 +172,19 @@ a.pt-fila:hover, a.pt-tarjeta:hover { border-color: var(--tinta); }
   .pt { padding: 36px 32px 56px; }
   .pt-titulo { font-size: 54px; line-height: 0.92; }
   .pt-sub { margin-top: 14px !important; font-size: 18px; max-width: 32ch; }
-  /* Dos columnas arriba: identidad, aviso, acciones y boletines a la izquierda; Ahora a la derecha. */
+  /* Dos columnas arriba: identidad, aviso, botones y boletines a la izquierda; la lluvia de las próximas 24 horas a la derecha. */
   .pt-arriba { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); grid-template-rows: auto auto auto 1fr; column-gap: 32px; row-gap: 24px;
-    grid-template-areas: "identidad ahora" "aviso ahora" "acciones ahora" "boletines ahora"; align-items: start; }
+    grid-template-areas: "identidad lluvia" "aviso lluvia" "hacer lluvia" "boletines lluvia"; align-items: start; }
   .pt-identidad { grid-area: identidad; }
   .pt-aviso { grid-area: aviso; }
-  .pt-acciones { grid-area: acciones; flex-direction: row; flex-wrap: wrap; }
-  .pt-acciones a { flex: 0 1 auto; }
+  .pt-hacer { grid-area: hacer; }
   .pt-boletines { grid-area: boletines; }
-  .pt-ahora { grid-area: ahora; }
-  .pt-zonas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; border: 0; border-radius: 0; overflow: visible; }
-  .pt-zona, .pt-zona:last-child { padding: 14px; border: 1px solid var(--linea); border-radius: 14px; }
-  .pt-zona-cab { flex-direction: column; align-items: flex-start; gap: 8px; }
-  .pt-barra i { width: 12px; height: 9px; }
-  .pt-arriba:not(:has(.pt-aviso)) { grid-template-areas: "identidad ahora" "acciones ahora" "boletines ahora" ". ahora"; }
+  .pt-reel { grid-area: lluvia; }
+  .pt-reel-espera { aspect-ratio: 5 / 4; margin-bottom: 190px; }
+  .pt-zonas { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .pt-arriba:not(:has(.pt-aviso)) { grid-template-areas: "identidad lluvia" "hacer lluvia" "boletines lluvia" ". lluvia"; }
   .pt-ayudas { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 24px; margin-top: 48px; align-items: start; }
   .pt-ayudas > .pt-bloque { padding: 22px; border: 1px solid var(--linea); border-radius: 16px; }
-  .pt-h2 { font-size: 24px; }
+  .pt-h2, .pt .sos-oficiales h2.pt-h2 { font-size: 24px; }
   .pt-abajo { grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 40px; }
 }

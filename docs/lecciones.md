@@ -202,3 +202,13 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 
 
 - **Todo lo que publica la gente sale al instante (decisión de Julián, 23-nov-2026).** Antes la foto y la nota de un vecino esperaban a que coordinación las revisara en el admin, y muchas nunca se veían. *Qué se hace:* `crear_reporte` las publica de una vez; el admin tiene «Ocultar foto y nota» para lo que no deba verse. En la nota, siete o más dígitos seguidos (un teléfono o una cédula) se cambian por «[número oculto]». Las caras y los nombres no se pueden detectar solos: si aparecen, coordinación los oculta.
+
+## La portada abre con la lluvia de las próximas 24 horas (25-nov-2026)
+
+- **La animación de la portada es el reel del clima, pero en vivo y con el motor que ya había.** Julián pidió poner el reel en lugar del bloque «Ahora». Un video fijo envejece en horas. *Qué se hizo:* `lluvia-mapa.js` ganó `LluviaMapa.reel`, que usa las mismas capas de lluvia y de viento que el mapa de `/clima/` y de `/riesgos/mapa-del-tiempo/` (se sacaron a `capaLluvia` y `capaViento` para no duplicarlas) y anima de la hora actual a 24 horas después con el pronóstico vigente. El archivo sigue siendo el único original: `/clima/` lo carga de aquí.
+- **La portada no baja lo que no anima.** El archivo del mapa trae 6 días de tres modelos (227 kB, sin comprimir). `?horas=24` devuelve los 11 cuadros de un modelo (43 kB). Leaflet, el motor y los datos se piden cuando la caja se acerca a la pantalla (`estaticos/portada/portada.js`), no con la página.
+- **Si el pronóstico no carga, la caja lo dice y manda al clima en vivo.** No queda un hueco. Con «reducir movimiento» no se anima: se ve la hora de más lluvia, y el botón de reproducir queda a mano.
+- **Lo medido se redujo, no se quitó.** Del bloque «Ahora» queda el nivel de cada zona, en cuatro casillas que llevan a su detalle en `/clima/`. Las cifras (mm en la última hora y en 24 h) y la línea que explica por qué un nivel sigue alto ya no están en la portada.
+- **Sin teselas de terceros en la portada.** El contorno de las islas es un archivo propio de 14 kB (`estaticos/portada/islas.json`, de la capa del IGM; lo genera `despliegue/generar_islas.py`).
+- **Una prueba no puede depender de la fecha del día.** La primera versión de la prueba del recorte usaba horas de noviembre de 2026 como «archivo viejo» y falló porque hoy es noviembre de 2026.
+

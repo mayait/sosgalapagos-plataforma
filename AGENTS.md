@@ -51,6 +51,7 @@ Plataforma de reportes de riesgo de SOS Galápagos: un mapa único donde la gent
 | Tocar el informe (línea del tiempo y lluvia) | `estaticos/mapa/informe.js` y `plantillas/reportes/informe.html` |
 | Saber cómo se retiró el visor de `/mapas` y cómo volver atrás | `docs/plan-baja-mapas.md` |
 | Tocar el buscador o «Mis puntos» | `estaticos/mapa/buscar.js` |
+| Tocar la animación de lluvia de la portada (próximas 24 horas) | `LluviaMapa.reel` en `estaticos/mapa/lluvia-mapa.js` (el motor que comparte con `/clima/`), `estaticos/portada/portada.js` y `plantillas/portada/portada.html`. Los datos son el recorte `?horas=24` de `/riesgos/api/clima/lluvia-mapa.json` |
 | Tocar WhatsApp (filtro, modelo, conversación) | `entradas/` y `docs/whatsapp.md`. Se prueba con `despliegue/local.sh whatsapp_probar` |
 | Cambiar de modelo de lenguaje (Anthropic o Gemini) | La variable `IA_MODELO`; nada de código |
 | Tocar los puntos | `reportes/reglas.py` (`sumar_puntos`) y `PUNTOS` en los ajustes |
