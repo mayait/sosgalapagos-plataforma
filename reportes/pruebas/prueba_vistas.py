@@ -568,7 +568,9 @@ def prueba_un_boletin_en_imagen_se_sube_avisa_y_abre_en_el_visor_con_boton_de_vo
     assert pagina.status_code == 200 and "text/html" in pagina["Content-Type"]
     assert "data-volver" in html and "← Volver" in html and 'class="visor-inicio" href="/"' in html
     assert s.imagen.url in html and "Boletín técnico del INAMHI" in html and "24 de noviembre de 2026, 18:35" in html
-    assert client.get(s.imagen.url).status_code == 200            # la imagen sí se sirve
+    from django.urls import resolve
+
+    assert resolve(s.imagen.url).kwargs["path"] == s.imagen.name    # la imagen sale por la ruta de las fotos (los PDF de oficiales/ no)
     assert client.get(f"{s.visor}archivo/").status_code == 404     # no hay PDF
 
 
