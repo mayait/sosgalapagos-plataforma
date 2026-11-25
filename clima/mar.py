@@ -12,6 +12,7 @@ import json
 import re
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
@@ -30,8 +31,16 @@ PUERTOS = {
 CUPO_DIARIO = 9  # de las 10 llamadas de cada llave de Stormglass se deja una de margen
 
 
+def _url_ascii(url):
+    """La dirección con lo que no es ASCII escrito en %XX: urllib no acepta tildes ni «°» en la ruta.
+
+    El INOCAR nombra así las imágenes de sus boletines («N°…»): sin esto, el de oleaje no se bajaba.
+    """
+    return urllib.parse.quote(url, safe="%/:=&?~#+!$,;'@()*[]")
+
+
 def _bajar(url, cabeceras=None, espera=30):
-    pedido = urllib.request.Request(url, headers={"User-Agent": "sosgalapagos.org (clima; contacto en el sitio)", **(cabeceras or {})})
+    pedido = urllib.request.Request(_url_ascii(url), headers={"User-Agent": "sosgalapagos.org (clima; contacto en el sitio)", **(cabeceras or {})})
     with urllib.request.urlopen(pedido, timeout=espera) as r:
         return r.read()
 
