@@ -2,14 +2,14 @@
 {% extends "base.html" %}
 {% load static reportes_extras %}
 {% block titulo %}Lluvias de El Niño en Galápagos{% endblock %}
-{% block descripcion %}SOS Galápagos (Sociedad Civil Galápagos · USFQ): la lluvia de ahora por zona, los boletines oficiales, el mapa de riesgos y cómo pedir o dar ayuda en Santa Cruz, San Cristóbal e Isabela. Emergencias: 911.{% endblock %}
+{% block descripcion %}SOS Galápagos (Sociedad Civil Galápagos · USFQ): la lluvia de las próximas 24 horas, los boletines oficiales, el mapa de riesgos y cómo pedir o dar ayuda en Santa Cruz, San Cristóbal e Isabela. Emergencias: 911.{% endblock %}
 {% block estilos_despues %}<link rel="stylesheet" href="{% propio 'portada/portada.css' %}">{% endblock %}
 {% block clase_cuerpo %}con-portada{% endblock %}
 {% block contenido %}
 <main class="pt" id="inicio">
 
-  {% comment %}Arriba. En el teléfono: identidad, aviso, Ahora, boletines y las dos acciones.
-     En el escritorio: identidad, acciones y boletines a la izquierda; Ahora a la derecha (portada.css).{% endcomment %}
+  {% comment %}Arriba. En el teléfono: identidad, aviso, la lluvia de las próximas 24 horas, los botones y los boletines.
+     En el escritorio: identidad, botones y boletines a la izquierda; la lluvia a la derecha (portada.css).{% endcomment %}
   <div class="pt-arriba">
 
     <header class="pt-identidad">
@@ -25,34 +25,56 @@
     </aside>
     {% endif %}
 
-    {# Ahora: el nivel y la lluvia medida de cada zona, leídos en el servidor (portada/ahora.py). #}
-    <section class="pt-ahora" id="ahora" aria-labelledby="ahora-titulo">
-      <div class="pt-cab">
-        <h2 class="pt-h2s" id="ahora-titulo">Ahora</h2>
-        {% if ahora.hora %}<span class="pt-cab-hora">lluvia medida · dato de las {{ ahora.hora }}</span>{% endif %}
+    {% comment %}La lluvia de las próximas 24 horas: el mapa del reel del clima, animado en la página con el pronóstico
+       vigente. Lo dibuja el motor del mapa de lluvia (mapa/lluvia-mapa.js, LluviaMapa.reel) y lo monta
+       portada/portada.js cuando la caja se acerca a la pantalla: Leaflet y los datos no se cargan con la página.
+       Si el pronóstico no carga, la caja dice dónde ver la lluvia medida.{% endcomment %}
+    <section class="pt-reel" id="lluvia-24h" aria-labelledby="reel-titulo">
+      <h2 class="pt-h2" id="reel-titulo">Lluvia de las próximas 24 horas</h2>
+      <div class="pt-reel-caja" data-reel data-estado="espera" data-datos="/riesgos/api/clima/lluvia-mapa.json?horas=24"
+           data-islas="{% propio 'portada/islas.json' %}" data-motor="{% propio 'mapa/lluvia-mapa.js' %}" data-estilos="{% propio 'mapa/lluvia-mapa.css' %}"
+           data-leaflet="{% static 'terceros/leaflet/leaflet.js' %}" data-leaflet-estilos="{% static 'terceros/leaflet/leaflet.css' %}">
+        <div class="pt-reel-espera">
+          <p class="pt-reel-cargando">Cargando el mapa de lluvia…</p>
+          <p class="pt-reel-fallo">No pudimos cargar el mapa de lluvia de las próximas 24 horas. La lluvia que miden las estaciones está en <a href="/clima/">el clima en vivo</a>.</p>
+          <noscript><p>El mapa animado de lluvia necesita JavaScript. La lluvia que miden las estaciones está en <a href="/clima/">el clima en vivo</a>.</p></noscript>
+        </div>
       </div>
-      {% if ahora.vacio %}
-      <p class="pt-tarjeta pt-sin">Todavía no hay datos de lluvia de las estaciones. <a href="/clima/">Ver clima →</a></p>
-      {% else %}
-      <ul class="pt-zonas">
-        {% for f in ahora.filas %}
-        <li class="pt-zona es-{{ f.estado }}" data-zona="{{ f.id }}">
-          <div class="pt-zona-cab">
-            <b>{{ f.nombre }}{% if f.lugar %} <span>({{ f.lugar }})</span>{% endif %}</b>
+      <p class="pt-nota pt-reel-nota">Lo calcula un modelo (ECMWF, con datos de Open-Meteo): sirve para ver cuándo llueve. En las islas se queda corto en cuánto. Contorno de las islas: IGM.</p>
+
+      {# Lo que miden las estaciones ahora: solo el nivel de cada zona (portada/ahora.py). Las cifras, a un toque, en /clima/. #}
+      <div class="pt-medido" id="ahora">
+        <div class="pt-cab">
+          <h3 class="pt-h2s" id="ahora-titulo">Lluvia medida ahora</h3>
+          {% if ahora.hora %}<span class="pt-cab-hora">dato de las {{ ahora.hora }}</span>{% endif %}
+        </div>
+        {% if ahora.vacio %}
+        <p class="pt-tarjeta pt-sin">Todavía no hay datos de lluvia de las estaciones. <a href="/clima/">Ver el clima en vivo →</a></p>
+        {% else %}
+        <ul class="pt-zonas" aria-labelledby="ahora-titulo">
+          {% for f in ahora.filas %}
+          <li><a class="pt-zona es-{{ f.estado }}" data-zona="{{ f.id }}" href="/clima/?zona={{ f.id }}">
+            <b>{{ f.nombre }}</b>
             {% if f.tramos %}
             <span class="pt-nivel tono-{{ f.tono }}"><span class="pt-barra" aria-hidden="true">{% for k in "1234" %}<i{% if forloop.counter <= f.tramos %} class="si"{% endif %}></i>{% endfor %}</span>{{ f.nivel }}</span>
             {% else %}
             <span class="pt-nivel-sin">{{ f.nivel }}</span>
             {% endif %}
-          </div>
-          {% if f.cifras %}<p class="pt-cifras">{{ f.cifras }}</p>{% endif %}
-          {% if f.estado == "viejo" %}<p class="pt-viejo">dato de las {{ f.hora }} · {{ f.hace }}</p>{% endif %}
-          {% if f.causa %}<p class="pt-causa">{{ f.causa }}</p>{% endif %}
-          {% if f.texto %}<p class="pt-zona-texto">{{ f.texto }}{% if f.estado == "sin-estaciones" %} <a href="/riesgos/mapa-del-tiempo/">Mira la lluvia de los modelos →</a>{% elif f.estado == "mudo" %} · <a href="/clima/">Ver clima</a>{% elif f.estado != "silencio" %} <a href="/clima/">Ver clima</a>{% endif %}</p>{% endif %}
-        </li>
-        {% endfor %}
-      </ul>
-      {% endif %}
+            {% if f.estado == "viejo" %}<small>dato de las {{ f.hora }}</small>{% endif %}
+          </a></li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+    </section>
+
+    {# Los botones. El único lleno de la página es «Reportar un punto». Los tres, en mayúsculas y con icono. #}
+    <div class="pt-hacer">
+      <nav class="pt-acciones" aria-label="Acciones principales">
+        <a class="pt-boton-rojo" href="/riesgos/reportar/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Reportar un punto</a>
+        <a class="pt-boton pt-boton-grande" href="/riesgos/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6.5V20l6-2.5 6 2.5 6-2.5V4l-6 2.5L9 4Z"/><path d="M9 4v13.5M15 6.5V20"/></svg>Ver el mapa de riesgos</a>
+        <a class="pt-boton pt-boton-grande" href="/clima/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4 4 0 0 1-.6-7.95A5.5 5.5 0 0 1 17 9a3.5 3.5 0 0 1 .5 6.97"/><path d="M9 21l1-2M13 21l1-2M17 19l1-2"/></svg>Ver el clima en vivo</a>
+      </nav>
       {# Todos los puntos que hoy se ven en el mapa: cuántos de cada clase y en qué zonas, sin el texto de los vecinos. #}
       <a class="pt-tarjeta pt-peligros" href="/riesgos/">
         {% if puntos.total %}
@@ -63,12 +85,11 @@
         <b class="pt-ir">Mapa →</b>
         {% endif %}
       </a>
-      <p class="pt-mas-clima"><a href="/clima/">Ver la lluvia en vivo en cada estación →</a></p>
-    </section>
+    </div>
 
     {# Boletines oficiales. data-sos-oficiales con la clase sos-oficiales ya puesta: app.js no pinta otro bloque aquí. #}
     <section class="pt-boletines sos-oficiales" data-sos-oficiales id="boletines" aria-labelledby="boletines-titulo">
-      <h2 class="pt-h2s" id="boletines-titulo">Boletines oficiales</h2>
+      <h2 class="pt-h2" id="boletines-titulo">Boletines oficiales</h2>
       {% if advertencia %}
       <article class="pt-advertencia" id="advertencia">
         <p class="pt-etq pt-rojo">INAMHI · advertencia vigente</p>
@@ -94,13 +115,6 @@
       {% endif %}
       <p class="pt-todos"><a href="{{ boletines.todos }}">Todos los documentos oficiales →</a></p>
     </section>
-
-    {# Las acciones. El único botón lleno de la página es «Reportar un punto». #}
-    <nav class="pt-acciones" aria-label="Acciones principales">
-      <a class="pt-boton-rojo" href="/riesgos/reportar/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Reportar un punto</a>
-      <a class="pt-boton" href="/riesgos/">Ver el mapa de riesgos</a>
-      <a class="pt-boton pt-boton-clima" href="/clima/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4 4 0 0 1-.6-7.95A5.5 5.5 0 0 1 17 9a3.5 3.5 0 0 1 .5 6.97"/><path d="M9 21l1-2M13 21l1-2M17 19l1-2"/></svg>Ver el clima en vivo</a>
-    </nav>
   </div>
 
   <div class="pt-ayudas">
@@ -159,7 +173,7 @@
         {% endif %}
       </div>
 
-      <h3 class="pt-h3" id="grupos-whatsapp">Únete a una brigada</h3>
+      <h3 class="pt-h2 pt-h2-dentro" id="grupos-whatsapp">Únete a una brigada</h3>
       <ul class="pt-brigadas">
         {% for g in cont.GRUPOS_WHATSAPP %}
         <li class="pt-brigada">
@@ -175,7 +189,7 @@
   {# Informes y mapas en PDF: el índice que publica sosgalapagos-datos en /srv/sosgalapagos-descargas. #}
   <div class="pt-abajo">
     <section class="pt-seccion" id="informes" aria-labelledby="informes-titulo">
-      <h2 class="pt-h2s" id="informes-titulo">Informes</h2>
+      <h2 class="pt-h2" id="informes-titulo">Informes</h2>
       {% if informes %}
       <ul class="pt-lista">
         {% for i in informes %}
@@ -198,7 +212,7 @@
     </section>
 
     <section class="pt-seccion" id="mas" aria-labelledby="mas-titulo">
-      <h2 class="pt-h2s" id="mas-titulo">Más</h2>
+      <h2 class="pt-h2" id="mas-titulo">Más</h2>
       <nav class="pt-pildoras" aria-label="Más secciones">
         {% for m in cont.MAS %}<a href="{{ m.ruta }}">{{ m.nombre }}</a>{% endfor %}
       </nav>
@@ -208,3 +222,4 @@
   {% include "parciales/firma.html" %}
 </main>
 {% endblock %}
+{% block guiones %}<script src="{% propio 'portada/portada.js' %}" defer></script>{% endblock %}

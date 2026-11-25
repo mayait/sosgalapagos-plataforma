@@ -117,13 +117,13 @@ def portada(request):
         "cont": contenido,
         "compartir": {
             "titulo": "SOS Galápagos · Lluvias de El Niño en Galápagos",
-            "descripcion": "La lluvia de ahora por zona, los boletines oficiales, el mapa de riesgos y cómo pedir o dar ayuda. Emergencias: 911.",
+            "descripcion": "La lluvia de las próximas 24 horas, los boletines oficiales, el mapa de riesgos y cómo pedir o dar ayuda. Emergencias: 911.",
             "imagen": request.build_absolute_uri(static("app/icono-512.png")),
             "url": request.build_absolute_uri("/"),
             "con_foto": False,
         },
     })
-    # Caché corta: «Ahora» cambia cada pocos minutos y Cloudflare no debe congelarlo.
+    # Caché corta: la lluvia medida cambia cada pocos minutos y Cloudflare no debe congelarla.
     respuesta["Cache-Control"] = f"public, max-age={CACHE_SEGUNDOS}, s-maxage={CACHE_SEGUNDOS}"
     return respuesta
 

@@ -269,18 +269,32 @@ def clima_alertas(request):
 
 
 @api.get("/clima/lluvia-mapa.json", summary="Rejilla de lluvia y viento de los modelos, para el mapa animado", tags=["clima"])
-def clima_lluvia_mapa(request):
+def clima_lluvia_mapa(request, horas: int = 0):
     """Lo que dibuja el mapa de lluvia y viento (lo genera clima/lluvia_mapa.py cada vez que hay corrida nueva).
-    Son modelos, no mediciones ni un pronóstico oficial."""
+    Son modelos, no mediciones ni un pronóstico oficial.
+
+    Con `horas` (de 6 a 72) devuelve solo lo necesario para animar ese tramo desde ahora con el modelo ECMWF:
+    es lo que pide la portada, y pesa la quinta parte."""
     from pathlib import Path
 
     from django.conf import settings
     from django.http import FileResponse
 
+    from clima import lluvia_mapa
+
     ruta = Path(settings.CLIMA_SALIDA or ".") / "lluvia-mapa.json"
     if not settings.CLIMA_SALIDA or not ruta.exists():
         return api.create_response(request, {"error": "todavía no hay mapa"}, status=404)
-    return FileResponse(open(ruta, "rb"), content_type="application/json", headers={"Cache-Control": "public, max-age=300"})
+    if not horas:
+        return FileResponse(open(ruta, "rb"), content_type="application/json", headers={"Cache-Control": "public, max-age=300"})
+    try:
+        datos = lluvia_mapa.recorte(json.loads(ruta.read_text(encoding="utf-8")), timezone.now(), horas=max(6, min(72, horas)))
+    except (ValueError, KeyError, TypeError):
+        datos = None
+    if datos is None:
+        return api.create_response(request, {"error": "el mapa no cubre las próximas horas"}, status=404)
+    return HttpResponse(json.dumps(datos, ensure_ascii=False, separators=(",", ":")), content_type="application/json",
+                        headers={"Cache-Control": "public, max-age=300"})
 
 
 def _archivo_clima(request, nombre, falta):

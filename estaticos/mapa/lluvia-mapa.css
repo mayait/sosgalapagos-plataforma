@@ -83,3 +83,67 @@
 .lm-error{position:absolute;inset:0;display:grid;place-items:center;padding:20px;text-align:center;color:#3a3f45;z-index:900}
 @media (max-width:640px){.lm-hora span{display:none}.lm-aviso{font-size:10.5px}}
 @media (prefers-reduced-motion:reduce){.lm-play{transition:none}}
+
+/* ── Reel: las próximas horas animadas solas, sin controles (la portada). Prefijo «lr-». ──────────────
+   Es el mapa del reel del clima: mar azul claro, islas en crema con su contorno, reloj con marco negro,
+   puntos rojos en los puertos. Marca: rojo, negro y blanco; los azules son la lluvia, no la marca. */
+.lr{--lr-titulo:var(--titulo,"Helvetica Neue",Helvetica,Arial,sans-serif);color:#000;font-family:"Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;line-height:1.2}
+.lr-caja{position:relative;aspect-ratio:1/1;overflow:hidden;border:1.5px solid #000;border-radius:14px;background:#e3ecf1;isolation:isolate}
+@supports not (aspect-ratio:1/1){.lr-caja{height:0;padding-bottom:100%}}
+.lr-mapa{position:absolute;inset:0;background:#e3ecf1}
+.lr .leaflet-container{background:#e3ecf1;font:inherit;cursor:default}
+.lr .lm-lluvia{pointer-events:none}
+.lr .lm-particulas{position:absolute;left:0;top:0;pointer-events:none;z-index:450}
+.lr-rotulos{position:absolute;inset:0;z-index:500;pointer-events:none;overflow:hidden}
+.lr-rotulos>*{position:absolute;box-sizing:border-box}
+.lr-isla,.lr-puerto{white-space:nowrap;text-shadow:0 0 2px #fff,0 0 2px #fff,1px 1px 0 #fff,-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,0 1px 0 #fff,0 -1px 0 #fff}
+.lr-isla{transform:translate(-50%,-50%);font:800 9.5px/1 var(--lr-titulo);text-transform:uppercase}
+.lr-puerto{transform:translate(-50%,var(--lr-bajo,20px));font-weight:700;font-size:11px;line-height:1}
+.lr-punto{border-radius:50%;background:#c4161c;border:2px solid #fff;transform:translate(-50%,-50%)}
+.lr-anillo{border-radius:50%;border:2px solid #b5161c;transform:translate(-50%,-50%)}
+.lr-reloj{position:absolute;z-index:600;left:10px;top:10px;width:146px;padding:8px 9px 7px;border:2px solid #000;background:rgba(255,255,255,.94);box-sizing:border-box}
+.lr-reloj b{display:block;font:900 26px/1 var(--lr-titulo);letter-spacing:-.01em}
+.lr-reloj span{display:block;margin-top:5px;font:800 9px/1 var(--lr-titulo);letter-spacing:.04em;text-transform:uppercase;color:#b5161c;white-space:nowrap}
+.lr-play{position:absolute;z-index:600;right:4px;top:4px;width:48px;height:48px;padding:0;border:0;background:none;color:#000;cursor:pointer;display:grid;place-items:center;-webkit-tap-highlight-color:transparent}
+.lr-play::before{content:"";position:absolute;inset:6px;border-radius:50%;border:1.5px solid #000;background:rgba(255,255,255,.94)}
+.lr-play svg{position:relative;width:12px;height:12px}
+.lr-play:focus-visible{outline:none}
+.lr-play:focus-visible::before{outline:3px solid #e11b22;outline-offset:2px}
+.lr-leyenda{position:absolute;z-index:600;left:10px;bottom:10px;width:128px;padding:5px 8px 7px;background:rgba(255,255,255,.9);font-size:11px;font-weight:600;box-sizing:border-box}
+.lr-leyenda div{display:flex;justify-content:space-between}
+.lr-leyenda canvas{display:block;width:100%;height:7px;margin-top:4px}
+.lr-credito{position:absolute;z-index:600;right:8px;bottom:8px;padding:3px 6px;background:rgba(255,255,255,.85);font-size:10.5px;font-weight:600;color:#333}
+/* Tira «¿A qué hora llueve más en cada isla?» */
+.lr-tira{--lr-col:122px;margin-top:14px}
+.lr-tira h3{margin:0 0 10px;font:800 12px/1.25 var(--lr-titulo);letter-spacing:.02em;text-transform:uppercase}
+.lr-filas{position:relative}
+.lr-fila{display:grid;grid-template-columns:var(--lr-col) minmax(0,1fr);align-items:end;height:36px;margin-bottom:6px}
+.lr-fila:last-of-type{margin-bottom:0}
+.lr-fila b{padding-right:8px;font:800 9.5px/1.15 var(--lr-titulo);text-transform:uppercase;white-space:nowrap}
+.lr-fila b span{display:block;margin-top:2px;font:500 12px/1.15 "Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;text-transform:none;color:#555;white-space:nowrap}
+.lr-barras{display:flex;align-items:flex-end;gap:3px;height:100%}
+.lr-barras i{flex:1;min-height:2px;border-radius:3px 3px 0 0;background:#d9e0e4}
+.lr-barras i.lr-ya{background:#1f4fbf}
+.lr-barras i.lr-pico{box-shadow:0 -3px 0 #b5161c}
+.lr-barras i.lr-pico.lr-ya{background:#0b1f5c}
+.lr-cursor{position:absolute;top:-4px;bottom:0;left:calc(var(--lr-col) + (100% - var(--lr-col)) * var(--f,0));width:2px;margin-left:-1px;background:#b5161c}
+.lr-eje{position:relative;height:19px;margin-left:var(--lr-col);border-top:1.5px solid #000}
+.lr-eje span{position:absolute;top:4px;transform:translateX(-50%);font-size:11px;line-height:1;color:#555;white-space:nowrap}
+.lr-eje .lr-dia{font-weight:700;color:#000}
+.lr-eje .lr-ini{transform:none}
+.lr-eje .lr-fin{transform:translateX(-100%)}
+@media (min-width:520px){
+  .lr-caja{aspect-ratio:5/4}
+  @supports not (aspect-ratio:1/1){.lr-caja{padding-bottom:80%}}
+  .lr-isla{font-size:12px}
+  .lr-puerto{font-size:13px}
+  .lr-reloj{left:14px;top:14px;width:178px;padding:10px 12px 9px}
+  .lr-reloj b{font-size:34px}
+  .lr-reloj span{font-size:10.5px}
+  .lr-leyenda{left:14px;bottom:14px;width:160px;font-size:12px}
+  .lr-credito{font-size:11.5px}
+  .lr-tira{--lr-col:150px}
+  .lr-fila{height:40px}
+  .lr-fila b{font-size:11.5px}
+  .lr-fila b span{font-size:13px}
+}
