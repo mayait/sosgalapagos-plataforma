@@ -344,6 +344,11 @@ def ruta_oficial(instancia, nombre):
     return f"oficiales/{timezone.now():%Y-%m}/{uuid.uuid4().hex}.pdf"
 
 
+def ruta_imagen_oficial(instancia, nombre):
+    # Fuera de oficiales/: esa carpeta no se sirve por /riesgos/medios/ y la imagen sí debe verse en el visor.
+    return f"boletines/{timezone.now():%Y-%m}/{uuid.uuid4().hex}.jpg"
+
+
 class Suceso(models.Model):
     """Algo que pasó en la emergencia y debe quedar en la línea del tiempo, aunque no tenga un punto en el mapa.
 
@@ -363,6 +368,9 @@ class Suceso(models.Model):
     institucion = models.CharField("institución", max_length=20, choices=Institucion, blank=True, help_text="Solo para documentos oficiales.")
     archivo = models.FileField("PDF del documento", upload_to=ruta_oficial, validators=[validar_pdf], blank=True,
                                help_text="Si el documento no está en internet. Es público: no subas uno con nombres de personas afectadas, cédulas ni teléfonos.")
+    # Muchos boletines se publican como imagen, no como PDF. Se guarda sin metadatos (reportes/fotos.py).
+    imagen = models.ImageField("imagen del documento", upload_to=ruta_imagen_oficial, blank=True,
+                               help_text="Si el documento es una imagen (un boletín publicado como foto). Es pública.")
     ocurrido = models.DateTimeField("cuándo", default=timezone.now, db_index=True)
     # Lo que dura: un cierre de vía anunciado, una suspensión de clases. Vacío: un hecho puntual.
     hasta = models.DateTimeField("vigente hasta", null=True, blank=True)
@@ -380,7 +388,12 @@ class Suceso(models.Model):
 
     @property
     def destino(self):
-        """Adónde lleva: al original en internet o, si se subió el PDF, a su descarga."""
+        """Adónde lleva: al original en internet o, si se subió el documento, a su visor."""
         if self.enlace:
             return self.enlace
-        return f"/riesgos/oficial/{self.pk}/" if self.archivo else ""
+        return self.visor if self.archivo or self.imagen else ""
+
+    @property
+    def visor(self):
+        """La página del sitio que muestra el documento, con su botón de volver. Es adonde llevan los avisos."""
+        return f"/riesgos/oficial/{self.pk}/"

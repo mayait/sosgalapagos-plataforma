@@ -528,3 +528,76 @@ def prueba_la_ficha_dice_cuando_caduca_y_no_por_verificar(client):
     assert "Por verificar" not in ficha
     assert _duracion(5 * 60) == "5 minutos" and _duracion(3600) == "1 hora" and _duracion(12 * 86400) == "12 días"
     assert _duracion(2 * 3600 + 15 * 60) == "2 horas y 15 minutos" and _duracion(86400) == "1 día"
+
+
+def _imagen_de_boletin(tmp_path):
+    ruta = tmp_path / "boletin.jpg"
+    Image.new("RGB", (60, 80), "white").save(ruta, "JPEG")
+    return str(ruta)
+
+
+def prueba_un_boletin_en_imagen_se_sube_avisa_y_abre_en_el_visor_con_boton_de_volver(client, settings, tmp_path, monkeypatch):
+    """Un boletín publicado como foto: se guarda la imagen, el aviso dice solo qué pasó y lleva al visor, no al archivo."""
+    from django.core.management import call_command
+
+    from clima import alertas
+    from clima.models import AvisoEnviado
+    from reportes import avisos
+    from reportes.models import Suceso, SuscripcionPush
+
+    settings.MEDIA_ROOT = tmp_path
+    settings.PUSH_PUBLICA = settings.PUSH_PRIVADA = "x"
+    settings.IA_MODELO = ""
+    mandados = []
+    monkeypatch.setattr(avisos, "_entregar", lambda s, carga: mandados.append(json.loads(carga)) or True)
+    monkeypatch.setattr(alertas, "es_de_noche", lambda ahora: False)
+    SuscripcionPush.objects.create(direccion="https://push.test/a", p256dh="k", auth="a", temas=["oficiales"])
+    SuscripcionPush.objects.create(direccion="https://push.test/b", p256dh="k", auth="a", temas=["lluvia"])
+
+    call_command("oficial_agregar", "inamhi", archivo=_imagen_de_boletin(tmp_path), titulo="Boletín técnico del INAMHI",
+                 resumen="Las lluvias previstas se desplazan un día.", fecha="2026-11-24T18:35", aviso="Las lluvias previstas se desplazan un día.")
+    s = Suceso.objects.get()
+    assert s.imagen and not s.archivo and s.imagen.name.startswith("boletines/") and s.destino == s.visor == f"/riesgos/oficial/{s.pk}/"
+    # Solo a quien pidió «oficiales», y el aviso abre el visor.
+    assert len(mandados) == 1 and mandados[0]["enlace"] == s.visor and mandados[0]["titulo"] == "Boletín técnico del INAMHI"
+    assert mandados[0]["cuerpo"] == "Las lluvias previstas se desplazan un día."
+    assert AvisoEnviado.objects.get(clave=f"suceso:{s.pk}").entregados == 1
+
+    pagina = client.get(s.visor)
+    html = pagina.content.decode()
+    assert pagina.status_code == 200 and "text/html" in pagina["Content-Type"]
+    assert "data-volver" in html and "← Volver" in html and 'class="docu-inicio" href="/"' in html
+    assert s.imagen.url in html and "Boletín técnico del INAMHI" in html and "24 de noviembre de 2026, 18:35" in html
+    from django.urls import resolve
+
+    assert resolve(s.imagen.url).kwargs["path"] == s.imagen.name    # la imagen sale por la ruta de las fotos (los PDF de oficiales/ no)
+    assert client.get(f"{s.visor}archivo/").status_code == 404     # no hay PDF
+
+
+def prueba_un_pdf_oficial_se_ve_dentro_del_visor_y_se_baja_aparte(client, settings, tmp_path):
+    from django.core.files.base import ContentFile
+
+    from reportes.models import Suceso
+
+    settings.MEDIA_ROOT = tmp_path
+    s = Suceso(clase="oficial", institucion="coe", titulo="Resolución del COE", texto="Qué dice.")
+    s.archivo.save("d.pdf", ContentFile(PDF), save=True)
+    html = client.get(s.visor).content.decode()
+    assert "data-volver" in html and f'data-pdf="{s.visor}archivo/"' in html and "terceros/pdfjs/pdf.min.js" in html and "Descargar el PDF" in html
+    resp = client.get(f"{s.visor}archivo/")
+    assert resp.status_code == 200 and resp["Content-Type"] == "application/pdf" and b"".join(resp.streaming_content) == PDF
+    s.visible = False
+    s.save()
+    assert client.get(s.visor).status_code == 404 and client.get(f"{s.visor}archivo/").status_code == 404
+
+
+def prueba_un_boletin_leido_solo_tiene_visor_con_volver_y_enlace_al_original(client):
+    from clima.models import Boletin
+
+    b = Boletin.objects.create(fuente="inamhi", tipo="advertencia", huella="v" * 64, numero="91", afecta_galapagos=True,
+                               resumen="Lluvias de nivel alto en la región Insular.", enlace="https://inamhi.test/91.pdf", extraido_con="modelo")
+    html = client.get(f"/riesgos/boletin/{b.pk}/").content.decode()
+    assert "data-volver" in html and "Advertencia del INAMHI n.º 91" in html and "Lluvias de nivel alto" in html
+    assert 'href="https://inamhi.test/91.pdf" target="_blank" rel="noopener"' in html and "Resumen automático" in html
+    assert client.get("/riesgos/boletin/999999/").status_code == 404
+

@@ -140,7 +140,7 @@ def prueba_la_lluvia_se_avisa_solo_si_esta_lloviendo_ahora(enviados, monkeypatch
     emitidos = alertas.revisar()
     assert len(emitidos) == 1 and emitidos[0].zona == "santa-cruz" and emitidos[0].urgente
     assert emitidos[0].titulo == "Llueve muy fuerte en Santa Cruz" and "32 mm en la última hora y 48 en tres horas" in emitidos[0].cuerpo
-    assert "peligros" not in (emitidos[0].titulo + emitidos[0].cuerpo).lower() and "Aléjate" not in emitidos[0].cuerpo and "no oficial" in emitidos[0].cuerpo
+    assert "peligros" not in (emitidos[0].titulo + emitidos[0].cuerpo).lower() and "Aléjate" not in emitidos[0].cuerpo and "Evita" not in emitidos[0].cuerpo and "no oficial" in emitidos[0].cuerpo
     assert alertas.revisar() == []  # cinco minutos después no se repite
 
 
@@ -202,7 +202,8 @@ def prueba_oleaje_fuerte_y_boletin_oficial_avisan(enviados, monkeypatch):
     Boletin.objects.create(fuente="inocar", tipo="erfen", huella="e" * 64, afecta_galapagos=False, resumen="No nombra a Galápagos.")
     titulos = sorted(a.titulo for a in alertas.revisar())
     assert titulos == ["Advertencia del INAMHI n.º 89", "Oleaje fuerte en Puerto Villamil (Isabela)"]
-    assert enviados[-1][1]["enlace"] in ("https://inamhi.test/a.pdf", "/clima/")
+    # El aviso abre el visor del sitio (con botón de volver), no el PDF de la institución, y no da instrucciones.
+    assert enviados[-1][1]["enlace"] == f"/riesgos/boletin/{Boletin.objects.get(numero='89').pk}/" and "Lee el documento" not in enviados[-1][1]["cuerpo"]
 
 
 def prueba_el_pronostico_de_manana_avisa_por_la_tarde(enviados):

@@ -5,6 +5,12 @@
   manage.py oficial_agregar gad-santa-cruz --archivo informe.pdf
   manage.py oficial_agregar coe --enlace https://… --titulo "Resolución del COE cantonal" --fecha 2026-11-23T15:00
   manage.py oficial_agregar gad-san-cristobal --archivo informe.pdf --zona san-cristobal --resumen "Qué dice…"
+  manage.py oficial_agregar inamhi --archivo boletin.jpg --titulo "Boletín técnico del INAMHI" --aviso "Qué pasó, en una frase."
+
+El archivo puede ser un PDF o una imagen (JPG o PNG): muchos boletines se publican como foto.
+Con --aviso se manda además un aviso a los teléfonos suscritos a «oficiales». El aviso dice solo qué pasó,
+sin instrucciones, y lleva al visor del documento (/riesgos/oficial/<n>/), que tiene botón de volver.
+De noche (21:00 a 06:00) el aviso queda retenido y sale en el resumen de la mañana.
 
 Si no se da el resumen (ni el título) y hay un modelo de lenguaje configurado, lee el PDF y los propone.
 El documento queda público: no subas uno con nombres de personas afectadas, cédulas ni teléfonos.
@@ -36,23 +42,28 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("institucion", choices=[v for v, _ in Institucion.choices])
-        parser.add_argument("--archivo", help="PDF del documento")
+        parser.add_argument("--archivo", help="PDF o imagen (JPG, PNG) del documento")
         parser.add_argument("--enlace", default="", help="Dirección del documento, si está publicado en internet")
         parser.add_argument("--titulo", default="")
         parser.add_argument("--resumen", default="")
         parser.add_argument("--fecha", default="", help="ISO 8601; sin zona se entiende hora de Galápagos")
         parser.add_argument("--zona", default="", choices=[""] + [v for v, _ in ZonaGrande.choices])
+        parser.add_argument("--aviso", default="", help="Texto del aviso a los teléfonos: qué pasó, sin instrucciones. Sin esto no se avisa")
 
-    def handle(self, institucion, archivo, enlace, titulo, resumen, fecha, zona, **opciones):
+    def handle(self, institucion, archivo, enlace, titulo, resumen, fecha, zona, aviso="", **opciones):
         if not archivo and not enlace:
             raise CommandError("Indica --archivo o --enlace.")
         contenido = Path(archivo).read_bytes() if archivo else None
-        if contenido is not None and not contenido.startswith(b"%PDF-"):
-            raise CommandError("El archivo no es un PDF.")
+        tipo_mime = ""
+        if contenido is not None:
+            tipo_mime = ("application/pdf" if contenido.startswith(b"%PDF-") else "image/jpeg" if contenido.startswith(b"\xff\xd8\xff")
+                         else "image/png" if contenido.startswith(b"\x89PNG") else "")
+            if not tipo_mime:
+                raise CommandError("El archivo no es un PDF ni una imagen JPG o PNG.")
         if contenido and not (titulo and resumen):
             from clima.oficiales import leer_documento
 
-            leido = leer_documento(contenido, "application/pdf", f"documento oficial de {Institucion(institucion).label}", DocumentoLeido, INSTRUCCIONES)
+            leido = leer_documento(contenido, tipo_mime, f"documento oficial de {Institucion(institucion).label}", DocumentoLeido, INSTRUCCIONES)
             if leido:
                 titulo, resumen, fecha = titulo or leido.titulo, resumen or leido.resumen, fecha or (leido.fecha or "")
         if not titulo:
@@ -69,7 +80,23 @@ class Command(BaseCommand):
                 raise CommandError("No entiendo la fecha: usa 2026-11-23T15:00.")
         s = Suceso(clase=ClaseSuceso.OFICIAL, institucion=institucion, titulo=titulo[:140], texto=resumen[:600], fuente=Institucion(institucion).label,
                    enlace=enlace, ocurrido=cuando, zona=zona)
-        if contenido:
+        if contenido and tipo_mime == "application/pdf":
             s.archivo.save("documento.pdf", ContentFile(contenido), save=False)
+        elif contenido:
+            from io import BytesIO
+
+            from reportes import fotos
+
+            s.imagen.save("documento.jpg", fotos.procesar(BytesIO(contenido))[0], save=False)  # sin metadatos, como las fotos
         s.save()
-        self.stdout.write(f"Añadido: {s.titulo} · {s.fuente} · {s.ocurrido:%Y-%m-%d %H:%M} → {s.destino}\n{s.texto}")
+        self.stdout.write(f"Añadido: {s.titulo} · {s.fuente} · {s.ocurrido:%Y-%m-%d %H:%M} → {s.visor}\n{s.texto}")
+        if aviso:
+            from clima import alertas
+
+            enviado = alertas.emitir("oficiales", "", f"suceso:{s.pk}", s.titulo, aviso, s.visor)
+            if not enviado:
+                self.stdout.write("Aviso: ya se había mandado uno de este documento.")
+            elif enviado.retenido and not enviado.entregados:
+                self.stdout.write("Aviso: es de noche; queda retenido y sale en el resumen de las 06:00.")
+            else:
+                self.stdout.write(f"Aviso: enviado a {enviado.entregados} teléfono(s).")

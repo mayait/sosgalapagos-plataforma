@@ -17,8 +17,12 @@ Reglas (rehechas el 22-nov-2026, tras un aviso que asustó sin motivo a las 2 de
 2. **La lluvia se avisa si está lloviendo ahora.** Antes bastaba que el nivel siguiera «muy alto» por
    lo acumulado en 24 horas: avisó de «lluvia peligrosa» cuando ya no llovía. Ahora hace falta lluvia
    medida en la última hora y que lo instantáneo, no lo acumulado, esté en «alto» o más.
-3. **El texto dice lo que se midió y dónde, sin órdenes ni adjetivos.** No dice «peligrosa» ni «aléjate».
-4. Cada aviso lleva una clave: el mismo no sale dos veces. Todos, enviados o retenidos, se ven en la
+3. **El texto dice solo qué pasó: lo que se midió y dónde, sin órdenes, consejos ni adjetivos.** No dice
+   «peligrosa», «aléjate», «evita» ni «lee el documento» (decisión de Julián, 25-nov-2026).
+4. **Un aviso siempre abre una página del sitio**, nunca un PDF suelto ni una web de fuera: en la app
+   instalada no hay barra del navegador y la persona no podría volver. Los documentos se abren en su
+   visor (/riesgos/oficial/<n>/ o /riesgos/boletin/<n>/), que tiene botón de volver.
+5. Cada aviso lleva una clave: el mismo no sale dos veces. Todos, enviados o retenidos, se ven en la
    línea del tiempo (/riesgos/informe/).
 
 Todo es información preliminar, no oficial, salvo los boletines, que enlazan al documento de la institución.
@@ -100,9 +104,8 @@ def _lluvia(ahora):
         R = z.get("R") or {}
         muy = intensidad == "muy alto"
         medido = f"{round(R['R1h'])} mm en la última hora" + (f" y {round(R['R3h'])} en tres horas" if R.get("R3h") and R["R3h"] > R["R1h"] + 1 else "")
-        consejo = "Evita cruzar quebradas y calles con agua." if muy else "Si vives junto a una quebrada o en una zona baja, mantente atento."
         salida.append(emitir("lluvia", isla, f"lluvia:{isla}:{intensidad}:{bloque}", f"Llueve {'muy ' if muy else ''}fuerte en {ZONAS[isla]}",
-                             f"{z.get('zona', '')}: {medido}. {consejo} Medición preliminar, no oficial.",
+                             f"{z.get('zona', '')}: {medido}. Medición preliminar, no oficial.",
                              f"/clima/?zona={z['id']}", urgente=muy, ahora=ahora))
     return salida
 
@@ -166,7 +169,7 @@ def _mar(ahora):
         if pico:
             cuando = pico.hora.astimezone(GALAPAGOS)
             salida.append(emitir("mar", p["zona"], f"mar:{puerto}:{cuando:%Y-%m-%d}", f"Oleaje fuerte en {p['nombre']}",
-                                 f"Se esperan olas de hasta {pico.ola_m:.1f} m hacia las {cuando:%H} h del {cuando:%d-%m}. Pronóstico de un modelo, no oficial: sigue los avisos de la Armada.",
+                                 f"Se esperan olas de hasta {pico.ola_m:.1f} m hacia las {cuando:%H} h del {cuando:%d-%m}. Pronóstico de un modelo, no oficial.",
                                  "/clima/", ahora=ahora))
     return salida
 
@@ -183,5 +186,5 @@ def _oficiales(ahora):
             continue  # sale dos veces al día: va a la línea del tiempo y a la portada, no al teléfono
         tema = "mar" if b.tipo == "oleaje" else "oficiales"
         salida.append(emitir(tema, "", f"boletin:{b.huella[:24]}", f"{nombres.get(b.tipo, 'Boletín oficial')}{' n.º ' + b.numero if b.numero else ''}",
-                             (b.resumen or "Hay un boletín oficial nuevo que nombra a Galápagos.")[:230] + " Lee el documento oficial.", b.enlace or "/clima/", ahora=ahora))
+                             (b.resumen or "Hay un boletín oficial nuevo que nombra a Galápagos.")[:230], f"/riesgos/boletin/{b.pk}/", ahora=ahora))
     return salida

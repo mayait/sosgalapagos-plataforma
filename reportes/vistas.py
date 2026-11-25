@@ -268,6 +268,39 @@ def mover(request, id_publico):
 
 @require_GET
 def oficial(request, pk):
+    """El visor de un documento de la línea del tiempo: qué dice, el documento y un botón para volver.
+
+    Es adonde llevan los avisos del teléfono. Antes llevaban al PDF suelto, y en la app instalada
+    (sin barra del navegador) no había forma de volver.
+    """
+    from .models import Suceso
+
+    s = get_object_or_404(Suceso, pk=pk, visible=True)
+    return render(request, "reportes/documento.html", {"doc": {
+        "titulo": s.titulo, "fuente": s.fuente or s.get_institucion_display(), "cuando": s.ocurrido, "texto": s.texto,
+        "vigente_hasta": s.hasta, "imagen": s.imagen.url if s.imagen else "",
+        "pdf": f"/riesgos/oficial/{s.pk}/archivo/" if s.archivo else "", "enlace": s.enlace,
+        "oficial": s.clase == "oficial", "nota": "",
+    }})
+
+
+@require_GET
+def boletin(request, pk):
+    """El visor de un boletín que se lee solo (INAMHI, INOCAR, SNGR): el resumen y el enlace al documento oficial."""
+    from clima.models import Boletin
+
+    from .cronica import SIGLA, _titulo_boletin
+
+    b = get_object_or_404(Boletin, pk=pk)
+    return render(request, "reportes/documento.html", {"doc": {
+        "titulo": _titulo_boletin(b), "fuente": SIGLA.get(b.fuente, b.fuente.upper()), "cuando": b.emitido or b.visto_en, "texto": b.resumen,
+        "vigente_hasta": b.vigente_hasta, "imagen": "", "pdf": "", "enlace": b.enlace, "oficial": True,
+        "nota": "" if b.revisado or not b.resumen else "Resumen automático: el documento oficial es el que vale.",
+    }})
+
+
+@require_GET
+def oficial_archivo(request, pk):
     """El PDF de un documento oficial que subió coordinación (un informe de un GAD, un comunicado del COE)."""
     from django.http import FileResponse
 
