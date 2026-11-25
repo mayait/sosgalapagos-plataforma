@@ -543,7 +543,7 @@ def prueba_un_boletin_en_imagen_se_sube_avisa_y_abre_en_el_visor_con_boton_de_vo
     from clima import alertas
     from clima.models import AvisoEnviado
     from reportes import avisos
-    from reportes.models import Suceso
+    from reportes.models import Suceso, SuscripcionPush
 
     settings.MEDIA_ROOT = tmp_path
     settings.PUSH_PUBLICA = settings.PUSH_PRIVADA = "x"
