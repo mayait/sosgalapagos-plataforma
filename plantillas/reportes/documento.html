@@ -6,29 +6,29 @@
 {% block contenido %}
 {% comment %}El visor de un documento. La barra de arriba se queda pegada: quien llega desde un aviso, dentro de la app
    instalada, no tiene barra del navegador y sin ella no podría volver.{% endcomment %}
-<div class="visor-barra">
-  <a class="visor-volver" href="/" data-volver>← Volver</a>
-  <a class="visor-inicio" href="/">Inicio</a>
+<div class="docu-barra">
+  <a class="docu-volver" href="/" data-volver>← Volver</a>
+  <a class="docu-inicio" href="/">Inicio</a>
 </div>
-<main class="pagina ancha visor">
-  <p class="visor-fuente">{{ doc.fuente }}{% if doc.cuando %} · {{ doc.cuando|date:"j \\d\\e F \\d\\e Y, H:i" }}{% endif %}</p>
+<main class="pagina ancha">
+  <p class="docu-fuente">{{ doc.fuente }}{% if doc.cuando %} · {{ doc.cuando|date:"j \\d\\e F \\d\\e Y, H:i" }}{% endif %}</p>
   <h1 class="form-titulo">{{ doc.titulo }}</h1>
-  {% if doc.texto %}<p class="visor-texto">{{ doc.texto }}</p>{% endif %}
-  {% if doc.vigente_hasta %}<p class="visor-nota">Vigente hasta el {{ doc.vigente_hasta|date:"j \\d\\e F, H:i" }}.</p>{% endif %}
-  {% if doc.nota %}<p class="visor-nota">{{ doc.nota }}</p>{% endif %}
+  {% if doc.texto %}<p class="docu-texto">{{ doc.texto }}</p>{% endif %}
+  {% if doc.vigente_hasta %}<p class="docu-nota">Vigente hasta el {{ doc.vigente_hasta|date:"j \\d\\e F, H:i" }}.</p>{% endif %}
+  {% if doc.nota %}<p class="docu-nota">{{ doc.nota }}</p>{% endif %}
 
   {% if doc.imagen %}
-  <a class="visor-imagen" href="{{ doc.imagen }}" download><img src="{{ doc.imagen }}" alt="{{ doc.titulo }}: imagen del documento"></a>
+  <a class="docu-imagen" href="{{ doc.imagen }}" download><img src="{{ doc.imagen }}" alt="{{ doc.titulo }}: imagen del documento"></a>
   {% endif %}
   {% if doc.pdf %}
   {# El PDF se dibuja aquí mismo (visor.js). Abrirlo suelto sacaría a la persona de la página, sin botón de volver. #}
-  <div class="visor-pdf" data-pdf="{{ doc.pdf }}" data-lib="{% static 'terceros/pdfjs/pdf.min.js' %}" data-obrero="{% static 'terceros/pdfjs/pdf.worker.min.js' %}">
-    <p class="visor-cargando">Cargando el documento…</p>
+  <div class="docu-pdf" data-pdf="{{ doc.pdf }}" data-lib="{% static 'terceros/pdfjs/pdf.min.js' %}" data-obrero="{% static 'terceros/pdfjs/pdf.worker.min.js' %}">
+    <p class="docu-cargando">Cargando el documento…</p>
   </div>
-  <p><a class="boton visor-boton" href="{{ doc.pdf }}" download>Descargar el PDF</a></p>
+  <p><a class="boton docu-boton" href="{{ doc.pdf }}" download>Descargar el PDF</a></p>
   {% endif %}
   {% if doc.enlace %}
-  <p><a class="boton visor-boton" href="{{ doc.enlace }}" target="_blank" rel="noopener">Ver el documento original ↗</a></p>
+  <p><a class="boton docu-boton" href="{{ doc.enlace }}" target="_blank" rel="noopener">Ver el documento original ↗</a></p>
   {% endif %}
   {% if not doc.oficial %}<p class="ficha-pie">Este documento no es de una institución oficial.</p>{% endif %}
   {% include "parciales/firma.html" %}

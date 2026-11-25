@@ -566,7 +566,7 @@ def prueba_un_boletin_en_imagen_se_sube_avisa_y_abre_en_el_visor_con_boton_de_vo
     pagina = client.get(s.visor)
     html = pagina.content.decode()
     assert pagina.status_code == 200 and "text/html" in pagina["Content-Type"]
-    assert "data-volver" in html and "← Volver" in html and 'class="visor-inicio" href="/"' in html
+    assert "data-volver" in html and "← Volver" in html and 'class="docu-inicio" href="/"' in html
     assert s.imagen.url in html and "Boletín técnico del INAMHI" in html and "24 de noviembre de 2026, 18:35" in html
     from django.urls import resolve
 

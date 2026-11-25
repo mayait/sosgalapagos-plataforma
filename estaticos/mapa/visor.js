@@ -17,7 +17,7 @@
 
   const caja = document.querySelector('[data-pdf]');
   if (!caja) return;
-  const fallo = () => { caja.innerHTML = '<p class="visor-cargando">No se pudo mostrar el documento aquí. Puedes descargarlo con el botón de abajo.</p>'; };
+  const fallo = () => { caja.innerHTML = '<p class="docu-cargando">No se pudo mostrar el documento aquí. Puedes descargarlo con el botón de abajo.</p>'; };
   import(caja.dataset.lib).then(async (pdfjs) => {
     pdfjs.GlobalWorkerOptions.workerSrc = caja.dataset.obrero;
     const pdf = await pdfjs.getDocument({ url: caja.dataset.pdf }).promise;
