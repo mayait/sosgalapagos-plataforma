@@ -4,8 +4,8 @@
 {% block titulo %}{{ doc.titulo }}{% endblock %}
 {% block descripcion %}{{ doc.fuente }}{% if doc.texto %}: {{ doc.texto|truncatechars:150 }}{% endif %}{% endblock %}
 {% block contenido %}
-{# El visor de un documento. La barra de arriba se queda pegada: quien llega desde un aviso, dentro de la app
-   instalada, no tiene barra del navegador y sin ella no podría volver. #}
+{% comment %}El visor de un documento. La barra de arriba se queda pegada: quien llega desde un aviso, dentro de la app
+   instalada, no tiene barra del navegador y sin ella no podría volver.{% endcomment %}
 <div class="visor-barra">
   <a class="visor-volver" href="/" data-volver>← Volver</a>
   <a class="visor-inicio" href="/">Inicio</a>
