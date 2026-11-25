@@ -112,12 +112,14 @@ def prueba_coordinacion_sube_el_informe_de_un_gad_con_su_pdf(client, tmp_path, s
     s = Suceso.objects.get()
     assert (s.clase, s.institucion, s.titulo, s.zona) == ("oficial", "gad-santa-cruz", "Informe de situación n.º 5 del COE cantonal", "santa-cruz")
     assert s.ocurrido == datetime(2026, 11, 23, 16, 0, tzinfo=timezone.utc) and "dos refugios" in s.texto and s.destino == f"/riesgos/oficial/{s.pk}/"
-    r = client.get(s.destino)
+    # El destino es el visor (una página con botón de volver); el PDF se baja por su propia ruta.
+    assert "data-volver" in client.get(s.destino).content.decode()
+    r = client.get(f"{s.destino}archivo/")
     assert r.status_code == 200 and r["Content-Type"] == "application/pdf" and b"".join(r.streaming_content) == PDF
     assert client.get(f"/riesgos/medios/{s.archivo.name}").status_code == 404        # el PDF solo sale por su ruta
     s.visible = False
     s.save()
-    assert client.get(s.destino).status_code == 404
+    assert client.get(s.destino).status_code == 404 and client.get(f"{s.destino}archivo/").status_code == 404
     with pytest.raises(Exception):
         call_command("oficial_agregar", "coe")                                         # sin archivo ni enlace
     (tmp_path / "foto.pdf").write_bytes(b"no es un pdf")

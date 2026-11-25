@@ -57,6 +57,8 @@ Plataforma de reportes de riesgo de SOS Galápagos: un mapa único donde la gent
 | Tocar los puntos | `reportes/reglas.py` (`sumar_puntos`) y `PUNTOS` en los ajustes |
 | Tocar la instalación de la app o los avisos | `estaticos/mapa/app.js`, `reportes/avisos.py` y `plantillas/reportes/sw.js` |
 | Desplegar o actualizar el servidor | `despliegue/servidor.md` y `despliegue/produccion/desplegar.sh` |
+| Subir un documento oficial (PDF o imagen) y avisar a los teléfonos | `manage.py oficial_agregar … --aviso "qué pasó"` (`reportes/management/commands/oficial_agregar.py`) |
+| Tocar el visor de documentos (adonde llevan los avisos; tiene botón de volver) | `plantillas/reportes/documento.html`, `estaticos/mapa/visor.js` y las vistas `oficial` y `boletin` |
 | Tocar el formulario | `plantillas/reportes/reportar.html` y `estaticos/mapa/reportar.js` |
 | Tocar los pines o el desteñido | `estaticos/mapa/mapa.js` |
 | Tocar el panel Capas | `estaticos/mapa/capas.js`. Las capas, sus estilos y sus descargas vienen de lo que publica `/mapas` |

@@ -36,6 +36,7 @@ Componentes de terceros incluidos en estaticos/ (conservan su licencia):
   Protomaps Basemaps 5.7.2     BSD de 3 cláusulas   https://github.com/protomaps/basemaps
   htmx 2.0.4                   BSD de cero cláusulas https://github.com/bigskysoftware/htmx
   Alpine.js 3.14.8             MIT                   https://github.com/alpinejs/alpine
+  PDF.js 4.10.38 (Mozilla)     Apache 2.0            estaticos/terceros/pdfjs/LICENCIA-pdfjs.txt
   Noto Sans (glifos)           SIL OFL 1.1           https://github.com/protomaps/basemaps-assets
   Zalando Sans Expanded        SIL OFL 1.1           estaticos/marca/ZalandoSansExpanded-OFL.txt
 

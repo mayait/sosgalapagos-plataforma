@@ -212,3 +212,9 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 - **Sin teselas de terceros en la portada.** El contorno de las islas es un archivo propio de 14 kB (`estaticos/portada/islas.json`, de la capa del IGM; lo genera `despliegue/generar_islas.py`).
 - **Una prueba no puede depender de la fecha del día.** La primera versión de la prueba del recorte usaba horas de noviembre de 2026 como «archivo viejo» y falló porque hoy es noviembre de 2026.
 
+## Los avisos abren un visor con botón de volver (25-nov-2026)
+
+- **Un aviso nunca abre un PDF suelto ni una web de fuera.** El aviso de un boletín llevaba al documento de la institución, y el de un documento subido, al PDF. En la app instalada no hay barra del navegador: la persona veía el documento y no tenía cómo volver ni ir al inicio. *Qué se hace:* todo aviso abre una página del sitio. Los documentos tienen visor (`/riesgos/oficial/<n>/` y `/riesgos/boletin/<n>/`) con «← Volver» pegado arriba y enlace a Inicio. El PDF se dibuja dentro de la página con PDF.js; «Descargar» lo baja sin navegar.
+- **«Volver» no siempre tiene adónde.** Quien abre la app desde el aviso no tiene página anterior. El botón regresa en el historial solo si se venía de una página del sitio; si no, lleva a la portada.
+- **Los avisos dicen qué pasó, no qué hacer (decisión de Julián, 25-nov-2026).** Se quitaron «Evita cruzar quebradas…», «mantente atento», «Lee el documento oficial» y «sigue los avisos de la Armada». Queda lo medido, dónde y de quién es el dato.
+- **Muchos boletines son una foto, no un PDF.** `oficial_agregar` acepta JPG y PNG (se guardan sin metadatos en `Suceso.imagen`) y con `--aviso` manda el aviso en el mismo paso.
