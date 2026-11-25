@@ -274,7 +274,7 @@ def clima_lluvia_mapa(request, horas: int = 0):
     Son modelos, no mediciones ni un pronóstico oficial.
 
     Con `horas` (de 6 a 72) devuelve solo lo necesario para animar ese tramo desde ahora con el modelo ECMWF:
-    es lo que pide la portada, y pesa la quinta parte."""
+    es lo que pide la portada, y pesa unas diez veces menos."""
     from pathlib import Path
 
     from django.conf import settings

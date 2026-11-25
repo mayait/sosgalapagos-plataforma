@@ -257,7 +257,7 @@ def recorte(datos, ahora=None, horas=24, modelo=REFERENCIA):
     """Lo que hace falta para animar las próximas `horas` con un solo modelo, o None si el archivo ya no las cubre.
 
     La portada anima 24 horas de un modelo: el archivo entero trae 6 días de tres modelos y pesa
-    cinco veces más. Tiene la misma forma que el archivo (lo dibuja el mismo `lluvia-mapa.js`), con
+    unas diez veces más. Tiene la misma forma que el archivo (lo dibuja el mismo `lluvia-mapa.js`), con
     menos cuadros, un solo modelo y `ahora`, la hora del servidor, por si el reloj del teléfono está mal.
 
     La lluvia de un cuadro es la de las 3 h que terminan en su hora; el viento, el de esa hora. Para
