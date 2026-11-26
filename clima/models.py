@@ -315,7 +315,7 @@ class AvisoEnviado(models.Model):
     enlace = models.CharField(max_length=200)
     creado = models.DateTimeField(auto_now_add=True)
     entregados = models.PositiveIntegerField(default=0)
-    urgente = models.BooleanField(default=False)           # llueve muy fuerte ahora o hay peligro de vida confirmado
+    urgente = models.BooleanField(default=False)           # llueve muy fuerte ahora
     retenido = models.BooleanField("retenido por ser de noche", default=False)
     resumido = models.BooleanField("ya salió en el resumen de la mañana", default=False)
 
