@@ -173,7 +173,7 @@ def prueba_de_noche_no_se_manda_nada_y_a_las_seis_sale_un_resumen(enviados, monk
     assert alertas._resumen_de_la_noche(noche.replace(hour=12) + timedelta(days=1)) == []
 
 
-def prueba_un_peligro_de_vida_confirmado_es_lo_unico_de_reportes_que_suena_de_noche(enviados, monkeypatch):
+def prueba_ningun_reporte_suena_de_noche_ni_dice_la_gravedad(enviados, monkeypatch):
     from django.contrib.gis.geos import Point
 
     from reportes import avisos, reglas
@@ -187,8 +187,12 @@ def prueba_un_peligro_de_vida_confirmado_es_lo_unico_de_reportes_que_suena_de_no
     tipo = TipoRiesgo.objects.get(codigo="agua_via")
     leve = reglas.crear_reporte(tipo=tipo, punto=Point(-90.31, -0.74, srid=4326), huella="c1", fuente=Fuente.COORDINADOR, gravedad="no_pasar").reporte
     grave = reglas.crear_reporte(tipo=tipo, punto=Point(-90.33, -0.70, srid=4326), huella="c2", fuente=Fuente.COORDINADOR, gravedad="peligro_vida").reporte
-    assert avisos.de_reporte(leve) == 0 and avisos.de_reporte(grave) == 1
-    assert [d for d, _ in enviados] == ["https://push.test/despierto"] and AvisoEnviado.objects.filter(retenido=True).count() == 2
+    # De noche ninguno sale, ni a quien pidió que lo despierten: los dos esperan al resumen de las 06:00.
+    assert avisos.de_reporte(leve) == 0 and avisos.de_reporte(grave) == 0
+    assert enviados == [] and AvisoEnviado.objects.filter(retenido=True, urgente=False).count() == 2
+    # El texto no nombra la gravedad ni dice qué hacer.
+    for a in AvisoEnviado.objects.all():
+        assert "peligro de vida" not in (a.titulo + a.cuerpo).lower() and "no pasar" not in (a.titulo + a.cuerpo).lower()
 
 
 def prueba_oleaje_fuerte_y_boletin_oficial_avisan(enviados, monkeypatch):

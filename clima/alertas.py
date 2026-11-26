@@ -13,7 +13,8 @@ Reglas (rehechas el 22-nov-2026, tras un aviso que asustó sin motivo a las 2 de
 
 1. **De noche no se manda nada.** Entre las 21:00 y las 06:00 (hora de Galápagos) los avisos quedan
    retenidos y a las 06:00 sale un solo resumen de lo que pasó. La única excepción es lo urgente
-   (llueve muy fuerte ahora, o un peligro de vida confirmado), y solo para quien pidió recibirlo de noche.
+   (llueve muy fuerte ahora), y solo para quien pidió recibirlo de noche. Un reporte del mapa nunca es
+   urgente y ningún aviso dice «peligro de vida» ni «no pasar» (decisión de Julián, 26-nov-2026).
 2. **La lluvia se avisa si está lloviendo ahora.** Antes bastaba que el nivel siguiera «muy alto» por
    lo acumulado en 24 horas: avisó de «lluvia peligrosa» cuando ya no llovía. Ahora hace falta lluvia
    medida en la última hora y que lo instantáneo, no lo acumulado, esté en «alto» o más.

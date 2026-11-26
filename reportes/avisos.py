@@ -70,9 +70,8 @@ def de_reporte(reporte):
 
     isla = {"Santa Cruz": "santa-cruz", "San Cristóbal": "san-cristobal", "Isabela": "isabela"}.get(reporte.zona.isla if reporte.zona else "", "")
     zona = f" en {reporte.zona.nombre}" if reporte.zona else ""
-    grave = {"no_pasar": "No pasar. ", "peligro_vida": "Peligro de vida. "}.get(reporte.gravedad, "")
-    # Solo un peligro de vida confirmado puede sonar de noche, y solo a quien lo pidió.
+    # El aviso no nombra la gravedad («no pasar», «peligro de vida») ni dice qué hacer, y ningún reporte
+    # suena de noche: sale en el resumen de las 06:00 (decisión de Julián, 26-nov-2026).
     aviso = alertas.emitir("peligros", isla, f"reporte:{reporte.id_publico}", f"{reporte.nombre}{zona}",
-                           f"{grave}Reporte confirmado. Información preliminar, no oficial. Emergencias: 911.", f"/riesgos/?r={reporte.id_publico}",
-                           urgente=reporte.gravedad == "peligro_vida")
+                           "Reporte confirmado. Información preliminar, no oficial. Emergencias: 911.", f"/riesgos/?r={reporte.id_publico}")
     return aviso.entregados if aviso else 0
