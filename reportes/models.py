@@ -7,6 +7,7 @@ de su tipo y se retira solo. Nunca se borra: al cerrarse pasa al archivo del eve
 Las reglas (plazos, duplicados, confirmaciones) están en reportes/reglas.py.
 """
 import secrets
+from datetime import timedelta
 import uuid
 
 from django.contrib.gis.db import models
@@ -107,6 +108,8 @@ class Colaborador(models.Model):
     huella = models.CharField(max_length=64, unique=True, editable=False)
     puntos = models.PositiveIntegerField(default=0, db_index=True)
     avisos = models.PositiveIntegerField("avisos publicados", default=0)
+    # «Ayúdanos a ubicar»: fotos que esta persona ubicó y que pasaron al mapa.
+    ubicados = models.PositiveIntegerField("fotos ubicadas", default=0, db_index=True)
     # Coordinación puede ocultar de la tabla un nombre impropio o el de un menor.
     visible = models.BooleanField("aparece en la tabla de puntos", default=True)
     creado_en = models.DateTimeField(auto_now_add=True)
@@ -283,6 +286,91 @@ class DocumentoReporte(models.Model):
 
     def __str__(self):
         return self.titulo
+
+
+def ruta_por_ubicar(instancia, nombre):
+    # Nombre al azar: una foto en revisión no debe poder adivinarse aunque /riesgos/medios/ la sirva.
+    return f"ubicar/{timezone.now():%Y/%m}/{uuid.uuid4().hex}.jpg"
+
+
+class EstadoUbicar(models.TextChoices):
+    PENDIENTE = "pendiente", "Esperando que la ubiquen"
+    # Coordinación la mira antes de que se vea: una cara en primer plano, un menor, un documento,
+    # un texto con nombres, o el clasificador no pudo revisar la foto.
+    REVISION = "revision", "En revisión de coordinación"
+    UBICADO = "ubicado", "Ubicada: ya es un reporte"
+    DESCARTADO = "descartado", "Descartada"
+
+
+class PorUbicarQuerySet(models.QuerySet):
+    def publicos(self, ahora=None):
+        """Lo que se pide ubicar en /riesgos/ubicar/: pendiente y reciente. Nunca lo que está en revisión."""
+        from django.conf import settings
+
+        desde = (ahora or timezone.now()) - timedelta(days=settings.UBICAR_DIAS)
+        return self.filter(estado=EstadoUbicar.PENDIENTE, visto_en__gte=desde)
+
+
+class PorUbicar(models.Model):
+    """Una foto o un aviso que llegó sin un lugar seguro y espera que la comunidad lo ubique.
+
+    Llega de la entrada de WhatsApp (despliegue/ingesta/, que corre en la Mac de coordinación).
+    Al servidor solo llega lo ya limpio: la foto o un fotograma del video, la hora y el texto sin
+    nombres, teléfonos ni el nombre del grupo. De qué grupo y de quién vino queda solo en la Mac,
+    bajo `id_origen`. Las reglas para pasar al mapa están en reportes/reglas.py
+    (proponer_ubicacion). Nunca se borra.
+    """
+
+    id_publico = models.CharField(max_length=8, unique=True, default=nuevo_id_publico, editable=False)
+    foto = models.ImageField(upload_to=ruta_por_ubicar, null=True, blank=True)
+    texto = models.CharField("texto público", max_length=280, blank=True, help_text="Ya sin nombres ni teléfonos. Es lo que se ve.")
+    visto_en = models.DateTimeField("hora del mensaje", db_index=True)
+    tipo = models.ForeignKey(TipoRiesgo, null=True, blank=True, on_delete=models.SET_NULL, help_text="El que sugirió el clasificador")
+    # Barrio que nombra el texto: el mapa arranca ahí. No basta para publicar: es aproximado.
+    pista = models.ForeignKey("zonas.Zona", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    estado = models.CharField(max_length=12, choices=EstadoUbicar, default=EstadoUbicar.PENDIENTE, db_index=True)
+    motivo_revision = models.CharField("por qué está en revisión", max_length=200, blank=True)
+    # Resumen de la foto, para no pedir dos veces la misma foto reenviada a varios grupos.
+    huella_foto = models.CharField(max_length=64, blank=True, db_index=True, editable=False)
+    # Resumen con clave de quien la mandó. Nunca el número.
+    huella = models.CharField(max_length=64, blank=True, editable=False)
+    # Resumen del mensaje de origen que da la Mac: no permite volver al grupo ni a la persona,
+    # y evita cargar dos veces lo mismo. Con él, coordinación encuentra el original en la Mac.
+    id_origen = models.CharField(max_length=80, null=True, blank=True, unique=True, editable=False)
+    es_video = models.BooleanField("es un fotograma de un video", default=False)
+    # Lo que dijo el clasificador (probabilidades, proveedor). Solo para coordinación.
+    clasificacion = models.JSONField(default=dict, blank=True)
+    reporte = models.ForeignKey(Reporte, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    objects = PorUbicarQuerySet.as_manager()
+
+    class Meta:
+        verbose_name = "foto por ubicar"
+        verbose_name_plural = "fotos por ubicar"
+        ordering = ["-visto_en"]
+
+    def __str__(self):
+        return f"Por ubicar {self.id_publico} · {self.get_estado_display()}"
+
+
+class Ubicacion(models.Model):
+    """Dónde cree una persona que fue tomada una foto por ubicar. Una por persona y foto."""
+
+    por_ubicar = models.ForeignKey(PorUbicar, on_delete=models.CASCADE, related_name="ubicaciones")
+    punto = models.PointField(srid=4326)
+    texto = models.CharField(max_length=280, blank=True)
+    huella = models.CharField(max_length=64, editable=False)
+    autor = models.ForeignKey(Colaborador, null=True, blank=True, on_delete=models.SET_NULL, related_name="ubicaciones")
+    de_coordinacion = models.BooleanField(default=False)
+    acertada = models.BooleanField("coincidió y pasó al mapa", default=False)
+    creada_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "ubicación propuesta"
+        verbose_name_plural = "ubicaciones propuestas"
+        ordering = ["creada_en"]
+        constraints = [models.UniqueConstraint(fields=["por_ubicar", "huella"], name="una_ubicacion_por_persona")]
 
 
 class TipoConfirmacion(models.TextChoices):

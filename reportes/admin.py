@@ -3,7 +3,7 @@
 from django.contrib.gis import admin
 
 from . import reglas
-from .models import Colaborador, Confirmacion, DocumentoReporte, Estado, FotoReporte, MotivoCierre, Reporte, Suceso, SuscripcionPush, TipoRiesgo
+from .models import Colaborador, Confirmacion, DocumentoReporte, Estado, EstadoUbicar, FotoReporte, MotivoCierre, PorUbicar, Reporte, Suceso, SuscripcionPush, TipoRiesgo, Ubicacion
 
 
 @admin.register(TipoRiesgo)
@@ -87,10 +87,10 @@ class ReporteAdmin(admin.GISModelAdmin):
 
 @admin.register(Colaborador)
 class ColaboradorAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "puntos", "avisos", "visible", "creado_en")
+    list_display = ("nombre", "puntos", "avisos", "ubicados", "visible", "creado_en")
     list_editable = ("visible",)
     search_fields = ("nombre",)
-    readonly_fields = ("huella", "puntos", "avisos", "creado_en")
+    readonly_fields = ("huella", "puntos", "avisos", "ubicados", "creado_en")
 
 
 @admin.register(SuscripcionPush)
@@ -112,3 +112,68 @@ class SucesoAdmin(admin.ModelAdmin):
     search_fields = ("titulo", "texto", "fuente")
     date_hierarchy = "ocurrido"
 
+
+
+class UbicacionEnLinea(admin.TabularInline):
+    model = Ubicacion
+    extra = 0
+    can_delete = False
+    fields = ("punto_txt", "texto", "autor", "de_coordinacion", "acertada", "creada_en")
+    readonly_fields = fields
+
+    @admin.display(description="punto")
+    def punto_txt(self, u):
+        return f"{u.punto.y:.5f}, {u.punto.x:.5f}"
+
+
+@admin.register(PorUbicar)
+class PorUbicarAdmin(admin.ModelAdmin):
+    """Fotos que llegaron de los grupos de WhatsApp sin un lugar seguro.
+
+    Las que están «en revisión» no se ven en /riesgos/ubicar/: una cara en primer plano, un menor,
+    un documento, o el clasificador no pudo mirarlas. Para ubicar una tú mismo, ábrela desde
+    «Ver y ubicar» con la sesión iniciada: tu ubicación la pasa al mapa sin esperar a nadie.
+    """
+
+    list_display = ("miniatura", "visto_en", "estado", "motivo_revision", "texto", "tipo", "propuestas", "reporte")
+    list_filter = ("estado", "es_video", "tipo")
+    search_fields = ("id_publico", "texto")
+    readonly_fields = ("id_publico", "miniatura_grande", "ver", "visto_en", "es_video", "huella_foto", "id_origen", "clasificacion", "reporte", "creado_en")
+    fields = ("id_publico", "miniatura_grande", "ver", "estado", "motivo_revision", "texto", "tipo", "pista", "visto_en", "es_video", "reporte", "clasificacion", "id_origen", "creado_en")
+    inlines = [UbicacionEnLinea]
+    actions = ["aprobar", "descartar"]
+
+    def has_delete_permission(self, request, obj=None):
+        return False  # nunca se borra: se descarta
+
+    @admin.display(description="foto")
+    def miniatura(self, p):
+        from django.utils.html import format_html
+
+        return format_html('<img src="{}" style="height:56px;border-radius:6px">', p.foto.url) if p.foto else "—"
+
+    @admin.display(description="foto")
+    def miniatura_grande(self, p):
+        from django.utils.html import format_html
+
+        return format_html('<img src="{}" style="max-width:420px;max-height:420px">', p.foto.url) if p.foto else "—"
+
+    @admin.display(description="propuestas")
+    def propuestas(self, p):
+        return p.ubicaciones.count()
+
+    @admin.display(description="ubicar")
+    def ver(self, p):
+        from django.urls import reverse
+        from django.utils.html import format_html
+
+        return format_html('<a href="{}" target="_blank" rel="noopener">Ver y ubicar</a>', reverse("reportes:ubicar", args=[p.id_publico]))
+
+    @admin.action(description="Aprobar la foto: puede verse (pasa a la lista o a su reporte)")
+    def aprobar(self, request, queryset):
+        for item in queryset.filter(estado=EstadoUbicar.REVISION):
+            reglas.aprobar_por_ubicar(item)
+
+    @admin.action(description="Descartar (no se pide ubicar)")
+    def descartar(self, request, queryset):
+        queryset.exclude(estado=EstadoUbicar.UBICADO).update(estado=EstadoUbicar.DESCARTADO)

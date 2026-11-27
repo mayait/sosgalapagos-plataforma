@@ -54,6 +54,8 @@ Plataforma de reportes de riesgo de SOS Galápagos: un mapa único donde la gent
 | Tocar la animación de lluvia de la portada (próximas 24 horas) | `LluviaMapa.reel` en `estaticos/mapa/lluvia-mapa.js` (el motor que comparte con `/clima/`), `estaticos/portada/portada.js` y `plantillas/portada/portada.html`. Los datos son el recorte `?horas=24` de `/riesgos/api/clima/lluvia-mapa.json` |
 | Tocar WhatsApp (filtro, modelo, conversación) | `entradas/` y `docs/whatsapp.md`. Se prueba con `despliegue/local.sh whatsapp_probar` |
 | Cambiar de modelo de lenguaje (Anthropic o Gemini) | La variable `IA_MODELO`; nada de código |
+| Tocar «Ayúdanos a ubicar» (lista, mapa, regla de coincidencia) | `reportes/reglas.py` (`proponer_ubicacion`), `UBICAR_*` en los ajustes, `plantillas/reportes/ubicar*.html` y `estaticos/mapa/ubicar.js` |
+| Tocar la entrada horaria de los grupos de WhatsApp (descarga, Jev, fotogramas) | `despliegue/ingesta/` (corre en la Mac) y `entradas/ingesta.py` (lo recibe el servidor) |
 | Tocar los puntos | `reportes/reglas.py` (`sumar_puntos`) y `PUNTOS` en los ajustes |
 | Tocar la instalación de la app o los avisos | `estaticos/mapa/app.js`, `reportes/avisos.py` y `plantillas/reportes/sw.js` |
 | Desplegar o actualizar el servidor | `despliegue/servidor.md` y `despliegue/produccion/desplegar.sh` |

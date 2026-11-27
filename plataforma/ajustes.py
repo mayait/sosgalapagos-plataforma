@@ -115,7 +115,7 @@ INFORMES_DIR = entorno("INFORMES_DIR", "")
 INFORMES_URL = "/descargas/"
 # Privacidad: a quién se escribe para ver, corregir o borrar datos, y la fecha de la política.
 PRIVACIDAD_CORREO = entorno("PRIVACIDAD_CORREO", "jamaya@usfq.edu.ec")
-PRIVACIDAD_ACTUALIZADA = "23 de noviembre de 2026"
+PRIVACIDAD_ACTUALIZADA = "26 de noviembre de 2026"
 
 # ── Mapa ──────────────────────────────────────────────────────────────────────
 # Vista inicial: centro de Puerto Ayora, a nivel de calles (ver docs/visual-mapa.md).
@@ -168,7 +168,16 @@ CERCA_METROS = 1500            # radio de «lo que hay cerca»
 LIMITE_REPORTES_HORA = 12      # por dispositivo, en el formulario web
 
 # ── Puntos: publicar suma (valores preliminares) ─────────────────────────────
-PUNTOS = {"reporte": 10, "foto": 5, "confirmacion": 2}
+PUNTOS = {"reporte": 10, "foto": 5, "confirmacion": 2, "ubicar": 1, "ubicar_acertada": 5}
+
+# ── «Ayúdanos a ubicar» (PRELIMINARES; ver reportes/reglas.py, proponer_ubicacion) ──
+# Una foto sin lugar pasa al mapa cuando UBICAR_COINCIDENCIAS personas distintas la ponen a
+# menos de UBICAR_METROS entre sí, o en cuanto la ubica alguien de coordinación.
+UBICAR_COINCIDENCIAS = 2
+UBICAR_METROS = 100
+UBICAR_DIAS = 7                # lo que lleva más de esto sin ubicar deja de pedirse
+UBICAR_TIPO_POR_DEFECTO = "agua_via"  # si el clasificador no supo el tipo
+LIMITE_UBICAR_HORA = 40        # propuestas por dispositivo y hora
 
 # Dirección pública del sitio, para los enlaces que se mandan por WhatsApp y en los avisos.
 SITIO_URL = entorno("SITIO_URL", "http://localhost:8000" if DEBUG else "https://sosgalapagos.org")
@@ -198,6 +207,15 @@ WHATSAPP_DIRECTOS = entorno("WHATSAPP_DIRECTOS", "0") == "1"
 WHATSAPP_RESPONDER_EN_GRUPOS = entorno("WHATSAPP_RESPONDER_EN_GRUPOS", "0") == "1"
 WHATSAPP_CONVERSACION_MIN = 45   # una conversación sin actividad se cierra sola
 WHATSAPP_RETENCION_DIAS = 7      # después se borra el texto de los mensajes
+
+# ── Entrada desde grupos de WhatsApp, cada hora (despliegue/ingesta/) ─────────
+# La descarga y la clasificación corren en la Mac de coordinación, sobre su copia de los grupos.
+# Al servidor solo llega lo ya limpio: la foto (o un fotograma), la hora, el texto sin nombres ni
+# teléfonos, la clasificación y, si es segura, la ubicación. Nunca el grupo, el remitente ni el video.
+# La Mac manda esta llave en la cabecera X-Llave. Vacía: la entrada está cerrada.
+INGESTA_LLAVE = entorno("INGESTA_LLAVE", "")
+INGESTA_MAX_BYTES = 3 * 1024 * 1024   # por foto
+INGESTA_LIMITE_HORA = 300             # elementos por hora (la corrida horaria de un día de lluvia trae decenas)
 
 # ── Avisos del navegador (Web Push) ──────────────────────────────────────────
 # Las genera «manage.py llaves_push». Sin ellas, el botón de avisos no aparece.

@@ -181,6 +181,41 @@ def whatsapp_entrada(request, secreto: str = ""):
     return {"atendido": bool(mensaje)}
 
 
+def _llave_de_ingesta(request):
+    import hmac
+
+    from django.conf import settings
+
+    llave = settings.INGESTA_LLAVE
+    return bool(llave) and hmac.compare_digest(request.headers.get("X-Llave", "").encode(), llave.encode())
+
+
+@api.get("/ingesta/tipos", summary="Tipos de aviso para la entrada horaria", tags=["interno"], include_in_schema=False)
+def ingesta_tipos(request):
+    """Los tipos activos, para que el clasificador de la Mac elija entre los que hay hoy (se cambian en el admin)."""
+    from reportes.models import TipoRiesgo
+
+    if not _llave_de_ingesta(request):
+        return api.create_response(request, {"error": "no autorizado"}, status=403)
+    return {"tipos": [{"codigo": t.codigo, "nombre": t.nombre, "clase": t.clase} for t in TipoRiesgo.objects.filter(activo=True)]}
+
+
+@api.post("/ingesta/whatsapp", summary="Elemento de la entrada horaria de WhatsApp", tags=["interno"], include_in_schema=False)
+def ingesta_whatsapp(request):
+    """Recibe un elemento ya limpio de la Mac de coordinación (despliegue/ingesta/). Pide la llave en X-Llave.
+
+    Solo crea: un punto en el mapa si trae ubicación segura, o una foto en «Ayúdanos a ubicar».
+    """
+    from entradas import ingesta
+
+    if not _llave_de_ingesta(request):
+        return api.create_response(request, {"error": "no autorizado"}, status=403)
+    try:
+        return ingesta.recibir(request.POST, request.FILES.get("foto"))
+    except ingesta.Rechazo as e:
+        return api.create_response(request, {"error": str(e)}, status=e.estado)
+
+
 # ── Clima: mediciones guardadas en esta base ─────────────────────────────────
 @api.get("/clima/estaciones", summary="Estaciones meteorológicas y su lluvia reciente", tags=["clima"])
 def clima_estaciones(request):

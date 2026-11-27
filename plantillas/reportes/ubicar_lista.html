@@ -1,0 +1,45 @@
+{# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec> · Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito. #}
+{% extends "base.html" %}
+{% load static reportes_extras %}
+{% block titulo %}Ayúdanos a ubicar{% endblock %}
+{% block descripcion %}Fotos de la emergencia que llegaron sin lugar. Si reconoces dónde fue, márcalo en el mapa.{% endblock %}
+{% block contenido %}
+<main class="pagina" id="ubicar">
+  <p class="atajos-linea"><a href="{% url 'reportes:informe' %}">← Línea del tiempo</a></p>
+  <h1 class="form-titulo">Ayúdanos a ubicar</h1>
+  <p class="form-ayuda">Estas fotos llegaron sin decir dónde se tomaron. Si reconoces el lugar, tócala y marca el punto en el mapa. Cuando {{ coincidencias }} personas la ponen en el mismo sitio (a menos de {{ metros }} m), pasa al mapa.</p>
+
+  {% if yo and yo.puntos %}<div class="cifra mis-puntos"><span>Tus puntos en este teléfono</span><b>{{ yo.puntos }}</b><small>{{ yo.ubicados }} foto{{ yo.ubicados|pluralize }} ubicada{{ yo.ubicados|pluralize }}{% if yo.nombre %} · {{ yo.nombre }}{% endif %}</small></div>{% endif %}
+
+  <p class="ubicar-cuenta"><b>{{ total }}</b> {% if total == 1 %}foto espera{% else %}fotos esperan{% endif %} su lugar</p>
+  <ul class="ubicar-lista">
+    {% for p in pendientes %}
+    <li>
+      <a class="ubicar-tarjeta" href="{% url 'reportes:ubicar' p.id_publico %}">
+        {% if p.foto %}<img src="{{ p.foto.url }}" alt="Foto por ubicar" loading="lazy">{% else %}<span class="ubicar-sin-foto" aria-hidden="true"><svg><use href="#i-ubicar"/></svg></span>{% endif %}
+        <span class="ubicar-datos">
+          <time datetime="{{ p.visto_en|date:'c' }}">{{ p.visto_en|date:"l j" }} de {{ p.visto_en|date:"F, H:i" }}</time>
+          {% if p.texto %}<span class="ubicar-texto">{{ p.texto|truncatechars:120 }}</span>{% endif %}
+          {% if p.pista %}<span class="ubicar-pista">Puede ser por {{ p.pista.nombre }}</span>{% endif %}
+          {% if p.ya_la_ubique %}<span class="ubicar-mia">Ya la ubicaste · puedes corregir</span>{% endif %}
+        </span>
+      </a>
+    </li>
+    {% empty %}
+    <li class="vacio">Ahora no hay fotos por ubicar. Gracias a quienes ayudaron.</li>
+    {% endfor %}
+  </ul>
+
+  <h2 class="seccion-titulo">Quién ha ubicado más</h2>
+  <ol class="tabla-puntos">
+    {% for c in tabla %}
+    <li{% if yo and yo.pk == c.pk %} class="yo"{% endif %}><span class="puesto">{{ forloop.counter }}</span><span class="quien">{{ c.nombre }}</span><span class="cuantos"><b>{{ c.ubicados }}</b> foto{{ c.ubicados|pluralize }}</span></li>
+    {% empty %}
+    <li class="vacio">Todavía nadie. La primera foto que ubiques te pone aquí (con el apodo que elijas).</li>
+    {% endfor %}
+  </ol>
+  <p class="ficha-pie">{{ valores.ubicar }} punto por cada foto que ubicas y {{ valores.ubicar_acertada }} más si otra persona la pone en el mismo lugar y pasa al mapa. Los puntos se suman a los de <a href="{% url 'reportes:puntos' %}">la tabla general</a>. Solo se muestra el nombre o apodo que elijas.</p>
+  <p class="ficha-pie">Las fotos y los textos vienen de grupos de WhatsApp de la emergencia. Aquí solo se ve la foto, la hora y el texto sin nombres ni teléfonos. Las fotos con personas en primer plano o con menores no salen aquí: las revisa coordinación. Si ves algo que no debería estar, escríbenos desde <a href="/privacidad">privacidad</a>.</p>
+  {% include "parciales/firma.html" %}
+</main>
+{% endblock %}

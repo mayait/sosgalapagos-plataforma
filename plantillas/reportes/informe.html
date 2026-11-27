@@ -8,6 +8,9 @@
   <p class="form-ayuda atajos-linea"><a href="{% url 'reportes:informe' %}?ver=oficial">Solo los documentos oficiales</a> · <a href="{% url 'reportes:informe' %}">Todo</a></p>
   <p class="form-ayuda">Todo lo que ha pasado, en orden, desde el inicio de la emergencia: lo que reporta la comunidad, los avisos que mandamos a los teléfonos, los comunicados oficiales, las noticias y los informes. Lo que reporta la comunidad y lo que avisamos <b>no es información oficial</b>; lo oficial lleva el nombre de su institución y el enlace al documento.</p>
 
+  {# «Ayúdanos a ubicar»: fotos de los grupos de WhatsApp que llegaron sin lugar. #}
+  {% if por_ubicar %}<a class="ubicar-aviso" href="{% url 'reportes:ubicar_lista' %}" id="ayudanos-a-ubicar"><b>{{ por_ubicar }}</b><span><strong>Ayúdanos a ubicar</strong>{% if por_ubicar == 1 %}Una foto llegó{% else %}Fotos que llegaron{% endif %} sin decir dónde. ¿Reconoces el lugar?</span></a>{% endif %}
+
   <form class="filtros" onsubmit="return false" aria-label="Filtros">
     <label>Zona<select id="f-zona"></select></label>
     <label>Qué ver<select id="f-clase"></select></label>

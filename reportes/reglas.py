@@ -7,8 +7,12 @@
 3. «Ya bajó»: la primera pasa el reporte a «bajando»; la segunda, desde otro
    dispositivo, lo cierra.
 4. Un reporte nuevo del mismo tipo a menos de 50 m de uno vivo se guarda como
-   confirmación «sigue ahí» del existente.
+   confirmación «sigue ahí» del existente. Uno visto hace más de su plazo, no: entra
+   propio y ya vencido (solo a la línea del tiempo).
 5. Un reporte cerrado nunca se borra: queda en el archivo.
+6. «Ayúdanos a ubicar»: una foto sin lugar pasa al mapa cuando dos personas distintas la
+   ubican a menos de 100 m entre sí (en el punto medio de las que coinciden), o en cuanto
+   la ubica alguien de coordinación. Ver proponer_ubicacion.
 
 Los umbrales están en plataforma/ajustes.py y son preliminares.
 """
@@ -21,9 +25,10 @@ from datetime import timedelta
 from django.conf import settings
 from django.contrib.gis.measure import D
 from django.db import transaction
+from django.db.models import F
 from django.utils import timezone
 
-from .models import Colaborador, Confirmacion, Estado, Fuente, MotivoCierre, Reporte, TipoConfirmacion
+from .models import Colaborador, Confirmacion, Estado, EstadoUbicar, Fuente, MotivoCierre, PorUbicar, Reporte, TipoConfirmacion, TipoRiesgo, Ubicacion
 
 
 def calcular_vence(visto_en, plazo_horas):
@@ -83,6 +88,11 @@ def tabla_de_puntos(limite=50):
     return Colaborador.objects.filter(visible=True, puntos__gt=0).exclude(nombre="")[:limite]
 
 
+def tabla_de_ubicadores(limite=20):
+    """Quién ha ubicado más fotos que pasaron al mapa. Solo el nombre o apodo que cada persona eligió."""
+    return Colaborador.objects.filter(visible=True, ubicados__gt=0).exclude(nombre="").order_by("-ubicados", "creado_en")[:limite]
+
+
 def buscar_duplicado(tipo, punto, ahora=None):
     return (
         Reporte.objects.vivos(ahora)
@@ -111,9 +121,13 @@ def crear_reporte(*, tipo, punto, huella, fuente=Fuente.VECINO, visto_en=None, a
     """
     ahora = ahora or timezone.now()
     visto_en = visto_en or ahora
-    existente = buscar_duplicado(tipo, punto, ahora)
+    # Una foto vieja (que llega tarde de un grupo o que la comunidad ubica días después) no dice
+    # que algo «sigue ahí»: si su plazo ya pasó, entra como reporte propio, ya vencido, a la
+    # línea del tiempo, y no renueva ningún reporte vivo.
+    vieja = calcular_vence(visto_en, tipo.plazo_horas) <= ahora
+    existente = None if vieja else buscar_duplicado(tipo, punto, ahora)
     if existente:
-        confirmar(existente, TipoConfirmacion.SIGUE_AHI, huella, ahora=ahora)
+        confirmar(existente, TipoConfirmacion.SIGUE_AHI, huella, ahora=min(visto_en, ahora))
         puntos = sumar_puntos(huella, settings.PUNTOS["confirmacion"], nombre=nombre_autor)
         foto = campos.get("foto")
         if foto and not existente.foto:
@@ -159,7 +173,8 @@ def confirmar(reporte, tipo, huella, ahora=None):
     Confirmacion.objects.create(reporte=reporte, tipo=tipo, huella=huella, fecha=ahora)
 
     if tipo == TipoConfirmacion.SIGUE_AHI:
-        reporte.vence_en = calcular_vence(ahora, reporte.tipo.plazo_horas)
+        # Renueva desde que se vio, sin acortar nunca lo que ya tenía.
+        reporte.vence_en = max(reporte.vence_en, calcular_vence(ahora, reporte.tipo.plazo_horas))
         if reporte.estado == Estado.BAJANDO:
             # Alguien lo volvió a ver: los «ya bajó» anteriores dejan de contar.
             reporte.estado = Estado.CONFIRMADO
@@ -220,3 +235,122 @@ def gravedad_sugerida(profundidad):
     if profundidad in (Profundidad.RODILLA, Profundidad.CINTURA, Profundidad.PUERTA_AUTO):
         return Gravedad.NO_PASAR
     return Gravedad.CUIDADO
+
+
+# ── «Ayúdanos a ubicar» ──────────────────────────────────────────────────────
+@dataclass
+class ResultadoUbicar:
+    aceptada: bool = False          # la foto pasó al mapa con esta propuesta
+    reporte: Reporte | None = None
+    puntos: int = 0                 # los que ganó quien propuso, contando el premio si se aceptó
+    coinciden: int = 1              # cuántas personas (con esta) la ponen en el mismo lugar
+    faltan: int = 0                 # cuántas más hacen falta para que pase al mapa
+    error: str = ""
+
+
+def _centro(puntos):
+    from django.contrib.gis.geos import Point
+
+    return Point(sum(p.x for p in puntos) / len(puntos), sum(p.y for p in puntos) / len(puntos), srid=4326)
+
+
+def _metros(a, b):
+    """Distancia aproximada en metros entre dos puntos cercanos (latitud de Galápagos ≈ 0)."""
+    import math
+
+    dx = (a.x - b.x) * 111320 * math.cos(math.radians((a.y + b.y) / 2))
+    dy = (a.y - b.y) * 110540
+    return math.hypot(dx, dy)
+
+
+@transaction.atomic
+def proponer_ubicacion(por_ubicar, punto, huella, *, texto="", nombre="", de_coordinacion=False, ahora=None):
+    """Guarda dónde cree una persona que se tomó la foto y, si coincide con otra, la pasa al mapa.
+
+    Regla (preliminar, umbrales en los ajustes):
+    - Cada persona (huella) tiene una sola propuesta por foto; si vuelve a marcar, se corrige la suya.
+    - Pasa al mapa cuando UBICAR_COINCIDENCIAS personas distintas la ponen a menos de UBICAR_METROS
+      de esta propuesta. El punto es el medio de las que coinciden.
+    - Una propuesta de coordinación (sesión del admin) la pasa al mapa sola, en su punto.
+    - Proponer da PUNTOS["ubicar"]; si la foto pasa al mapa, cada persona que coincidió gana
+      además PUNTOS["ubicar_acertada"] y una foto ubicada en la tabla. Así no se ganan puntos
+      marcando al azar.
+    """
+    ahora = ahora or timezone.now()
+    item = PorUbicar.objects.select_for_update().get(pk=por_ubicar.pk)
+    if item.estado != EstadoUbicar.PENDIENTE:
+        return ResultadoUbicar(error="Esta foto ya no espera ubicación. Gracias.")
+    if not huella:
+        return ResultadoUbicar(error="No pudimos reconocer este teléfono. Recarga la página.")
+    texto = ocultar_numeros((texto or "").strip())[:280]
+    propuesta, nueva = Ubicacion.objects.update_or_create(
+        por_ubicar=item, huella=huella, defaults={"punto": punto, "texto": texto, "de_coordinacion": de_coordinacion}
+    )
+    puntos = sumar_puntos(huella, settings.PUNTOS["ubicar"] if nueva else 0, nombre=nombre)
+    propuesta.autor = colaborador_de(huella)
+    propuesta.save(update_fields=["autor"])
+
+    cerca = [u for u in item.ubicaciones.all() if _metros(u.punto, punto) <= settings.UBICAR_METROS]
+    personas = {u.huella for u in cerca}
+    if not de_coordinacion and len(personas) < settings.UBICAR_COINCIDENCIAS:
+        return ResultadoUbicar(puntos=puntos, coinciden=len(personas), faltan=settings.UBICAR_COINCIDENCIAS - len(personas))
+
+    acertadas = [propuesta] if de_coordinacion else cerca
+    reporte = _aceptar(item, acertadas, punto if de_coordinacion else _centro([u.punto for u in cerca]), ahora)
+    premio = settings.PUNTOS["ubicar_acertada"]
+    for u in acertadas:
+        sumar_puntos(u.huella, premio)
+        Colaborador.objects.filter(huella=u.huella).update(ubicados=F("ubicados") + 1)
+    Ubicacion.objects.filter(pk__in=[u.pk for u in acertadas]).update(acertada=True)
+    return ResultadoUbicar(aceptada=True, reporte=reporte, puntos=puntos + premio, coinciden=len(personas))
+
+
+def _aceptar(item, acertadas, punto, ahora):
+    """Convierte la foto ubicada en un reporte por el camino de siempre (duplicados incluidos)."""
+    from django.core.files.base import ContentFile
+
+    from zonas.models import zona_de
+
+    tipo = item.tipo or TipoRiesgo.objects.filter(codigo=settings.UBICAR_TIPO_POR_DEFECTO).first()
+    precision = max([round(_metros(u.punto, punto)) for u in acertadas] + [10])
+    foto = None
+    if item.foto:
+        item.foto.open("rb")
+        foto = ContentFile(item.foto.read(), name="foto.jpg")
+        item.foto.close()
+    resultado = crear_reporte(
+        tipo=tipo,
+        punto=punto,
+        huella=item.huella or f"ubicar:{item.id_publico}",
+        fuente=Fuente.WHATSAPP,
+        visto_en=item.visto_en,
+        ahora=ahora,
+        foto=foto,
+        nota=item.texto,
+        precision_m=precision,
+        zona=zona_de(punto),
+    )
+    item.estado, item.reporte = EstadoUbicar.UBICADO, resultado.reporte
+    item.save(update_fields=["estado", "reporte"])
+    return resultado.reporte
+
+
+def aprobar_por_ubicar(item):
+    """Coordinación revisó la foto y puede verse: pasa a la lista o, si ya tenía punto, a su reporte."""
+    if item.estado != EstadoUbicar.REVISION:
+        return item
+    if item.reporte_id:
+        reporte = item.reporte
+        if item.foto and not reporte.foto:
+            from django.core.files.base import ContentFile
+
+            item.foto.open("rb")
+            reporte.foto.save("foto.jpg", ContentFile(item.foto.read()), save=False)
+            item.foto.close()
+            reporte.save(update_fields=["foto"])
+        item.estado = EstadoUbicar.UBICADO
+    else:
+        item.estado = EstadoUbicar.PENDIENTE
+    item.motivo_revision = ""
+    item.save(update_fields=["estado", "motivo_revision"])
+    return item
