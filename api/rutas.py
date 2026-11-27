@@ -181,6 +181,27 @@ def whatsapp_entrada(request, secreto: str = ""):
     return {"atendido": bool(mensaje)}
 
 
+@api.post("/ingesta/whatsapp", summary="Elemento de la entrada horaria de WhatsApp", tags=["interno"], include_in_schema=False)
+def ingesta_whatsapp(request):
+    """Recibe un elemento ya limpio de la Mac de coordinación (despliegue/ingesta/). Pide la llave en X-Llave.
+
+    Solo crea: un punto en el mapa si trae ubicación segura, o una foto en «Ayúdanos a ubicar».
+    """
+    import hmac
+
+    from django.conf import settings
+
+    from entradas import ingesta
+
+    llave = settings.INGESTA_LLAVE
+    if not llave or not hmac.compare_digest(request.headers.get("X-Llave", "").encode(), llave.encode()):
+        return api.create_response(request, {"error": "no autorizado"}, status=403)
+    try:
+        return ingesta.recibir(request.POST, request.FILES.get("foto"))
+    except ingesta.Rechazo as e:
+        return api.create_response(request, {"error": str(e)}, status=e.estado)
+
+
 # ── Clima: mediciones guardadas en esta base ─────────────────────────────────
 @api.get("/clima/estaciones", summary="Estaciones meteorológicas y su lluvia reciente", tags=["clima"])
 def clima_estaciones(request):

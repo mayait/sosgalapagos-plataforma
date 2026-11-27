@@ -21,7 +21,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from zonas.models import zona_de
 
 from . import avisos, clima, fotos, reglas
-from .models import Gravedad, Profundidad, Reporte, SuscripcionPush, TipoConfirmacion, TipoRiesgo
+from .models import Gravedad, PorUbicar, Profundidad, Reporte, SuscripcionPush, TipoConfirmacion, TipoRiesgo, Ubicacion
 
 GALLETA = "dispositivo"
 
@@ -381,7 +381,7 @@ def lluvia(request):
 @require_GET
 def informe(request):
     """Línea del tiempo: todos los reportes y cuánto ha llovido, con filtros."""
-    return render(request, "reportes/informe.html", {"configuracion": _configuracion()})
+    return render(request, "reportes/informe.html", {"configuracion": _configuracion(), "por_ubicar": PorUbicar.objects.publicos().count()})
 
 
 @require_GET
@@ -581,3 +581,62 @@ def push_suscribir(request):
 
     avisar_bienvenida.enqueue(suscripcion.pk)  # confirma a la persona que los avisos le llegan
     return _con_galleta(JsonResponse({"suscrito": True, "temas": suscripcion.temas, "zonas": suscripcion.zonas}), nuevo)
+
+
+# ── «Ayúdanos a ubicar» ──────────────────────────────────────────────────────
+@require_GET
+def ubicar_lista(request):
+    """Fotos que llegaron sin lugar: cualquiera ayuda a ponerlas en el mapa. Solo foto, hora y texto limpio."""
+    huella, _ = _huella(request)
+    pendientes = list(PorUbicar.objects.publicos().select_related("tipo", "pista")[:60])
+    mias = set(Ubicacion.objects.filter(huella=huella, por_ubicar__in=pendientes).values_list("por_ubicar_id", flat=True))
+    for p in pendientes:
+        p.ya_la_ubique = p.pk in mias
+    return render(request, "reportes/ubicar_lista.html", {
+        "pendientes": pendientes, "total": PorUbicar.objects.publicos().count(), "tabla": reglas.tabla_de_ubicadores(),
+        "yo": reglas.colaborador_de(huella), "valores": settings.PUNTOS, "coincidencias": settings.UBICAR_COINCIDENCIAS,
+        "metros": settings.UBICAR_METROS,
+    })
+
+
+@ensure_csrf_cookie
+@require_http_methods(["GET", "POST"])
+def ubicar(request, id_publico):
+    item = get_object_or_404(PorUbicar.objects.select_related("tipo", "pista"), id_publico=id_publico)
+    huella, nuevo = _huella(request)
+    de_coordinacion = request.user.is_authenticated and request.user.is_staff
+    publico = item in PorUbicar.objects.publicos() or (de_coordinacion and item.estado != "descartado")
+    if request.method == "GET":
+        if not publico:
+            raise Http404
+        mia = item.ubicaciones.filter(huella=huella).first()
+        centro = [mia.punto.x, mia.punto.y] if mia else (
+            [item.pista.geometria.point_on_surface.x, item.pista.geometria.point_on_surface.y] if item.pista else settings.MAPA_CENTRO)
+        return _con_galleta(render(request, "reportes/ubicar.html", {
+            "item": item, "mia": mia, "otras": item.ubicaciones.exclude(huella=huella).count(), "de_coordinacion": de_coordinacion,
+            "configuracion": {**_configuracion(), "centro": centro, "zoom": 17 if mia else (16 if item.pista else settings.MAPA_ZOOM)},
+            "valores": settings.PUNTOS, "coincidencias": settings.UBICAR_COINCIDENCIAS,
+        }), nuevo)
+
+    if not publico:
+        return JsonResponse({"error": "Esta foto ya no espera ubicación. Gracias."}, status=410)
+    hace_una_hora = timezone.now() - timedelta(hours=1)
+    if Ubicacion.objects.filter(huella=huella, creada_en__gt=hace_una_hora).count() >= settings.LIMITE_UBICAR_HORA:
+        return JsonResponse({"error": "Ya ubicaste muchas fotos en la última hora. Gracias: descansa un rato."}, status=429)
+    lat, lon = _numero(request.POST.get("lat")), _numero(request.POST.get("lon"))
+    if lat is None or lon is None:
+        return JsonResponse({"error": "Mueve el mapa hasta que el pin quede donde se tomó la foto."}, status=400)
+    if not (-2 <= lat <= 2 and -92.5 <= lon <= -88.5):
+        return JsonResponse({"error": "Ese punto está fuera de Galápagos."}, status=400)
+    resultado = reglas.proponer_ubicacion(
+        item, Point(lon, lat, srid=4326), huella, texto=request.POST.get("texto") or "",
+        nombre=request.POST.get("nombre") or "", de_coordinacion=de_coordinacion,
+    )
+    if resultado.error:
+        return JsonResponse({"error": resultado.error}, status=410)
+    colaborador = reglas.colaborador_de(huella)
+    return _con_galleta(JsonResponse({
+        "aceptada": resultado.aceptada, "faltan": resultado.faltan, "puntos": resultado.puntos,
+        "total": colaborador.puntos if colaborador else resultado.puntos, "nombre": colaborador.nombre if colaborador else "",
+        "enlace": f"{reverse('reportes:mapa')}?r={resultado.reporte.id_publico}" if resultado.reporte else "",
+    }, status=201), nuevo)

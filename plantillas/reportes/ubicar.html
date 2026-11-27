@@ -1,0 +1,64 @@
+{# SOS Galápagos · © 2026 Universidad San Francisco de Quito (USFQ) · Autor: Julián Maya <jamaya@usfq.edu.ec> · Licencia Apache 2.0 (ver LICENSE y NOTICE): puede reutilizarse dando crédito. #}
+{% extends "base.html" %}
+{% load static reportes_extras %}
+{% block titulo %}¿Dónde fue?{% endblock %}
+{% block menu %}{% menu_sitio "nada" %}{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'terceros/maplibre-gl.css' %}">{% endblock %}
+
+{% block contenido %}
+<main class="formulario" x-data="ubicar()" x-cloak data-enviar="{% url 'reportes:ubicar' item.id_publico %}">
+  <div class="form-cabecera">
+    <a href="{% url 'reportes:ubicar_lista' %}">← Todas las fotos</a>
+    <a class="form-911" href="tel:911" aria-label="Emergencias: llamar al 911">911</a>
+  </div>
+
+  <section x-show="!listo">
+    {% if item.foto %}<img class="foto-vista ubicar-foto" src="{{ item.foto.url }}" alt="La foto que hay que ubicar">{% endif %}
+    <p class="ubicar-hora"><time datetime="{{ item.visto_en|date:'c' }}">{{ item.visto_en|date:"l j" }} de {{ item.visto_en|date:"F, H:i" }}</time>{% if item.es_video %} · fotograma de un video{% endif %}</p>
+    {% if item.texto %}<p class="ubicar-cita">{{ item.texto }}</p>{% endif %}
+    {% if item.estado == "revision" %}<p class="form-error">En revisión de coordinación: {{ item.motivo_revision|default:"sin motivo" }}. No se ve en la lista pública.</p>{% endif %}
+
+    <h1 class="form-titulo">¿Dónde fue?</h1>
+    <p class="form-ayuda">Mueve el mapa hasta que el pin quede donde se tomó la foto.{% if item.pista %} El texto nombra {{ item.pista.nombre }}: el mapa arranca ahí.{% endif %}</p>
+    <div class="mini-mapa ubicar-mapa">
+      <div id="mini-mapa"></div>
+      <svg class="mini-pin" viewBox="0 0 30 40"><path d="M15 1C7 1 1 7 1 15c0 10 14 24 14 24s14-14 14-24C29 7 23 1 15 1z" fill="#e11b22" stroke="#fff" stroke-width="2"/><circle cx="15" cy="15" r="5" fill="#fff"/></svg>
+    </div>
+    <p class="mini-nota">{% if mia %}Ya la ubicaste aquí. Si te equivocaste, mueve el pin y vuelve a enviar.{% elif otras %}{{ otras }} persona{{ otras|pluralize }} ya la ubic{{ otras|pluralize:"ó,aron" }}. Marca donde tú creas, sin mirar lo de los demás.{% else %}Nadie la ha ubicado todavía.{% endif %}</p>
+
+    <div class="campo-titulo">¿Algo más? <small>(opcional)</small></div>
+    <textarea class="campo-texto campo-largo" maxlength="280" x-model="texto" placeholder="Ejemplo: es la esquina de la Charles Binford, frente a la tienda"></textarea>
+    <p class="nota-ayuda">No escribas nombres, teléfonos ni cédulas: si escribes un número largo, se oculta.</p>
+
+    <div class="campo-titulo">Tu nombre o apodo <small>(opcional)</small></div>
+    <input class="campo-texto" type="text" maxlength="40" x-model="nombre" placeholder="Para aparecer en la tabla" autocomplete="nickname">
+    <p class="nota-ayuda">Solo se muestra este nombre; nada más de ti.</p>
+
+    <p class="form-error" x-show="error" x-text="error" role="alert"></p>
+    <div class="form-pie">
+      <button type="button" class="reportar" :disabled="enviando" @click="enviar()" x-text="enviando ? 'Enviando…' : '{% if de_coordinacion %}Ubicar (coordinación: pasa al mapa){% else %}Es aquí{% endif %}'"></button>
+    </div>
+  </section>
+
+  <section x-show="listo" class="listo">
+    <svg style="color:#e11b22"><use href="#i-listo"/></svg>
+    <h1 class="form-titulo" x-text="aceptada ? 'Ya está en el mapa' : 'Gracias'"></h1>
+    <p class="form-ayuda" x-text="aceptada ? 'Coincidiste con otra persona: la foto ya es un punto del mapa.' : 'Guardamos tu ubicación. Cuando otra persona la ponga en el mismo lugar, pasa al mapa.'"></p>
+    <p class="puntos-ganados" x-show="puntos"><svg><use href="#i-estrella"/></svg><span x-text="textoPuntos"></span></p>
+    <a class="reportar" href="{% url 'reportes:ubicar_lista' %}">Ubicar otra foto</a>
+    <p class="form-ayuda" style="margin-top:14px" x-show="enlace"><a :href="enlace">Ver el punto en el mapa</a></p>
+    {% include "parciales/firma.html" %}
+  </section>
+</main>
+{% endblock %}
+
+{% block guiones %}
+{{ configuracion|json_script:"configuracion" }}
+<script src="{% static 'terceros/maplibre-gl.js' %}"></script>
+<script src="{% static 'terceros/pmtiles.js' %}"></script>
+<script src="{% static 'terceros/basemaps.js' %}"></script>
+<script src="{% propio 'mapa/comun.js' %}"></script>
+<script src="{% propio 'mapa/base.js' %}"></script>
+<script src="{% propio 'mapa/ubicar.js' %}"></script>
+<script defer src="{% static 'terceros/alpine.min.js' %}"></script>
+{% endblock %}

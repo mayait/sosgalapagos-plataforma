@@ -856,3 +856,28 @@ textarea.nota { width: 100%; min-height: 64px; padding: 10px 12px; border: 2px s
 .docu-pdf { display: grid; gap: 10px; margin: 16px 0; }
 .docu-cargando { margin: 0; padding: 24px 12px; border-radius: 10px; background: var(--fondo-suave); font-size: 14px; color: var(--gris); text-align: center; }
 .docu-boton { display: block; margin: 10px 0; color: inherit; text-decoration: none; }
+
+/* ── «Ayúdanos a ubicar» (/riesgos/ubicar/ y su apartado en la línea del tiempo) ── */
+.ubicar-aviso { display: flex; align-items: center; gap: 12px; min-height: 56px; margin: 0 0 16px; padding: 12px 14px; border: 2px solid var(--rojo); border-radius: 14px; color: var(--tinta); text-decoration: none; }
+.ubicar-aviso b { font: 900 26px/1 var(--titulo); color: var(--rojo); flex: none; }
+.ubicar-aviso span { flex: 1; min-width: 0; font-size: 14px; }
+.ubicar-aviso strong { display: block; font: 800 13px/1.2 var(--titulo); letter-spacing: 0.03em; text-transform: uppercase; }
+.ubicar-aviso::after { content: "→"; flex: none; font-weight: 800; color: var(--rojo); }
+.ubicar-cuenta { margin: 0 0 10px; font-size: 14px; color: var(--gris); }
+.ubicar-cuenta b { color: var(--tinta); }
+.ubicar-lista { list-style: none; margin: 0 0 24px; padding: 0; display: grid; gap: 10px; }
+.ubicar-tarjeta { display: flex; gap: 12px; align-items: flex-start; min-height: 44px; padding: 8px; border: 1px solid var(--linea); border-radius: 14px; color: var(--tinta); text-decoration: none; }
+.ubicar-tarjeta:active { background: var(--fondo-suave); }
+.ubicar-tarjeta img, .ubicar-sin-foto { flex: none; width: 92px; height: 92px; object-fit: cover; border-radius: 10px; background: var(--fondo-suave); }
+.ubicar-sin-foto { display: grid; place-items: center; color: var(--gris); }
+.ubicar-sin-foto svg { width: 28px; height: 28px; }
+.ubicar-datos { display: grid; gap: 4px; min-width: 0; font-size: 13.5px; }
+.ubicar-datos time { font-weight: 800; font-size: 13px; }
+.ubicar-texto { overflow-wrap: anywhere; }
+.ubicar-pista, .ubicar-mia { font-size: 12px; color: var(--gris); }
+.ubicar-mia { color: var(--rojo-oscuro); font-weight: 700; }
+.ubicar-foto { max-height: 340px; object-fit: contain; background: var(--fondo-suave); }
+.ubicar-hora { margin: 8px 0 4px; font-weight: 800; font-size: 13.5px; }
+.ubicar-cita { margin: 0 0 14px; padding: 8px 12px; border-left: 3px solid var(--linea); font-size: 14.5px; overflow-wrap: anywhere; }
+.ubicar-mapa { height: 300px; }
+.campo-largo { height: auto; min-height: 76px; padding: 10px 12px; line-height: 1.35; resize: vertical; }
