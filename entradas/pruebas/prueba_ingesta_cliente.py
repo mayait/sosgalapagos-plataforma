@@ -270,3 +270,31 @@ def prueba_de_la_carpeta_a_ayudanos_a_ubicar(tmp_path, client, settings):
     assert cuentas["ubicar"] == 1
     item = PorUbicar.objects.get()
     assert item.texto == "agua hasta la rodilla" and item.foto
+
+
+def prueba_los_nombres_conocidos_no_borran_lugares(tmp_path):
+    (tmp_path / "remitentes.json").write_text(json.dumps({"1": "Cruz", "2": "Rosa Isabel Mora (+593000000000)", "3": "Santa Cruz", "4": "Luz"}))
+    conocidos = I.nombres_conocidos(tmp_path, [])
+    t = I.limpiar_texto("Sin luz en Santa Cruz y en Santa Rosa; avisó Rosa Isabel Mora", conocidos)
+    assert t == "Sin luz en Santa Cruz y en Santa Rosa; avisó [nombre oculto]"
+
+
+class PlataformaCaida(PlataformaFalsa):
+    def subir(self, campos, foto=None):
+        raise I.Detener("503")
+
+
+def prueba_si_la_plataforma_no_responde_se_detiene_sin_gastar_intentos(tmp_path):
+    armar(tmp_path, [msg(1, "text", "agua en la vía"), msg(2, "text", "agua en la quebrada", hace_min=50, autor="2@lid")])
+    for _ in range(4):  # más corridas que INTENTOS_MAXIMOS
+        cuentas = correr(tmp_path, plataforma=PlataformaCaida(), clasificador=ClasificadorFalso())
+        assert "detenida" in cuentas
+    assert correr(tmp_path, plataforma=PlataformaFalsa(), clasificador=ClasificadorFalso())["ubicar"] == 2
+
+
+def prueba_no_se_pierden_filas_de_reportes_sos(tmp_path):
+    filas = [{"fecha": "2026-11-22", "hora": "10:00:00", "mensaje_id": "a"}, {"fecha": "2026-11-22", "hora": "11:00:00", "mensaje_id": "b"}]
+    (tmp_path / "reportes_sos.json").write_text(json.dumps(filas[1:]))  # wa_export dejó solo la de esta corrida
+    I._no_perder_reportes(tmp_path, filas)
+    assert [r["mensaje_id"] for r in json.loads((tmp_path / "reportes_sos.json").read_text())] == ["a", "b"]
+    assert (tmp_path / "reportes_sos.csv").read_text().count("\n") == 3

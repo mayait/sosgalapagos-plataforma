@@ -178,6 +178,7 @@ def descargar(cfg, grupos_ruta, carpeta, desde=None):
         raise SystemExit("Falta OPENWA_API_KEY (la de solo lectura)")
     carpeta.mkdir(parents=True, exist_ok=True)
     antes = _instantanea(carpeta)
+    reportes_antes = _leer_json(carpeta / "reportes_sos.json", [])
     # wa_export reescribe mensajes.json con lo que encuentra desde --since: se le pide desde el mensaje
     # más antiguo que ya está en la carpeta, para que nunca deje fuera lo que ya se había bajado.
     marcas = [m["timestamp"] for mensajes, _ in antes.values() for m in mensajes if m.get("timestamp")]
@@ -191,7 +192,36 @@ def descargar(cfg, grupos_ruta, carpeta, desde=None):
     if hecho.returncode:
         aviso("wa_export.py falló:", (hecho.stderr or hecho.stdout)[-800:])
     _no_perder_nada(antes)
+    _no_perder_reportes(carpeta, reportes_antes)
     return hecho.returncode == 0
+
+
+def _leer_json(archivo, defecto):
+    try:
+        return json.loads(archivo.read_text()) if archivo.exists() else defecto
+    except ValueError:
+        return defecto
+
+
+def _no_perder_reportes(carpeta, antes):
+    """wa_export reescribe reportes_sos.json y .csv solo con los chats de esta corrida: se vuelven a unir con lo que había."""
+    import csv
+
+    if not antes:
+        return
+    nuevos = _leer_json(carpeta / "reportes_sos.json", [])
+    vistos = {r.get("mensaje_id") for r in nuevos}
+    perdidos = [r for r in antes if r.get("mensaje_id") not in vistos]
+    if not perdidos:
+        return
+    unidos = sorted(nuevos + perdidos, key=lambda r: (r.get("fecha", ""), r.get("hora", "")))
+    (carpeta / "reportes_sos.json").write_text(json.dumps(unidos, ensure_ascii=False, indent=1))
+    columnas = list(dict.fromkeys(k for r in unidos for k in r))
+    with (carpeta / "reportes_sos.csv").open("w", newline="") as f:
+        escritor = csv.DictWriter(f, fieldnames=columnas)
+        escritor.writeheader()
+        escritor.writerows(unidos)
+    aviso(f"reportes_sos: se recuperaron {len(perdidos)} filas que wa_export dejó fuera")
 
 
 def _no_perder_nada(antes):
@@ -330,21 +360,31 @@ def _sin_tildes(t):
     return "".join(c for c in unicodedata.normalize("NFD", t) if unicodedata.category(c) != "Mn").lower()
 
 
+# Nombres de lugar que también son nombres de persona (Cruz, Rosa, Isabela…): nunca se borran como nombres.
+LUGARES = {"santa cruz", "san cristobal", "isabela", "floreana", "baltra", "puerto ayora", "puerto baquerizo", "puerto baquerizo moreno",
+           "puerto villamil", "bellavista", "santa rosa", "el cascajo", "el progreso", "la soledad", "cerro verde", "la cascada",
+           "pelican bay", "barrio central", "los algarrobos", "miraflores", "galapagos", "charles binford", "charles darwin", "juan montalvo"}
+
+
 def nombres_conocidos(carpeta, chats):
-    """Lo que se sabe que es un nombre: los contactos que anotó wa_export (remitentes.json) y los nombres de los grupos."""
+    """Nombres completos que se sabe que son de personas: los contactos que anotó wa_export (remitentes.json).
+
+    Solo nombres de dos palabras o más: un nombre suelto (Rosa, Cruz, Luz) también es un lugar o una
+    palabra común, y borrarlo estropea el texto. Los nombres sueltos los decide Jev, palabra por palabra.
+    """
     nombres = set()
     archivo = carpeta / "remitentes.json"
     if archivo.exists():
         try:
             for valor in json.loads(archivo.read_text()).values():
-                limpio = re.sub(r"\(.*?\)|[+\d]", " ", str(valor)).strip()
-                if limpio and not limpio.isdigit():
+                limpio = re.sub(r"\s+", " ", re.sub(r"\(.*?\)|[+\d]", " ", str(valor))).strip()
+                if len(limpio.split()) >= 2 and _sin_tildes(limpio) not in LUGARES:
                     nombres.add(limpio)
-                    nombres.update(p for p in limpio.split() if len(p) >= 3)
         except ValueError:
             pass
-    nombres.update(c.name for c in chats)
-    return {n for n in nombres if len(n) >= 3}
+    # El nombre del grupo tal cual (distingue mayúsculas: «Barrio la Cascada» no borra «barrio La Cascada»).
+    nombres.update(c.name for c in chats if len(c.name.split()) >= 2 and _sin_tildes(c.name) not in LUGARES)
+    return nombres
 
 
 def limpiar_texto(texto, conocidos=()):
@@ -354,14 +394,19 @@ def limpiar_texto(texto, conocidos=()):
     t = MENCION.sub(" ", t)
     t = NUMERO.sub("[número oculto]", t)
     for nombre in sorted(conocidos, key=len, reverse=True):
-        t = re.sub(rf"(?<![\wáéíóúñ]){re.escape(nombre)}(?![\wáéíóúñ])", OCULTO, t, flags=re.I)
+        t = re.sub(rf"(?<![\wáéíóúñ]){re.escape(nombre)}(?![\wáéíóúñ])", OCULTO, t)
     t = re.sub(rf"(?:{re.escape(OCULTO)}[\s,y]*)+", OCULTO + " ", t)
     return re.sub(r"[ \t]+", " ", re.sub(r"\s*\n\s*", "\n", t)).strip()[:600]
 
 
 # ── Clasificador ─────────────────────────────────────────────────────────────
 class ErrorClasificador(Exception):
-    pass
+    """El clasificador no pudo con este elemento (p. ej. rechazó la imagen). Cuenta como intento."""
+
+
+class Detener(Exception):
+    """Algo de fuera no responde (Jev o la plataforma caídos, límite por hora): la corrida se detiene y
+    lo pendiente se retoma en la siguiente, sin gastar intentos."""
 
 
 class Jev:
@@ -387,14 +432,17 @@ class Jev:
                 self.version = respuesta.get("model", self.version)
                 return respuesta["answers"]
             except urllib.error.HTTPError as e:
+                if e.code in (401, 403):
+                    raise Detener(f"Jev rechazó la llave ({e.code})")
                 if e.code in (429, 529) or e.code >= 500:
                     time.sleep(float(e.headers.get("Retry-After") or 3 * (intento + 1)))
                     continue
                 raise ErrorClasificador(f"Jev respondió {e.code}")
-            except (urllib.error.URLError, TimeoutError, ConnectionError, KeyError, ValueError) as e:
+            except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
                 time.sleep(3 * (intento + 1))
-                ultimo = e
-        raise ErrorClasificador(f"Jev no responde ({type(locals().get('ultimo', '')).__name__})")
+            except (KeyError, ValueError):
+                raise ErrorClasificador("Jev dio una respuesta ilegible")
+        raise Detener("Jev no responde")
 
 
 CONTEXTO = ("Mensajes de grupos de WhatsApp de vecinos y voluntarios durante la emergencia por lluvias e inundaciones "
@@ -579,7 +627,11 @@ class Plataforma:
                 return json.load(r)
         except urllib.error.HTTPError as e:
             detalle = e.read()[:200].decode(errors="replace")
-            raise RuntimeError(f"la plataforma respondió {e.code}: {detalle}")
+            if e.code in (401, 403, 429) or e.code >= 500:
+                raise Detener(f"la plataforma respondió {e.code}: {detalle}")
+            raise RuntimeError(f"la plataforma rechazó el elemento ({e.code}): {detalle}")
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+            raise Detener(f"la plataforma no responde ({type(e).__name__})")
 
 
 # ── 3. Procesar ──────────────────────────────────────────────────────────────
@@ -689,6 +741,10 @@ def procesar(cfg, grupos, carpeta, ensayo=False, desde_h=None, limite=None, plat
             relativo = str(carpeta_chat.relative_to(carpeta))
             try:
                 resultado, elementos = clasificar_rafaga(rafaga, carpeta_chat, ubicaciones, clasificador, conocidos, zona)
+            except Detener as e:
+                aviso(f"Se detiene la corrida: {e}. Lo pendiente se retoma en la próxima.")
+                cuentas["detenida"] = str(e)[:120]
+                return cuentas
             except ErrorClasificador as e:
                 aviso(f"{relativo}: el clasificador falló ({e}); se reintenta en la próxima corrida")
                 cuentas["error"] += 1
@@ -724,6 +780,12 @@ def procesar(cfg, grupos, carpeta, ensayo=False, desde_h=None, limite=None, plat
                     cuentas[destino] = cuentas.get(destino, 0) + 1
                     subidos[ident] = {"resultado": destino, "id_origen": campos["id_origen"], "archivo": e["archivo"].name if e["archivo"] else "",
                                       "publico": respuesta.get("id", ""), "reporte": respuesta.get("reporte", "")}
+                except Detener as error:
+                    # Nada de esta ráfaga se anota: se vuelve a mandar en la próxima corrida y el
+                    # servidor responde «ya» a lo que alcanzó a subir.
+                    aviso(f"Se detiene la corrida: {error}. Lo pendiente se retoma en la próxima.")
+                    cuentas["detenida"] = str(error)[:120]
+                    return cuentas
                 except Exception as error:
                     aviso(f"{relativo}: no se pudo subir ({error}); se reintenta en la próxima corrida")
                     cuentas["error"] += 1

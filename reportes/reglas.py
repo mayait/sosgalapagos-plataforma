@@ -7,7 +7,8 @@
 3. «Ya bajó»: la primera pasa el reporte a «bajando»; la segunda, desde otro
    dispositivo, lo cierra.
 4. Un reporte nuevo del mismo tipo a menos de 50 m de uno vivo se guarda como
-   confirmación «sigue ahí» del existente.
+   confirmación «sigue ahí» del existente. Uno visto hace más de su plazo, no: entra
+   propio y ya vencido (solo a la línea del tiempo).
 5. Un reporte cerrado nunca se borra: queda en el archivo.
 6. «Ayúdanos a ubicar»: una foto sin lugar pasa al mapa cuando dos personas distintas la
    ubican a menos de 100 m entre sí (en el punto medio de las que coinciden), o en cuanto
@@ -120,9 +121,13 @@ def crear_reporte(*, tipo, punto, huella, fuente=Fuente.VECINO, visto_en=None, a
     """
     ahora = ahora or timezone.now()
     visto_en = visto_en or ahora
-    existente = buscar_duplicado(tipo, punto, ahora)
+    # Una foto vieja (que llega tarde de un grupo o que la comunidad ubica días después) no dice
+    # que algo «sigue ahí»: si su plazo ya pasó, entra como reporte propio, ya vencido, a la
+    # línea del tiempo, y no renueva ningún reporte vivo.
+    vieja = calcular_vence(visto_en, tipo.plazo_horas) <= ahora
+    existente = None if vieja else buscar_duplicado(tipo, punto, ahora)
     if existente:
-        confirmar(existente, TipoConfirmacion.SIGUE_AHI, huella, ahora=ahora)
+        confirmar(existente, TipoConfirmacion.SIGUE_AHI, huella, ahora=min(visto_en, ahora))
         puntos = sumar_puntos(huella, settings.PUNTOS["confirmacion"], nombre=nombre_autor)
         foto = campos.get("foto")
         if foto and not existente.foto:
@@ -168,7 +173,8 @@ def confirmar(reporte, tipo, huella, ahora=None):
     Confirmacion.objects.create(reporte=reporte, tipo=tipo, huella=huella, fecha=ahora)
 
     if tipo == TipoConfirmacion.SIGUE_AHI:
-        reporte.vence_en = calcular_vence(ahora, reporte.tipo.plazo_horas)
+        # Renueva desde que se vio, sin acortar nunca lo que ya tenía.
+        reporte.vence_en = max(reporte.vence_en, calcular_vence(ahora, reporte.tipo.plazo_horas))
         if reporte.estado == Estado.BAJANDO:
             # Alguien lo volvió a ver: los «ya bajó» anteriores dejan de contar.
             reporte.estado = Estado.CONFIRMADO

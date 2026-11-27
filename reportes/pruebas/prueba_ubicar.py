@@ -152,3 +152,29 @@ def prueba_lo_publico_no_dice_de_donde_vino(client):
         assert "abc123def456" not in pagina and "f" * 64 not in pagina and "no debería verse" not in pagina
         texto_visible = re.sub(r"<script.*?</script>|<[^>]*>", " ", pagina, flags=re.S)
         assert not re.search(r"\d{7,}", texto_visible)
+
+
+def prueba_una_foto_vieja_no_renueva_un_reporte_vivo():
+    """Ubicar hoy una foto de hace cuatro días no dice que algo «sigue ahí»."""
+    from reportes.models import TipoRiesgo
+
+    vivo = reglas.crear_reporte(tipo=TipoRiesgo.objects.get(codigo="agua_via"), punto=AQUI, huella="vecino").reporte
+    vence_antes = vivo.vence_en
+    item = por_ubicar(visto_en=timezone.now() - timedelta(days=4))
+    r = reglas.proponer_ubicacion(item, AQUI, "coord", de_coordinacion=True)
+    assert r.reporte.pk != vivo.pk  # reporte propio, ya vencido: va a la línea del tiempo
+    assert r.reporte.vence_en < timezone.now()
+    vivo.refresh_from_db()
+    assert vivo.vence_en == vence_antes and not vivo.confirmaciones.exists()
+
+
+def prueba_una_foto_reciente_confirma_con_su_hora_sin_acortar():
+    from reportes.models import TipoRiesgo
+
+    tipo = TipoRiesgo.objects.get(codigo="agua_via")
+    vivo = reglas.crear_reporte(tipo=tipo, punto=AQUI, huella="vecino").reporte
+    vence_antes = vivo.vence_en
+    r = reglas.crear_reporte(tipo=tipo, punto=A_40_M, huella="otro", visto_en=timezone.now() - timedelta(hours=2))
+    assert r.duplicado and r.reporte.pk == vivo.pk
+    vivo.refresh_from_db()
+    assert vivo.vence_en == vence_antes  # se vio hace 2 horas: no alarga más allá de lo que ya tenía
