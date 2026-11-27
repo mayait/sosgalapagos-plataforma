@@ -218,3 +218,13 @@ Registro corto de errores y decisiones, para no repetirlos. Lo más nuevo va arr
 - **«Volver» no siempre tiene adónde.** Quien abre la app desde el aviso no tiene página anterior. El botón regresa en el historial solo si se venía de una página del sitio; si no, lleva a la portada.
 - **Los avisos dicen qué pasó, no qué hacer (decisión de Julián, 25-nov-2026).** Se quitaron «Evita cruzar quebradas…», «mantente atento», «Lee el documento oficial» y «sigue los avisos de la Armada». Queda lo medido, dónde y de quién es el dato.
 - **Muchos boletines son una foto, no un PDF.** `oficial_agregar` acepta JPG y PNG (se guardan sin metadatos en `Suceso.imagen`) y con `--aviso` manda el aviso en el mismo paso.
+
+
+## «Ayúdanos a ubicar» y la entrada horaria de los grupos (26-nov-2026)
+
+- **Lo que viene de un grupo privado sale a un sitio público: se limpia en la máquina que lo tiene, no en el servidor.** Las fotos y textos de los grupos están en la Mac de coordinación. *Qué se hace:* la Mac clasifica y limpia, y al servidor solo sube la foto, la hora y el texto sin nombres. El grupo y el remitente nunca salen de la Mac; el servidor solo guarda un resumen del id del mensaje para no duplicar.
+- **Ante la duda, a revisión.** Si Jev no responde, si ve una persona en primer plano, un menor o un documento, o si sin modelo no se puede revisar la foto, no se publica: va a coordinación. Si no se puede comprobar que el texto no lleva nombres, se publica la foto sin texto, nunca al revés.
+- **Una calle con nombre de persona no es una persona.** Ocultar toda palabra con mayúscula borraba «Charles Binford». Jev decide palabra por palabra si es un nombre de persona, y una segunda pregunta comprueba que no quede ninguno.
+- **Las coordenadas de una ubicación compartida no están en la base de OpenWA.** Solo salen del historial en vivo, y `wa_export.py` las escribe en `mensajes.txt`; `mensajes.json` no las trae. La ingesta las lee de ahí.
+- **Una herramienta que reescribe sus archivos con una ventana puede borrar historia sin querer.** `wa_export.py --since 3h` dejaría `mensajes.json` con tres horas. *Qué se hace:* se le pide desde el mensaje más antiguo que ya está en disco, y si aun así falta alguno se vuelve a unir.
+- **Una foto vieja ubicada hoy no vuelve al mapa en vivo.** El reporte lleva la hora del mensaje y vence con su plazo; si ya venció, queda en la línea del tiempo. Es lo honesto: el mapa en vivo muestra lo que está pasando.

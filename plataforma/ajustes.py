@@ -115,7 +115,7 @@ INFORMES_DIR = entorno("INFORMES_DIR", "")
 INFORMES_URL = "/descargas/"
 # Privacidad: a quién se escribe para ver, corregir o borrar datos, y la fecha de la política.
 PRIVACIDAD_CORREO = entorno("PRIVACIDAD_CORREO", "jamaya@usfq.edu.ec")
-PRIVACIDAD_ACTUALIZADA = "23 de noviembre de 2026"
+PRIVACIDAD_ACTUALIZADA = "26 de noviembre de 2026"
 
 # ── Mapa ──────────────────────────────────────────────────────────────────────
 # Vista inicial: centro de Puerto Ayora, a nivel de calles (ver docs/visual-mapa.md).

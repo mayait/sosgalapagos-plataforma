@@ -97,3 +97,14 @@ Por el chat también se puede avisar lo que no es una emergencia y sirve para co
 
 En un daño en infraestructura, si la persona dice cuánto va a durar («un mes»), el aviso se queda ese tiempo (`duracion_dias`, entre 1 y 180 días). Si no lo dice, dura el plazo del tipo (14 días).
 
+
+
+## 7. Entrada horaria desde los grupos y «Ayúdanos a ubicar» (26-nov-2026)
+
+Aparte del asistente (que conversa en directo), cada hora la Mac de coordinación lee los grupos de la emergencia de su copia en disco, clasifica cada mensaje con Jev (TypeSafe) y sube lo que sirve. Todo el detalle está en [`despliegue/ingesta/LEEME.md`](../despliegue/ingesta/LEEME.md).
+
+- **Con ubicación segura** (ubicación compartida, enlace de mapa o coordenadas) entra al mapa por `reglas.crear_reporte`, como un reporte de vecino.
+- **Sin ubicación segura**, la foto o el aviso va a **«Ayúdanos a ubicar»** (`/riesgos/ubicar/`, con su apartado en la línea del tiempo). La comunidad la ubica en un mapa.
+- **Cuándo pasa al mapa** (`reglas.proponer_ubicacion`, umbrales preliminares en los ajustes): cuando **dos personas distintas** (dos teléfonos) la ponen a **menos de 100 m** entre sí, en el punto medio de las que coinciden; o en cuanto la ubica alguien de **coordinación** con la sesión del admin abierta. El reporte lleva la hora del mensaje: si su plazo ya pasó, queda en la línea del tiempo y no en el mapa en vivo.
+- **Puntos:** 1 por proponer y 5 más a cada persona que coincidió cuando la foto pasa al mapa. La tabla de quién ha ubicado más está en la misma página. La identidad es la de siempre: el teléfono (galleta anónima) y el nombre o apodo que la persona elige.
+- **Privacidad:** de cada mensaje solo se publica la foto (o un fotograma), la fecha y la hora y el texto sin nombres ni teléfonos. Nunca el grupo ni el remitente: eso queda en la Mac, en `registro_ingesta.jsonl`. Las fotos con personas identificables en primer plano, menores o documentos, y las que no se pudieron revisar, van a **revisión**: coordinación las aprueba o descarta en `/riesgos/admin/reportes/porubicar/`.
